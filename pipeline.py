@@ -8,23 +8,35 @@ from functools import wraps
 # not supposed to use this
 from allennlp.nn.util import move_to_device
 class Scenario:
-    def __init__(self, target,attacker):
+    '''
+    Defines the scenario which contains the target and the attacker's accesses. 
+    '''
+    def __init__(self, target,attacker) -> None:
         self.target = target
         self.attacker = attacker
 class Attacker:
-    def __init__(self, training_data_access: bool,test_data_access:bool,model_access_level:int,output_access:bool):
+    '''
+    Attacker defines different access levels.
+    '''
+    def __init__(self, training_data_access: bool,test_data_access:bool,model_access_level:int,output_access:bool) -> None:
         self.training_data_access = training_data_access
         self.test_data_access = test_data_access
         self.model_access_level = model_access_level
         self.output_access = output_access 
 
 class model_wrapper:
-    def __init__(self, model:nn.Module, scenario: Scenario,training_data:, test_data, training_process,device):
+    '''
+    model_wraper is an object that only contains method/data that are allowed to the users.
+    '''
+    def __init__(self, model:nn.Module, scenario: Scenario,training_data, test_data, training_process,device) -> None:
         self.model = model
         self.scenario = scenario
         self.device = device
 
 def add_method(cls):
+    '''
+    A function that adds method to an object.
+    '''
     def decorator(func):
         @wraps(func) 
         def wrapper(self, *args, **kwargs): 
@@ -33,8 +45,10 @@ def add_method(cls):
         return func # returning func means func can still be used normally
     return decorator
 class Pipeline:
-    # This class is the most abstact class
-    def __init__(self,scenario: Scenario,training_data, test_data, model: nn.Module, training_process,device: int):
+    '''
+    Pipeline contains everything.
+    '''
+    def __init__(self,scenario: Scenario,training_data, test_data, model: nn.Module, training_process,device: int) -> None:
         self.scenario = scenario
         self.training_data = training_data
         self.test_data = test_data
@@ -80,7 +94,7 @@ class Pipeline:
                 output = self.model(x)
                 return output
             @add_method(model_wrapper)
-            def get_batch_output(x):
+            def get_batch_output(x) -> Dict[str, Any]:
                 device = self.device
                 batch = move_to_device(x, cuda_device=1)
                 output = self.model(batch['tokens'], batch['label'])

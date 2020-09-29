@@ -1,4 +1,4 @@
-from pipeline import Pipeline,Scenario, Attacker
+from pipeline import Pipeline,Scenario, Attacker,model_wrapper
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,12 +26,10 @@ from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import move_to_device
 from allennlp.common.util import lazy_groups_of
-# from allennlp.data.iterators import BucketIterator, BasicIterator
-
 # from torchvision import datasets, transforms
 
 class LstmClassifier(Model):
-    def __init__(self, word_embeddings, encoder, vocab):
+    def __init__(self, word_embeddings: nn.Module, encoder: nn.Module, vocab) ->None:
         super().__init__(vocab)
         self.word_embeddings = word_embeddings
         self.encoder = encoder
@@ -40,7 +38,7 @@ class LstmClassifier(Model):
         self.accuracy = CategoricalAccuracy()
         self.loss_function = torch.nn.CrossEntropyLoss()
 
-    def forward(self, tokens, label):
+    def forward(self, tokens, label) -> Dict[str, Any]:
         mask = get_text_field_mask(tokens)
         embeddings = self.word_embeddings(tokens)
         encoder_out = self.encoder(embeddings, mask)
@@ -50,10 +48,10 @@ class LstmClassifier(Model):
             self.accuracy(logits, label)
             output["loss"] = self.loss_function(logits, label)
         return output
-    def get_metrics(self, reset=False):
+    def get_metrics(self, reset=False) -> Dict[str, Any]:
         return {'accuracy': self.accuracy.get_metric(reset)}
 
-def get_accuracy(model_wrapper, dev_data,vocab,trigger_token_ids, batch=True,triggers=False):       
+def get_accuracy(model_wrapper: model_wrapper, dev_data,vocab,trigger_token_ids, batch=True,triggers=False) -> None:       
     model_wrapper.model.get_metrics(reset=True)
     model_wrapper.model.eval() # model should be in eval() already, but just in case
     if batch:
@@ -80,7 +78,7 @@ def get_accuracy(model_wrapper, dev_data,vocab,trigger_token_ids, batch=True,tri
 
     print(model_wrapper.model.get_metrics(True)['accuracy'])
     model_wrapper.model.train()
-def get_accuracy_with_triggers(model_wrapper, dev_data, vocab,trigger_token_ids):       
+def get_accuracy_with_triggers(model_wrapper: model_wrapper, dev_data, vocab,trigger_token_ids) -> None:       
     model_wrapper.model.get_metrics(reset=True)
     model_wrapper.model.eval() # model should be in eval() already, but just in case
     train_sampler = BucketBatchSampler(dev_data,batch_size=128, sorting_keys = ["tokens"])
@@ -96,11 +94,12 @@ def get_accuracy_with_triggers(model_wrapper, dev_data, vocab,trigger_token_ids)
     print(model_wrapper.model.get_metrics(True)['accuracy'])
     model_wrapper.model.train()
 
-def eval_with_triggers(model_wrapper: nn.Module, batch, trigger_token_ids: List[int], gradient=True):
+def eval_with_triggers(model_wrapper: nn.Module, batch, trigger_token_ids: List[int], gradient=True) -> Dict[str, Any]:
     # if gradient is true, this function returns the gradient of the input with the appended trigger tokens
     trigger_sequence_tensor = torch.LongTensor(deepcopy(trigger_token_ids))
-    trigger_sequence_tensor = trigger_sequence_tensor.repeat(len(batch['label']), 1).cuda()
-    original_tokens = batch['tokens']['tokens']["tokens"].clone().cuda()
+    with torch.cuda.device(1):
+        trigger_sequence_tensor = trigger_sequence_tensor.repeat(len(batch['label']), 1).cuda()
+        original_tokens = batch['tokens']['tokens']["tokens"].clone().cuda()
     batch['tokens']['tokens']["tokens"] = torch.cat((trigger_sequence_tensor, original_tokens), 1)
     if gradient:
         data_grad = model_wrapper.get_batch_input_gradient(batch)
@@ -112,7 +111,7 @@ def eval_with_triggers(model_wrapper: nn.Module, batch, trigger_token_ids: List[
         return outputs
 
 def hotflip_attack(averaged_grad, embedding_matrix, trigger_token_ids,
-                   increase_loss=False, num_candidates=1):
+                   increase_loss=False, num_candidates=1) -> List[List[int]]:
     """
     The "Hotflip" attack described in Equation (2) of the paper. This code is heavily inspired by
     the nice code of Paul Michel here https://github.com/pmichel31415/translate/blob/paul/
@@ -137,6 +136,7 @@ def hotflip_attack(averaged_grad, embedding_matrix, trigger_token_ids,
         _, best_k_ids = torch.topk(gradient_dot_embedding_matrix, num_candidates, dim=2)
         return best_k_ids.detach().cpu().numpy()[0]
     _, best_at_each_step = gradient_dot_embedding_matrix.max(2)
+    
     return best_at_each_step[0].detach().cpu().numpy()
 def get_loss_per_candidate(index, model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids, snli=False):
     """
@@ -157,7 +157,7 @@ def get_loss_per_candidate(index, model_wrapper, batch, trigger_token_ids, cand_
         loss = eval_with_triggers(model_wrapper, batch, trigger_token_ids_one_replaced, False)['loss'].cpu().detach().numpy()
         loss_per_candidate.append((deepcopy(trigger_token_ids_one_replaced), loss))
     return loss_per_candidate
-def get_best_candidates(model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids, snli=False, beam_size=1):
+def get_best_candidates(model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids, snli=False, beam_size=1) -> List[int]:
     """"
     Given the list of candidate trigger token ids (of number of trigger words by number of candidates
     per word), it finds the best new candidate trigger.

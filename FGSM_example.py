@@ -32,7 +32,7 @@ from torchvision import datasets, transforms
 #         return init_pred
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
@@ -40,15 +40,17 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
         x = x.view(-1, 320)
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
+        print(x)
+        exit(0)
         return F.log_softmax(x, dim=1)
-def fgsm_attack(image, epsilon, data_grad):
+def fgsm_attack(image, epsilon, data_grad) -> torch.Tensor:
     sign_data_grad = data_grad.sign()
     perturbed_image = image + epsilon*sign_data_grad
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
@@ -62,7 +64,7 @@ def test(model_wrapper, device, test_loader, epsilon ):
     # Loop over all examples in test set
     for data, target in test_loader:
         data = data.to(device)
-        output = model_wrapper.get_prediction(data)
+        output = model_wrapper.get_output(data)
         init_pred = output.max(1, keepdim=True)[1]
         print(init_pred,target)
         if init_pred.item() != target.item():
@@ -72,7 +74,7 @@ def test(model_wrapper, device, test_loader, epsilon ):
         perturbed_data = fgsm_attack(data, epsilon, data_grad)
 
         # Re-classify the perturbed image
-        output = model_wrapper.get_prediction(perturbed_data)
+        output = model_wrapper.get_output(perturbed_data)
         final_pred = output.max(1, keepdim=True)[1]
         if final_pred.item() == target.item():
             correct += 1
@@ -95,6 +97,7 @@ def test(model_wrapper, device, test_loader, epsilon ):
 
 
 def main():
+    # (1) prepare the data loaders and the model
     pretrained_model = "data/lenet_mnist_model.pth"
     use_cuda=True
     test_loader = torch.utils.data.DataLoader(
@@ -110,24 +113,26 @@ def main():
     test_data = test_loader
     training_data = train_loader
     print("CUDA Available: ",torch.cuda.is_available())
-    device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "cpu")
+    device = torch.device("cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu")
     model = Net().to(device)
     model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
     model.eval()
 
     training_process = None
-    # initialize Atacker, which specifies access rights
+    # (2) initialize Atacker, which specifies access rights
     training_data_access = False
     test_data_access = True
     model_access = False
     output_access = True
     myattacker = Attacker(training_data_access,test_data_access,model_access,output_access)
 
-    # initialize Scenario. This defines our target
+    # (3) initialize Scenario. This defines our target
     target = None
     myscenario = Scenario(target,myattacker)
 
     model_wrapper = Pipeline(myscenario,training_data,test_data,model,training_process,device).get_object()
+
+    # (4) test FGSM
     test(model_wrapper, device, test_loader, 0)
 
 if __name__ == "__main__":

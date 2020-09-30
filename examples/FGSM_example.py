@@ -112,6 +112,7 @@ def main():
         batch_size=1, shuffle=True)
     test_data = test_loader
     training_data = train_loader
+    dev_data =None
     print("CUDA Available: ",torch.cuda.is_available())
     device = torch.device("cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu")
     model = Net().to(device)
@@ -121,16 +122,17 @@ def main():
     training_process = None
     # (2) initialize Atacker, which specifies access rights
     training_data_access = False
+    dev_data_access = True
     test_data_access = True
     model_access = False
-    output_access = True
-    myattacker = Attacker(training_data_access,test_data_access,model_access,output_access)
+    output_access = 2
+    myattacker = Attacker(training_data_access,dev_data_access,test_data_access,model_access,output_access)
 
     # (3) initialize Scenario. This defines our target
     target = None
     myscenario = Scenario(target,myattacker)
 
-    model_wrapper = Pipeline(myscenario,training_data,test_data,model,training_process,device).get_object()
+    model_wrapper = Pipeline(myscenario,training_data,dev_data,test_data,model,training_process,device).get_object()
 
     # (4) test FGSM
     test(model_wrapper, device, test_loader, 0)

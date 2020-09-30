@@ -1,0 +1,6 @@
+Attacker:
+    training_data_access: False
+    dev_data_access: True
+    test_data_access: True
+    model_access: False
+    output_access: 2

@@ -178,8 +178,9 @@ def get_best_candidates(model_wrapper, batch, trigger_token_ids, cand_trigger_to
                                                              cand_trigger_token_ids, snli))
         top_candidates = heapq.nlargest(beam_size, loss_per_candidate, key=itemgetter(1))
     return max(top_candidates, key=itemgetter(1))[0]
-def test(model_wrapper, device, dev_data,validation_sampler, num_tokens_change,vocab):
+def test(model_wrapper, device,validation_sampler, num_tokens_change,vocab):
     dataset_label_filter = "0"
+    dev_data = model_wrapper.get_dev_data()
     targeted_dev_data = []
     for instance in dev_data:
         if instance['label'].label == dataset_label_filter:
@@ -232,7 +233,7 @@ def test(model_wrapper, device, dev_data,validation_sampler, num_tokens_change,v
                                                       batch,
                                                       trigger_token_ids,
                                                       cand_trigger_token_ids)
-    
+    print("triggers: ",trigger_token_ids)
     get_accuracy(model_wrapper,dev_data,vocab,trigger_token_ids,False,True)
 def main():
     use_cuda=True
@@ -245,6 +246,7 @@ def main():
     reader = StanfordSentimentTreeBankDatasetReader(granularity="2-class",
                                                     token_indexers={"tokens": single_id_indexer})
     dev_data = reader.read('https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/dev.txt')
+    test_data = reader.read('https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/test.txt')
     vocab = Vocabulary.from_instances(train_data)
     train_data.index_with(vocab)
     dev_data.index_with(vocab)
@@ -303,17 +305,18 @@ def main():
 
     # initialize Atacker, which specifies access rights
     training_data_access = False
-    test_data_access = True
+    dev_data_access = True
+    test_data_access = False
     model_access = False
-    output_access = True
-    myattacker = Attacker(training_data_access,test_data_access,model_access,output_access)
+    output_access = 2
+    myattacker = Attacker(training_data_access,dev_data_access,test_data_access,model_access,output_access)
 
     # initialize Scenario. This defines our target
     target = None
     myscenario = Scenario(target,myattacker)
 
-    model_wrapper = Pipeline(myscenario,train_data,dev_data,model,training_process,device).get_object()
-    test(model_wrapper, device, dev_data,validation_sampler, 5,vocab)
+    model_wrapper = Pipeline(myscenario,train_data,dev_data,test_data,model,training_process,device).get_object()
+    test(model_wrapper, device,validation_sampler, 5,vocab)
 
 if __name__ == "__main__":
     main()

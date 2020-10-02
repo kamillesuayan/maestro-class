@@ -106,7 +106,6 @@ def test(model_wrapper, device,validation_sampler, num_tokens_change,vocab):
 def main():
     use_cuda=True
     single_id_indexer = SingleIdTokenIndexer(lowercase_tokens=True) # word tokenizer
-    # use_subtrees gives us a bit of extra data by breaking down each example into sub sentences.
     reader = StanfordSentimentTreeBankDatasetReader(granularity="2-class",
                                                     token_indexers={"tokens": single_id_indexer},
                                                     use_subtrees=True)
@@ -173,10 +172,10 @@ def main():
     training_process = None
 
     # initialize Atacker, which specifies access rights
-    training_data_access = False
-    dev_data_access = False
-    test_data_access = True
-    model_access = False
+    training_data_access = 0
+    dev_data_access = 0
+    test_data_access = 2
+    model_access = 0
     output_access = 0
     myattacker = Attacker(training_data_access,dev_data_access,test_data_access,model_access,output_access)
 

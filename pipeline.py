@@ -8,6 +8,11 @@ import yaml
 
 # not supposed to use this
 from allennlp.nn.util import move_to_device
+from allennlp.data.samplers import BucketBatchSampler
+from allennlp.data import DataLoader
+from allennlp.training.trainer import Trainer,GradientDescentTrainer
+import torch.optim as optim
+
 class Scenario:
     '''
     Defines the scenario which contains the target and the attacker's accesses. 
@@ -19,7 +24,8 @@ class Attacker:
     '''
     Attacker defines different access levels.
     '''
-    def __init__(self, training_data_access: bool,dev_data_access,test_data_access:bool,model_access_level:int,output_access:bool) -> None:
+    def __init__(self, training_data_access: int,dev_data_access: int,test_data_access:int,model_access_level:int,output_access:int) -> None:
+        # 0 = no acess,1 = read acess,2 = write acess and 3 = write/read access
         self.training_data_access = training_data_access
         self.dev_data_access = dev_data_access
         self.test_data_access = test_data_access
@@ -110,16 +116,70 @@ class Pipeline:
                     outputs = self.model.forward(x['tokens'], x['label'])
                     loss = outputs["loss"]
                     embedding_gradients_auto = torch.autograd.grad(loss, embedding_outputs[0],create_graph=False)
-                    # print(x["tokens"]["tokens"]["tokens"])
-                    # print(embedding_gradients_auto)
+
                     return embedding_gradients_auto
-        if self.scenario.attacker.dev_data_access == True:
+        if self.scenario.attacker.train_data_access == 1:
+            @add_method(model_wrapper)
+            def get_train_data():
+                return self.training_data
+        elif self.scenario.attacker.train_data_access == 2:
+            @add_method(model_wrapper)
+            def change_train_data(x):
+                self.training_data = x
+        elif self.scenario.attacker.train_data_access == 3:
+            @add_method(model_wrapper)
+            def get_train_data():
+                return self.training_data
+            @add_method(model_wrapper)
+            def change_train_data(x):
+                self.training_data = x
+
+        if self.scenario.attacker.dev_data_access == 1:
             @add_method(model_wrapper)
             def get_dev_data():
                 return self.dev_data
-        if self.scenario.attacker.test_data_access == True:
+        elif self.scenario.attacker.dev_data_access == 2:
+            @add_method(model_wrapper)
+            def change_dev_data(x):
+                self.dev_data = x
+        elif self.scenario.attacker.dev_data_access == 3:
+            @add_method(model_wrapper)
+            def get_dev_data():
+                return self.dev_data
+            @add_method(model_wrapper)
+            def change_dev_data(x):
+                self.dev_data = x
+
+        if self.scenario.attacker.test_data_access == 1:
             @add_method(model_wrapper)
             def get_test_data():
                 return self.test_data
+        elif self.scenario.attacker.test_data_access == 2:
+            @add_method(model_wrapper)
+            def change_test_data(x):
+                self.test_data = x
+        elif self.scenario.attacker.test_data_access == 3:
+            @add_method(model_wrapper)
+            def get_test_data():
+                return self.test_data
+            @add_method(model_wrapper)
+            def change_test_data(x):
+                self.test_data = x
+    
+        @add_method(model_wrapper)
+        def train():
+            optimizer = optim.Adam(self.model.parameters())
+            train_sampler = BucketBatchSampler(self.training_data,batch_size=32, sorting_keys = ["tokens"])
+            validation_sampler = BucketBatchSampler(self.dev_data,batch_size=32, sorting_keys = ["tokens"])
+            train_dataloader = DataLoader(self.training_data,batch_sampler=train_sampler)
+            validation_dataloader = DataLoader(self.dev_data,batch_sampler=validation_sampler)
+            trainer = GradientDescentTrainer(model=self.model,
+                            optimizer=optimizer,
+                            data_loader=train_dataloader,
+                            validation_data_loader = validation_dataloader,
+                            num_epochs=8,
+                            patience=1,
+                            cuda_device=1)
+            trainer.train()
+            return self.test_data
         return obj
-

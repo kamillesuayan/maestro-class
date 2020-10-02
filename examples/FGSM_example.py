@@ -121,10 +121,10 @@ def main():
 
     training_process = None
     # (2) initialize Atacker, which specifies access rights
-    training_data_access = False
-    dev_data_access = True
-    test_data_access = True
-    model_access = False
+    training_data_access = 0
+    dev_data_access = 0
+    test_data_access = 3
+    model_access = 0
     output_access = 2
     myattacker = Attacker(training_data_access,dev_data_access,test_data_access,model_access,output_access)
 

@@ -10,32 +10,6 @@ from pipeline import Pipeline, Scenario, Attacker
 from model import build_model
 from data import get_data
 
-# class model_wrapper:
-#     def __init__(self, model, scenario,application):
-#         self.model = model
-#         self.scenario = scenario
-#         self.application = application
-#     def get_input_gradient(self,x):
-#         if self.scenario.attacker.output_access == False:
-#             raise ValueError("Do not have access to gradients")
-#         device = self.application.device
-#         x= x.to(device)
-#         x.requires_grad = True
-#         output = self.model(x)
-#         pred = output.max(1, keepdim=True)[1]
-#         loss = F.nll_loss(output, pred[0])
-#         self.model.zero_grad()
-#         loss.backward()
-#         x_grad = x.grad.data
-#         return x_grad
-#     def get_prediction(self,x):
-#         if self.scenario.attacker.output_access == False:
-#             raise ValueError("Do not have access to predictions")
-#         device = self.application.device
-#         x = x.to(device)
-#         output = self.model(x)
-#         init_pred = output.max(1, keepdim=True)[1]
-#         return init_pred
 
 
 class Net(nn.Module):

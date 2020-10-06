@@ -28,28 +28,6 @@ from allennlp.nn.util import move_to_device
 from allennlp.common.util import lazy_groups_of
 # from torchvision import datasets, transforms
 
-class LstmClassifier(Model):
-    def __init__(self, word_embeddings: nn.Module, encoder: nn.Module, vocab) ->None:
-        super().__init__(vocab)
-        self.word_embeddings = word_embeddings
-        self.encoder = encoder
-        self.linear = torch.nn.Linear(in_features=encoder.get_output_dim(),
-                                      out_features=vocab.get_vocab_size('labels'))
-        self.accuracy = CategoricalAccuracy()
-        self.loss_function = torch.nn.CrossEntropyLoss()
-
-    def forward(self, tokens, label) -> Dict[str, Any]:
-        mask = get_text_field_mask(tokens)
-        embeddings = self.word_embeddings(tokens)
-        encoder_out = self.encoder(embeddings, mask)
-        logits = self.linear(encoder_out)
-        output = {"logits": logits}
-        if label is not None:
-            self.accuracy(logits, label)
-            output["loss"] = self.loss_function(logits, label)
-        return output
-    def get_metrics(self, reset=False) -> Dict[str, Any]:
-        return {'accuracy': self.accuracy.get_metric(reset)}
 
 def get_accuracy(model_wrapper: model_wrapper, dev_data,vocab,trigger_token_ids, batch=True,triggers=False) -> None:       
     model_wrapper.model.get_metrics(reset=True)

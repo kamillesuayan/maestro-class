@@ -1,6 +1,16 @@
 Attacker:
-    training_data_access: False
-    dev_data_access: True
-    test_data_access: True
-    model_access: False
-    output_access: 2
+    training_data_access:
+      read: False
+      write: False
+    dev_data_access:
+      read: False
+      write: False
+    test_data_access: 
+      read: True
+      write: True
+    model_access:
+      read: False
+      write: False
+    output_access:
+      gradient: True
+      output: True

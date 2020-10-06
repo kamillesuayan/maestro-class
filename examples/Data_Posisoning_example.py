@@ -1,5 +1,7 @@
 from pipeline import Pipeline,Scenario, Attacker,model_wrapper
-from Universal_Triggers_example import get_accuracy, LstmClassifier
+from Universal_Triggers_example import get_accuracy
+from model import LstmClassifier
+
 from typing import List, Iterator, Dict, Tuple, Any, Type
 from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import \
     StanfordSentimentTreeBankDatasetReader
@@ -11,6 +13,7 @@ from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
 import torch
+
 def test(model_wrapper, device, num_tokens_change,vocab):
     data_poision = None # predefined, since this is only testing applying the model.
     test_data = model_wrapper.get_test_data()

@@ -200,13 +200,13 @@ class Pipeline:
                     return embedding_gradients_auto
 
         # getting the data modifier
-        self.training_data = DataModifier(
+        model_wrapper.training_data = DataModifier(
             self.training_data, self.scenario.attacker.training_data_access_level
         )
-        self.dev_data = DataModifier(
+        model_wrapper.dev_data = DataModifier(
             self.dev_data, self.scenario.attacker.dev_data_access_level
         )
-        self.test_data = DataModifier(
+        model_wrapper.test_data = DataModifier(
             self.test_data, self.scenario.attacker.test_data_access_level
         )
 

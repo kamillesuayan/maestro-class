@@ -1,4 +1,3 @@
-from pipeline import Pipeline, Scenario, Attacker, model_wrapper
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,6 +12,7 @@ from operator import itemgetter
 from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
     StanfordSentimentTreeBankDatasetReader,
 )
+
 from allennlp.models import Model
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.token_indexers import SingleIdTokenIndexer
@@ -27,9 +27,14 @@ from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import move_to_device
 from allennlp.common.util import lazy_groups_of
-from model import LstmClassifier
 
 # from torchvision import datasets, transforms
+import sys
+
+sys.path.append("..")
+from pipeline import Pipeline, Scenario, Attacker, model_wrapper
+from model import build_model
+from data import get_data
 
 
 def get_accuracy(
@@ -234,7 +239,7 @@ def get_best_candidates(
     return max(top_candidates, key=itemgetter(1))[0]
 
 
-def test(model_wrapper, device, validation_sampler, num_tokens_change, vocab):
+def test(model_wrapper, device, num_tokens_change, vocab):
     dataset_label_filter = "0"
     dev_data = model_wrapper.get_dev_data()
     targeted_dev_data = []
@@ -300,66 +305,21 @@ def test(model_wrapper, device, validation_sampler, num_tokens_change, vocab):
 
 def main():
     use_cuda = True
-    single_id_indexer = SingleIdTokenIndexer(lowercase_tokens=True)  # word tokenizer
-    # use_subtrees gives us a bit of extra data by breaking down each example into sub sentences.
-    reader = StanfordSentimentTreeBankDatasetReader(
-        granularity="2-class",
-        token_indexers={"tokens": single_id_indexer},
-        use_subtrees=True,
+    print("CUDA Available: ", torch.cuda.is_available())
+    device = torch.device(
+        "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
     )
-    train_data = reader.read(
-        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/train.txt"
-    )
-    reader = StanfordSentimentTreeBankDatasetReader(
-        granularity="2-class", token_indexers={"tokens": single_id_indexer}
-    )
-    dev_data = reader.read(
-        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/dev.txt"
-    )
-    test_data = reader.read(
-        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/test.txt"
-    )
-    vocab = Vocabulary.from_instances(train_data)
-    train_data.index_with(vocab)
-    dev_data.index_with(vocab)
-    train_sampler = BucketBatchSampler(
-        train_data, batch_size=32, sorting_keys=["tokens"]
-    )
-    validation_sampler = BucketBatchSampler(
-        dev_data, batch_size=32, sorting_keys=["tokens"]
-    )
-    train_dataloader = DataLoader(train_data, batch_sampler=train_sampler)
-    validation_dataloader = DataLoader(dev_data, batch_sampler=validation_sampler)
+    train_dataloader, validation_dataloader, test_dataloader, vocab = get_data("SST")
 
-    embedding_path = (
-        "https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip"
-    )
-    weight = _read_pretrained_embeddings_file(
-        embedding_path, embedding_dim=300, vocab=vocab, namespace="tokens"
-    )
-    token_embedding = Embedding(
-        num_embeddings=vocab.get_vocab_size("tokens"),
-        embedding_dim=300,
-        weight=weight,
-        trainable=False,
-    )
-    word_embedding_dim = 300
-    word_embeddings = BasicTextFieldEmbedder({"tokens": token_embedding})
-    # word_embeddings.requires_grad = True
-    encoder = PytorchSeq2VecWrapper(
-        torch.nn.LSTM(
-            word_embedding_dim, hidden_size=512, num_layers=2, batch_first=True
-        )
-    )
-    model = LstmClassifier(word_embeddings, encoder, vocab)
+    pretrained_model = None
+    name = "LSTM"
+    model = build_model(name, pretrained_model, vocab).to(device)
     model.to(1)
 
     model_path = "models/" + "LSTM/" + "model.th"
     vocab_path = "models/" + "LSTM/" + "vocab"
     # if the model already exists (its been trained), load the pre-trained weights and vocabulary
     if os.path.isfile(model_path):
-        vocab = Vocabulary.from_files(vocab_path)
-        model = LstmClassifier(word_embeddings, encoder, vocab)
         with open(model_path, "rb") as f:
             model.load_state_dict(torch.load(f))
     # otherwise train model from scratch and save its weights
@@ -405,9 +365,9 @@ def main():
     myscenario = Scenario(target, myattacker)
 
     model_wrapper = Pipeline(
-        myscenario, train_data, dev_data, test_data, model, training_process, device
+        myscenario, train_dataloader, validation_dataloader, test_dataloader, model, training_process, device
     ).get_object()
-    test(model_wrapper, device, validation_sampler, 5, vocab)
+    test(model_wrapper, device, 5, vocab)
 
 
 if __name__ == "__main__":

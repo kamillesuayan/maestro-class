@@ -50,7 +50,7 @@ def get_data(name: str):
     if name == "MNIST":
         test_loader = torch.utils.data.DataLoader(
             datasets.MNIST(
-                "../data",
+                "../tmp",
                 train=False,
                 download=True,
                 transform=transforms.Compose([transforms.ToTensor(),]),
@@ -60,7 +60,7 @@ def get_data(name: str):
         )
         train_loader = torch.utils.data.DataLoader(
             datasets.MNIST(
-                "../data",
+                "../tmp",
                 train=True,
                 download=True,
                 transform=transforms.Compose([transforms.ToTensor(),]),
@@ -77,20 +77,14 @@ def get_data(name: str):
         reader = StanfordSentimentTreeBankDatasetReader(
             granularity="2-class",
             token_indexers={"tokens": single_id_indexer},
-            use_subtrees=True,
+            use_subtrees=False,
         )
-        train_data = reader.read(
-            "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/train.txt"
-        )
+        train_data = reader.read(train_data_path)
         reader = StanfordSentimentTreeBankDatasetReader(
             granularity="2-class", token_indexers={"tokens": single_id_indexer}
         )
-        dev_data = reader.read(
-            "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/dev.txt"
-        )
-        test_data = reader.read(
-            "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/test.txt"
-        )
+        dev_data = reader.read(dev_data_path)
+        test_data = reader.read(test_data_path)
         vocab = Vocabulary.from_instances(train_data)
         train_data.index_with(vocab)
         dev_data.index_with(vocab)
@@ -103,8 +97,21 @@ def get_data(name: str):
         test_sampler = BucketBatchSampler(
             test_data, batch_size=32, sorting_keys=["tokens"]
         )
+
         train_loader = DataLoader(train_data, batch_sampler=train_sampler)
         dev_loader = DataLoader(dev_data, batch_sampler=validation_sampler)
-        test_loader = DataLoader(dev_data, batch_sampler=test_sampler)
+        for each in dev_loader:
+            print(each)
+        exit(0)
+        test_loader = DataLoader(test_data, batch_sampler=test_sampler)
 
     return train_loader, dev_loader, test_loader, vocab
+
+
+def read_sst():
+    train_data_path = (
+        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/train.txt"
+    )
+    dev_data_path = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/dev.txt"
+    test_data_path = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/sst/test.txt"
+

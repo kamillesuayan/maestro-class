@@ -86,7 +86,8 @@ class model_wrapper:
         self,
         model: nn.Module,
         scenario: Scenario,
-        training_data,
+        train_data,
+        dev_data,
         test_data,
         training_process,
         device,
@@ -94,6 +95,9 @@ class model_wrapper:
         self.model = model
         self.scenario = scenario
         self.device = device
+        self.train_data = train_data
+        self.dev_data = dev_data
+        self.test_data = test_data
 
 
 def add_method(cls):
@@ -140,6 +144,7 @@ class Pipeline:
             self.model,
             self.scenario,
             self.training_data,
+            self.dev_data,
             self.test_data,
             self.training_process,
             self.device,
@@ -200,17 +205,18 @@ class Pipeline:
                     return embedding_gradients_auto
 
         # getting the data modifier
-        model_wrapper.training_data = DataModifier(
+        obj.training_data = DataModifier(
             self.training_data, self.scenario.attacker.training_data_access_level
         )
-        model_wrapper.dev_data = DataModifier(
+        obj.dev_data = DataModifier(
             self.dev_data, self.scenario.attacker.dev_data_access_level
         )
-        model_wrapper.test_data = DataModifier(
+        obj.test_data = DataModifier(
             self.test_data, self.scenario.attacker.test_data_access_level
         )
 
         # adding the training method
+        # or we could return a trainer object
         @add_method(model_wrapper)
         def train():
             optimizer = optim.Adam(self.model.parameters())

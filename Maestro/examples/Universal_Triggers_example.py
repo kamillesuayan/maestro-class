@@ -241,11 +241,14 @@ def get_best_candidates(
 
 def test(model_wrapper, device, num_tokens_change, vocab):
     dataset_label_filter = "0"
-    dev_data = model_wrapper.get_dev_data()
+    dev_data = model_wrapper.dev_data.get_write_data()
+    print(dev_data)
     targeted_dev_data = []
-    for instance in dev_data:
+    for instance, label in dev_data:
+        print(instance, label)
         if instance["label"].label == dataset_label_filter:
             targeted_dev_data.append(instance)
+    exit(0)
     universal_perturb_batch_size = 128
     num_trigger_tokens = 3
     trigger_token_ids = [vocab.get_token_index("the")] * num_trigger_tokens
@@ -284,17 +287,6 @@ def test(model_wrapper, device, num_tokens_change, vocab):
             increase_loss=True,
         )
         print("cand ids", cand_trigger_token_ids)
-        # cand_trigger_token_ids = attacks.random_attack(embedding_weight,
-        #                                                trigger_token_ids,
-        #                                                num_candidates=40)
-        # cand_trigger_token_ids = attacks.nearest_neighbor_grad(averaged_grad,
-        #                                                        embedding_weight,
-        #                                                        trigger_token_ids,
-        #                                                        tree,
-        #                                                        100,
-        #                                                        num_candidates=40,
-        #                                                        increase_loss=True)
-
         # Tries all of the candidates and returns the trigger sequence with highest loss.
         trigger_token_ids = get_best_candidates(
             model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids
@@ -311,19 +303,15 @@ def main():
     )
     train_dataloader, validation_dataloader, test_dataloader, vocab = get_data("SST")
 
-    pretrained_model = None
-    name = "LSTM"
-    model = build_model(name, pretrained_model, vocab).to(device)
-    model.to(1)
-
     model_path = "models/" + "LSTM/" + "model.th"
     vocab_path = "models/" + "LSTM/" + "vocab"
-    # if the model already exists (its been trained), load the pre-trained weights and vocabulary
     if os.path.isfile(model_path):
-        with open(model_path, "rb") as f:
-            model.load_state_dict(torch.load(f))
-    # otherwise train model from scratch and save its weights
+        name = "LSTM"
+        model = build_model(name, model_path, vocab).to(device)
+        model.to(1)
     else:
+        name = "LSTM"
+        model = build_model(name, None, vocab).to(device)
         optimizer = optim.Adam(model.parameters())
         trainer = GradientDescentTrainer(
             model=model,
@@ -338,7 +326,6 @@ def main():
         with open(model_path, "wb") as f:
             torch.save(model.state_dict(), f)
         vocab.save_to_files(vocab_path)
-    # model.train() #.cuda(1) # rnn cannot do backwards in train mode
 
     print("CUDA Available: ", torch.cuda.is_available())
     # print("accuracy: ",get_accuracy(model_wrapper,dev_data,vocab))
@@ -365,7 +352,13 @@ def main():
     myscenario = Scenario(target, myattacker)
 
     model_wrapper = Pipeline(
-        myscenario, train_dataloader, validation_dataloader, test_dataloader, model, training_process, device
+        myscenario,
+        train_dataloader,
+        validation_dataloader,
+        test_dataloader,
+        model,
+        training_process,
+        device,
     ).get_object()
     test(model_wrapper, device, 5, vocab)
 

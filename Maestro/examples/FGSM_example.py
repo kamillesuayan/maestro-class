@@ -5,10 +5,9 @@ from torchvision import datasets, transforms
 
 import sys
 
-sys.path.append("..")
-from pipeline import Pipeline, Scenario, Attacker
-from model import build_model
-from data import get_data
+from Maestro.pipeline import Pipeline, Scenario, Attacker
+from Maestro.model import build_model
+from Maestro.data.DataModifier import get_data
 
 
 def fgsm_attack(image, epsilon, data_grad) -> torch.Tensor:

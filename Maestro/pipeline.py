@@ -5,7 +5,7 @@ from typing import List, Iterator, Dict, Tuple, Any, Type
 import torch.optim as optim
 from functools import wraps
 import yaml
-from data import DataModifier
+from Maestro.data import DataModifier
 
 # not supposed to use this
 from allennlp.nn.util import move_to_device

@@ -100,9 +100,7 @@ def get_data(name: str):
 
         train_loader = DataLoader(train_data, batch_sampler=train_sampler)
         dev_loader = DataLoader(dev_data, batch_sampler=validation_sampler)
-        for each in dev_loader:
-            print(each)
-        exit(0)
+
         test_loader = DataLoader(test_data, batch_sampler=test_sampler)
 
     return train_loader, dev_loader, test_loader, vocab

@@ -8,10 +8,10 @@ import yaml
 from Maestro.data import DataModifier
 
 # not supposed to use this
-from allennlp.nn.util import move_to_device
-from allennlp.data.samplers import BucketBatchSampler
-from allennlp.data import DataLoader
-from allennlp.training.trainer import Trainer, GradientDescentTrainer
+# from allennlp.nn.util import move_to_device
+# from allennlp.data.samplers import BucketBatchSampler
+# from allennlp.data import DataLoader
+# from allennlp.training.trainer import Trainer, GradientDescentTrainer
 
 WRITE_ACCESS = 0
 
@@ -162,7 +162,7 @@ class Pipeline:
             @add_method(model_wrapper)
             def get_batch_output(x) -> Dict[str, Any]:
                 device = self.device
-                batch = move_to_device(x, cuda_device=1)
+                batch = x.to(device)
                 output = self.model(batch["tokens"], batch["label"])
                 return output
 
@@ -184,7 +184,6 @@ class Pipeline:
                 @add_method(model_wrapper)
                 def get_batch_input_gradient(x):
                     device = self.device
-                    x = move_to_device(x, cuda_device=1)
                     embedding_outputs = []
 
                     def hook_layers(module, grad_in, grad_out):
@@ -196,7 +195,9 @@ class Pipeline:
                     hooks.append(
                         self.model.word_embeddings.register_forward_hook(hook_layers)
                     )
-                    outputs = self.model.forward(x["tokens"], x["label"])
+                    outputs = self.model.forward(
+                        x["tokens"].to(device), x["label"].to(device)
+                    )
                     loss = outputs["loss"]
                     embedding_gradients_auto = torch.autograd.grad(
                         loss, embedding_outputs[0], create_graph=False

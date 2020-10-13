@@ -9,9 +9,9 @@ import numpy
 import heapq
 from operator import itemgetter
 
-from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
-    StanfordSentimentTreeBankDatasetReader,
-)
+# from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
+#     StanfordSentimentTreeBankDatasetReader,
+# )
 
 from allennlp.models import Model
 from allennlp.data.vocabulary import Vocabulary

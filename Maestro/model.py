@@ -1,16 +1,17 @@
 import torch
 import torch.nn as nn
-from allennlp.models import Model
-from allennlp.data.vocabulary import Vocabulary
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.nn.util import get_text_field_mask
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import torch.nn as nn
 import torch.nn.functional as F
+
+from allennlp.models import Model
 from allennlp.modules.token_embedders import Embedding
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
+from allennlp.data.vocabulary import Vocabulary
+from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.nn.util import get_text_field_mask
 
 
 def build_model(model_name, pretrained_file: str, vocab=None):

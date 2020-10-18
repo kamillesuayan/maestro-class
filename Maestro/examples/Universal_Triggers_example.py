@@ -8,15 +8,18 @@ from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy
 import heapq
 from operator import itemgetter
+from Maestro.data.HuggingFaceDataset import make_text_dataloader, HuggingFaceDataset
+from transformers import Trainer, TrainingArguments
+from Maestro.models import build_model
 
 # from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
 #     StanfordSentimentTreeBankDatasetReader,
 # )
 
-from allennlp.models import Model
-from allennlp.data.vocabulary import Vocabulary
-from allennlp.data.token_indexers import SingleIdTokenIndexer
-from allennlp.training.trainer import Trainer, GradientDescentTrainer
+# from allennlp.models import Model
+# from allennlp.data.vocabulary import Vocabulary
+# from allennlp.data.token_indexers import SingleIdTokenIndexer
+# from allennlp.training.trainer import Trainer, GradientDescentTrainer
 from allennlp.training.metrics import CategoricalAccuracy
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.data import DataLoader
@@ -33,7 +36,6 @@ import sys
 
 sys.path.append("..")
 from pipeline import Pipeline, Scenario, Attacker, model_wrapper
-from model import build_model
 from data import get_data
 
 
@@ -301,31 +303,63 @@ def main():
     device = torch.device(
         "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
     )
-    train_dataloader, validation_dataloader, test_dataloader, vocab = get_data("SST")
-
-    model_path = "models/" + "LSTM/" + "model.th"
-    vocab_path = "models/" + "LSTM/" + "vocab"
-    if os.path.isfile(model_path):
-        name = "LSTM"
-        model = build_model(name, model_path, vocab).to(device)
-        model.to(1)
+    bert = True
+    if bert:
+        model_path = "models/" + "BERT_SST/" + "model.th"
+        vocab_path = "models/" + "BERT_SST/" + "vocab"
+        name = "bert-base-uncased"
     else:
+        model_path = "models/" + "textattackLSTM/" + "model.th"
+        vocab_path = "models/" + "textattackLSTM/" + "vocab"
         name = "LSTM"
-        model = build_model(name, None, vocab).to(device)
+    dataset_name = "SST"
+
+    train_dataset = HuggingFaceDataset(
+        name="imdb", subset=None, split="train", label_map=None, shuffle=True
+    )
+    validation_dataset = HuggingFaceDataset(
+        name="imdb", subset=None, split="test", label_map=None, shuffle=True
+    )
+    # train_dataset, validation_dataset = get_data("SST")
+
+    if not os.path.isfile(model_path):
+        model_path = None
+
+    model = build_model(name, model_path, num_labels=2, max_length=128, device=device)
+    tokenizer = model.tokenizer
+    model = model.model
+    train_dataloader = make_text_dataloader(tokenizer, train_dataset, batch_size=32)
+    validation_dataloader = make_text_dataloader(
+        tokenizer, validation_dataset, batch_size=32
+    )
+    test_dataloader = None
+    print(train_dataset._dataset[0])
+    print(train_dataset[0])
+    print(train_dataset.examples[0])
+    print("-------")
+    train_dataset_huggingface = train_dataset.to_tensor(tokenizer)
+    validation_dataset_huggingface = validation_dataset.to_tensor(tokenizer)
+    print(train_dataset_huggingface[0])
+    print("-------")
+    if not model_path:
         optimizer = optim.Adam(model.parameters())
-        trainer = GradientDescentTrainer(
+        # scheduler = optim.lr_scheduler.LambdaLR(optimizer)
+        training_args = TrainingArguments(
+            output_dir="models/textattackLSTM",
+            do_train=True,
+            do_eval=True,
+            num_train_epochs=8,
+        )
+        trainer = Trainer(
             model=model,
-            optimizer=optimizer,
-            data_loader=train_dataloader,
-            validation_data_loader=validation_dataloader,
-            num_epochs=8,
-            patience=1,
-            cuda_device=1,
+            optimizers=(optimizer, None),
+            train_dataset=train_dataset._dataset,
+            eval_dataset=validation_dataset._dataset,
+            args=training_args,
         )
         trainer.train()
         with open(model_path, "wb") as f:
             torch.save(model.state_dict(), f)
-        vocab.save_to_files(vocab_path)
 
     print("CUDA Available: ", torch.cuda.is_available())
     # print("accuracy: ",get_accuracy(model_wrapper,dev_data,vocab))
@@ -335,13 +369,13 @@ def main():
     # initialize Atacker, which specifies access rights
 
     training_data_access = 0
-    dev_data_access = 3
+    validation_data_access = 3
     test_data_access = 0
     model_access = 0
     output_access = 2
     myattacker = Attacker(
         training_data_access,
-        dev_data_access,
+        validation_data_access,
         test_data_access,
         model_access,
         output_access,
@@ -360,7 +394,7 @@ def main():
         training_process,
         device,
     ).get_object()
-    test(model_wrapper, device, 5, vocab)
+    test(model_wrapper, device, 5)
 
 
 if __name__ == "__main__":

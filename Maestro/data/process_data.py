@@ -1,18 +1,62 @@
-def prepare_dataset_for_training(nlp_dataset):
-    """Changes an `nlp` dataset into the proper format for tokenization."""
+import torch
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import textattack
+from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
+from Maestro.data.TorchVisionDataset import TorchVisionDataset
+import numpy as np
+from torch.utils.data import DataLoader, RandomSampler
 
-    def prepare_example_dict(ex):
-        """Returns the values in order corresponding to the data.
-        ex:
-            'Some text input'
-        or in the case of multi-sequence inputs:
-            ('The premise', 'the hypothesis',)
-        etc.
-        """
-        values = list(ex.values())
-        if len(values) == 1:
-            return values[0]
-        return tuple(values)
 
-    text, outputs = zip(*((prepare_example_dict(x[0]), x[1]) for x in nlp_dataset))
-    return list(text), list(outputs)
+def get_data(name: str):
+    vocab = None
+    if name == "MNIST":
+        return _read_mnist_dataset()
+        # test_loader = torch.utils.data.DataLoader(
+        #     datasets.MNIST(
+        #         "../tmp",
+        #         train=False,
+        #         download=True,
+        #         transform=transforms.Compose([transforms.ToTensor(),]),
+        #     ),
+        #     batch_size=1,
+        #     shuffle=True,
+        # )
+        # train_loader = torch.utils.data.DataLoader(
+        #     datasets.MNIST(
+        #         "../tmp",
+        #         train=True,
+        #         download=True,
+        #         transform=transforms.Compose([transforms.ToTensor(),]),
+        #     ),
+        #     batch_size=1,
+        #     shuffle=True,
+        # )
+    elif name == "SST":
+        return _read_sst_dataset()
+
+
+def _read_mnist_dataset():
+    train_data = TorchVisionDataset(
+        name="mnist",
+        split="train",
+        transforms=transforms.Compose([transforms.ToTensor(),]),
+    )
+    test_data = TorchVisionDataset(
+        name="mnist",
+        split="test",
+        transforms=transforms.Compose([transforms.ToTensor(),]),
+    )
+
+    return {"train": train_data, "dev": test_data}
+
+
+def _read_sst_dataset():
+    train_data = HuggingFaceDataset(
+        name="glue", subset="sst2", split="train", label_map=None, shuffle=True
+    )
+    validation_data = HuggingFaceDataset(
+        name="glue", subset="sst2", split="test", label_map=None, shuffle=True
+    )
+    return train_data, validation_data
+

@@ -35,14 +35,16 @@ def build_model(
         )
         if pretrained_file:
             model.load_from_disk(pretrained_file)
+        model = textattack.models.wrappers.PyTorchModelWrapper(model, model.tokenizer)
         return model
     else:
         config = transformers.AutoConfig.from_pretrained(
             model_name, num_labels=num_labels
         )
-        model = transformers.AutoModel.from_pretrained(model_name, config=config,).to(
-            device
-        )
+        config.architectures = ["BertForSequenceClassification"]
+        model = transformers.AutoModelForSequenceClassification.from_pretrained(
+            model_name
+        ).to(device)
         tokenizer = textattack.models.tokenizers.AutoTokenizer(
             model_name, use_fast=True, max_length=max_length
         )
@@ -93,7 +95,8 @@ class FGSM_example_model(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-class LSTMForClassification(LightningModule):
+# LightningModule
+class LSTMForClassification(BasicClassifier):
     """A long short-term memory neural network for text classification.
     We use different versions of this network to pretrain models for
     text classification.

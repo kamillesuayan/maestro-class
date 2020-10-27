@@ -9,7 +9,7 @@ import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
 
 # from textattack.shared import AttackedText
-def prepare_dataset_for_training(nlp_dataset):
+def prepare_dataset_for_training(nlp_dataset, _format_raw_example):
     """
         Copied from textattack
     """
@@ -28,7 +28,8 @@ def prepare_dataset_for_training(nlp_dataset):
             return values[0]
         return tuple(values)
 
-    nlp_dataset._i = 0
+    # nlp_dataset._i = 0
+
     text, outputs = zip(*((prepare_example_dict(x[0]), x[1]) for x in nlp_dataset))
     return list(text), list(outputs)
 
@@ -150,8 +151,6 @@ class HuggingFaceDataset(TextAttackDataset):
             self.output_column,
         ) = dataset_columns or get_datasets_dataset_columns(self._dataset)
         self._i = 0
-        self.examples = list(self._dataset)
-
         self.label_map = label_map
         self.output_scale_factor = output_scale_factor
         try:
@@ -170,14 +169,38 @@ class HuggingFaceDataset(TextAttackDataset):
             # This happens when self._dataset.features["label"] exists
             # but is a single value.
             self.label_names = ("label",)
+
+        self.examples = list(self._dataset)
+        for idx, ex in enumerate(self.examples):
+            self.examples[idx] = self._format_raw_example(ex)
+        self.examples_indexed = None
         if shuffle:
             random.shuffle(self.examples)
+
+    def __next__(self):
+        if self._i >= len(self.examples_indexed):
+            raise StopIteration
+        if self.examples_indexed is None:
+            raise ValueError
+        raw_example = self.examples_indexed[self._i]
+        self._i += 1
+        return raw_example
+
+    def __getitem__(self, i):
+        if self.examples_indexed is None:
+            raise ValueError
+        if isinstance(i, int):
+            return self.examples_indexed[i]
+        else:
+            # `i` could be a slice or an integer. if it's a slice,
+            # return the formatted version of the proper slice of the list
+            print("indexes", i)
+            return [ex for ex in self.examples_indexed[i]]
 
     def _format_raw_example(self, raw_example):
         input_dict = collections.OrderedDict(
             [(c, raw_example[c]) for c in self.input_columns]
         )
-
         output = raw_example[self.output_column]
         if self.label_map:
             output = self.label_map[output]
@@ -186,28 +209,58 @@ class HuggingFaceDataset(TextAttackDataset):
 
         return (input_dict, output)
 
-    def __next__(self):
-        if self._i >= len(self.examples):
-            raise StopIteration
-        raw_example = self.examples[self._i]
-        self._i += 1
-        return self._format_raw_example(raw_example)
+    # def __next__(self):
+    #     if self._i >= len(self.examples):
+    #         raise StopIteration
+    #     raw_example = self.examples[self._i]
+    #     self._i += 1
+    #     return self._format_raw_example(raw_example)
 
-    def __getitem__(self, i):
-        if isinstance(i, int):
-            return self._format_raw_example(self.examples[i])
-        else:
-            # `i` could be a slice or an integer. if it's a slice,
-            # return the formatted version of the proper slice of the list
-            return [self._format_raw_example(ex) for ex in self.examples[i]]
+    # def __getitem__(self, i):
+    #     if isinstance(i, int):
+    #         return self._format_raw_example(self.examples[i])
+    #     else:
+    #         # `i` could be a slice or an integer. if it's a slice,
+    #         # return the formatted version of the proper slice of the list
+    #         return [self._format_raw_example(ex) for ex in self.examples[i]]
 
-    def to_tensor(self, tokenizer):
-        data, labels = prepare_dataset_for_training(self)
+    def indexed(self, tokenizer):
+        data, labels = prepare_dataset_for_training(
+            self.examples, self._format_raw_example
+        )
         text_ids = _batch_encode(tokenizer, data)
         input_ids = np.array(text_ids)
         labels = np.array(labels)
-        data = list(
-            {self.input_columns[0]: ids, self.output_column: label}
-            for ids, label in zip(input_ids, labels)
-        )
+        if isinstance(input_ids[0], np.ndarray):
+            data = list(
+                {self.input_columns: ids, self.output_column: label}
+                for ids, label in zip(input_ids, labels)
+            )
+        elif isinstance(input_ids[0], dict):
+            list(ids.update({"labels": label}) for ids, label in zip(input_ids, labels))
+            data = input_ids
+        self.examples_indexed = data
         return data
+
+    def make_text_dataloader(self, tokenizer, batch_size):
+        """
+        Copied from textattack
+        Create torch DataLoader from list of input text and labels.
+        :param tokenizer: Tokenizer to use for this text.
+        :param text: list of input text.
+        :param labels: list of corresponding labels.
+        :param batch_size: batch size (int).
+        :return: torch DataLoader for this training set.
+        """
+        data, labels = prepare_dataset_for_training(
+            self.examples, self._format_raw_example
+        )
+        text_ids = _batch_encode(tokenizer, data)
+        input_ids = np.array(text_ids)
+        labels = np.array(labels)
+        print("HuggingFaceDatset", input_ids)
+        data = list((ids, label) for ids, label in zip(input_ids, labels))
+        sampler = RandomSampler(data)
+        dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
+        return dataloader
+

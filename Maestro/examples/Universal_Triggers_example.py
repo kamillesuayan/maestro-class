@@ -5,12 +5,15 @@ import os
 import torch.optim as optim
 from copy import deepcopy
 from typing import List, Iterator, Dict, Tuple, Any, Type
-import numpy
+import numpy as np
 import heapq
 from operator import itemgetter
 from Maestro.data.HuggingFaceDataset import make_text_dataloader, HuggingFaceDataset
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments, EvalPrediction
+from transformers.data.data_collator import default_data_collator
 from Maestro.models import build_model
+from torch.utils.data.sampler import BatchSampler, RandomSampler
+from torch.utils.data import DataLoader
 
 # from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
 #     StanfordSentimentTreeBankDatasetReader,
@@ -20,9 +23,9 @@ from Maestro.models import build_model
 # from allennlp.data.vocabulary import Vocabulary
 # from allennlp.data.token_indexers import SingleIdTokenIndexer
 # from allennlp.training.trainer import Trainer, GradientDescentTrainer
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.data.samplers import BucketBatchSampler
-from allennlp.data import DataLoader
+# from allennlp.training.metrics import CategoricalAccuracy
+# from allennlp.data.samplers import BucketBatchSampler
+from allennlp.data import DataLoader as AllenDataLoader
 from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
 from allennlp.modules.token_embedders import Embedding
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
@@ -57,7 +60,7 @@ def get_accuracy(
         train_sampler = BucketBatchSampler(
             dev_data, batch_size=128, sorting_keys=["tokens"]
         )
-        train_dataloader = DataLoader(dev_data, batch_sampler=train_sampler)
+        train_dataloader = AllenDataLoader(dev_data, batch_sampler=train_sampler)
         model_wrapper.model.to(1)
         if triggers:
             print_string = ""
@@ -84,7 +87,7 @@ def get_accuracy_with_triggers(
     train_sampler = BucketBatchSampler(
         dev_data, batch_size=128, sorting_keys=["tokens"]
     )
-    train_dataloader = DataLoader(dev_data, batch_sampler=train_sampler)
+    train_dataloader = AllenDataLoader(dev_data, batch_sampler=train_sampler)
     model_wrapper.model.to(1)
     print_string = ""
     for idx in trigger_token_ids:
@@ -255,7 +258,7 @@ def test(model_wrapper, device, num_tokens_change, vocab):
     num_trigger_tokens = 3
     trigger_token_ids = [vocab.get_token_index("the")] * num_trigger_tokens
 
-    iterator_dataloader = DataLoader(
+    iterator_dataloader = AllenDataLoader(
         targeted_dev_data, batch_size=universal_perturb_batch_size, shuffle=True
     )
     print(iterator_dataloader)
@@ -297,6 +300,11 @@ def test(model_wrapper, device, num_tokens_change, vocab):
     get_accuracy(model_wrapper, dev_data, vocab, trigger_token_ids, False, True)
 
 
+def compute_metrics1(p: EvalPrediction) -> Dict:
+    preds = np.argmax(p.predictions, axis=1)
+    return preds == p.label_ids.mean()
+
+
 def main():
     use_cuda = True
     print("CUDA Available: ", torch.cuda.is_available())
@@ -304,14 +312,14 @@ def main():
         "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
     )
     bert = True
+    checkpoint_path = ""
     if bert:
-        model_path = "models/" + "BERT_SST/" + "model.th"
-        vocab_path = "models/" + "BERT_SST/" + "vocab"
+        model_path = "models/" + "BERT_SST_label/"
         name = "bert-base-uncased"
     else:
-        model_path = "models/" + "textattackLSTM/" + "model.th"
-        vocab_path = "models/" + "textattackLSTM/" + "vocab"
+        model_path = "models/" + "textattackLSTM/"
         name = "LSTM"
+    checkpoint_path = model_path
     dataset_name = "SST"
 
     train_dataset = HuggingFaceDataset(
@@ -322,46 +330,74 @@ def main():
     )
     # train_dataset, validation_dataset = get_data("SST")
 
-    if not os.path.isfile(model_path):
+    if not os.path.isdir(model_path):
+        os.mkdir(model_path)
         model_path = None
 
-    model = build_model(name, model_path, num_labels=2, max_length=128, device=device)
+    model = build_model(name, model_path, num_labels=2, max_length=128, device=1)
     tokenizer = model.tokenizer
-    model = model.model
-    train_dataloader = make_text_dataloader(tokenizer, train_dataset, batch_size=32)
-    validation_dataloader = make_text_dataloader(
-        tokenizer, validation_dataset, batch_size=32
-    )
-    test_dataloader = None
     print(train_dataset._dataset[0])
-    print(train_dataset[0])
     print(train_dataset.examples[0])
+    # train_dataloader = make_text_dataloader(tokenizer, train_dataset, batch_size=32)
+    # validation_dataloader = make_text_dataloader(
+    #     tokenizer, validation_dataset, batch_size=32
+    # )
+    # test_dataloader = None
+
     print("-------")
-    train_dataset_huggingface = train_dataset.to_tensor(tokenizer)
-    validation_dataset_huggingface = validation_dataset.to_tensor(tokenizer)
-    print(train_dataset_huggingface[0])
+    train_dataset_huggingface = train_dataset.indexed(tokenizer)
+    validation_dataset_huggingface = validation_dataset.indexed(tokenizer)
+    # print(train_dataset_huggingface[0])
     print("-------")
     if not model_path:
-        optimizer = optim.Adam(model.parameters())
+        print("start training")
+        optimizer = optim.Adam(model.model.parameters())
         # scheduler = optim.lr_scheduler.LambdaLR(optimizer)
         training_args = TrainingArguments(
-            output_dir="models/textattackLSTM",
+            output_dir=checkpoint_path,
             do_train=True,
             do_eval=True,
-            num_train_epochs=8,
+            num_train_epochs=3,
+            evaluation_strategy="steps",
+            save_steps=500,
+            eval_steps=500,
+            save_total_limit=5,
         )
         trainer = Trainer(
-            model=model,
-            optimizers=(optimizer, None),
-            train_dataset=train_dataset._dataset,
-            eval_dataset=validation_dataset._dataset,
             args=training_args,
+            model=model.model,
+            optimizers=(optimizer, None),
+            train_dataset=train_dataset,
+            eval_dataset=validation_dataset,
+            compute_metrics=compute_metrics1,
         )
         trainer.train()
-        with open(model_path, "wb") as f:
+        with open(checkpoint_path + "model.th", "wb") as f:
             torch.save(model.state_dict(), f)
+    else:
+        print("load model")
+        model.model.from_pretrained("models/BERT_SST1/checkpoint-4500")
 
-    print("CUDA Available: ", torch.cuda.is_available())
+    # print(validation_dataset[0])
+    test_sampler = RandomSampler(validation_dataset, replacement=False)
+    test_dataloader = DataLoader(
+        validation_dataset,
+        sampler=test_sampler,
+        batch_size=32,
+        collate_fn=default_data_collator,
+    )
+    # test_dataloader = validation_dataset.make_text_dataloader(tokenizer, 32)
+    model.model.to(1)
+    print(test_dataloader)
+    model.model.eval()
+    for batch in test_dataloader:
+        # print(batch)
+        batch = move_to_device(batch, cuda_device=1)
+        outputs = model.model(**batch)
+        print(outputs)
+    print(model.model.get_metrics(True)["accuracy"])
+    model.model.train()
+    exit(0)
     # print("accuracy: ",get_accuracy(model_wrapper,dev_data,vocab))
     device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "cpu")
     training_process = None

@@ -1,7 +1,8 @@
 # data/
-model/
+models_temp/
 __pycache__/
 tmp/
+runs/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

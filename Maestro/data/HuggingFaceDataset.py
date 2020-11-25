@@ -34,14 +34,22 @@ def prepare_dataset_for_training(nlp_dataset, _format_raw_example):
     return list(text), list(outputs)
 
 
-def _batch_encode(tokenizer, text_list):
-    """
-        Copied from textattack
-    """
-    if hasattr(tokenizer, "batch_encode"):
-        return tokenizer.batch_encode(text_list)
-    else:
-        return [tokenizer.encode(text_input) for text_input in text_list]
+def _batch_encode(tokenizer, text_list, max_length):
+
+    # if hasattr(tokenizer, "batch_encode"):
+
+    return tokenizer.batch_encode_plus(
+        text_list,
+        truncation=True,
+        max_length=max_length,
+        add_special_tokens=True,
+        padding="max_length",
+    )
+
+
+# else:
+
+#     return [tokenizer.encode(text_input) for text_input in text_list]
 
 
 def make_text_dataloader(tokenizer, data, batch_size):
@@ -69,7 +77,13 @@ def _cb(s):
     return textattack.shared.utils.color_text(str(s), color="blue", method="ansi")
 
 
+def whether_two_inputs(dataset):
+    input_columns, _ = get_datasets_dataset_columns(dataset)
+    return True if (input_columns == 2) else False
+
+
 def get_datasets_dataset_columns(dataset):
+    # referenced from textattack
     schema = set(dataset.column_names)
     if {"premise", "hypothesis", "label"} <= schema:
         input_columns = ("premise", "hypothesis")
@@ -139,12 +153,12 @@ class HuggingFaceDataset(TextAttackDataset):
         self._name = name
 
         self._dataset = datasets.load_dataset(name, subset)
-        print(self._dataset)
         self._dataset = self._dataset[split]
-        subset_print_str = f", subset {_cb(subset)}" if subset else ""
-        textattack.shared.logger.info(
-            f"Loading {_cb('datasets')} dataset {_cb(name)}{subset_print_str}, split {_cb(split)}."
-        )
+
+        # subset_print_str = f", subset {_cb(subset)}" if subset else ""
+        # textattack.shared.logger.info(
+        #     f"Loading {_cb('datasets')} dataset {_cb(name)}{subset_print_str}, split {_cb(split)}."
+        # )
         # Input/output column order, like (('premise', 'hypothesis'), 'label')
         (
             self.input_columns,
@@ -194,7 +208,6 @@ class HuggingFaceDataset(TextAttackDataset):
         else:
             # `i` could be a slice or an integer. if it's a slice,
             # return the formatted version of the proper slice of the list
-            print("indexes", i)
             return [ex for ex in self.examples_indexed[i]]
 
     def _format_raw_example(self, raw_example):
@@ -209,36 +222,41 @@ class HuggingFaceDataset(TextAttackDataset):
 
         return (input_dict, output)
 
-    # def __next__(self):
-    #     if self._i >= len(self.examples):
-    #         raise StopIteration
-    #     raw_example = self.examples[self._i]
-    #     self._i += 1
-    #     return self._format_raw_example(raw_example)
-
-    # def __getitem__(self, i):
-    #     if isinstance(i, int):
-    #         return self._format_raw_example(self.examples[i])
-    #     else:
-    #         # `i` could be a slice or an integer. if it's a slice,
-    #         # return the formatted version of the proper slice of the list
-    #         return [self._format_raw_example(ex) for ex in self.examples[i]]
-
-    def indexed(self, tokenizer):
-        data, labels = prepare_dataset_for_training(
-            self.examples, self._format_raw_example
-        )
-        text_ids = _batch_encode(tokenizer, data)
-        input_ids = np.array(text_ids)
-        labels = np.array(labels)
-        if isinstance(input_ids[0], np.ndarray):
-            data = list(
-                {self.input_columns: ids, self.output_column: label}
-                for ids, label in zip(input_ids, labels)
+    def indexed(self, tokenizer, max_length):
+        input_columns, output_column = get_datasets_dataset_columns(self._dataset)
+        if whether_two_inputs(self._dataset):
+            data = self._dataset.map(
+                lambda e: tokenizer(
+                    e["premise"],
+                    e["hypothesis"],
+                    max_length=max_length,
+                    truncation=True,
+                    padding="max_length",
+                ),
+                batched=True,
             )
-        elif isinstance(input_ids[0], dict):
-            list(ids.update({"labels": label}) for ids, label in zip(input_ids, labels))
-            data = input_ids
+            data.set_format(
+                type="torch",
+                columns=["input_ids", "token_type_ids", "attention_mask", "label"],
+            )
+        else:
+            data = self._dataset.map(
+                lambda e: tokenizer(
+                    e[input_columns[0]],
+                    max_length=max_length,
+                    truncation=True,
+                    padding="max_length",
+                ),
+                batched=True,
+            )
+            data.set_format(
+                type="torch",
+                columns=["input_ids", "token_type_ids", "attention_mask", "label"],
+            )
+        # for i in range(len(self.examples)):
+        #     inputs = {k: batch_encoding[k][i] for k in batch_encoding}
+        #     inputs["labels"] = labels[i]
+        #     data.append(inputs)
         self.examples_indexed = data
         return data
 

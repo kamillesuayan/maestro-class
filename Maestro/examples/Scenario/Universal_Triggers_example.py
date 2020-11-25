@@ -8,12 +8,28 @@ from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import heapq
 from operator import itemgetter
-from Maestro.data.HuggingFaceDataset import make_text_dataloader, HuggingFaceDataset
-from transformers import Trainer, TrainingArguments, EvalPrediction
 from transformers.data.data_collator import default_data_collator
-from Maestro.models import build_model
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 from torch.utils.data import DataLoader
+
+from Maestro.models import build_model
+from Maestro.utils import move_to_device, get_embedding
+from Maestro.data import get_dataset
+from Maestro.pipeline import (
+    AutoPipelineForNLP,
+    Pipeline,
+    Scenario,
+    Attacker,
+    model_wrapper,
+)
+from Maestro.data.HuggingFaceDataset import make_text_dataloader, HuggingFaceDataset
+
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    EvalPrediction,
+    glue_compute_metrics,
+)
 
 # from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
 #     StanfordSentimentTreeBankDatasetReader,
@@ -25,78 +41,98 @@ from torch.utils.data import DataLoader
 # from allennlp.training.trainer import Trainer, GradientDescentTrainer
 # from allennlp.training.metrics import CategoricalAccuracy
 # from allennlp.data.samplers import BucketBatchSampler
-from allennlp.data import DataLoader as AllenDataLoader
-from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
-from allennlp.modules.token_embedders import Embedding
-from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
-from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
-from allennlp.nn.util import get_text_field_mask
-from allennlp.nn.util import move_to_device
-from allennlp.common.util import lazy_groups_of
+# from allennlp.data import PyTorchDataLoader as AllenDataLoader
+# from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
+# from allennlp.modules.token_embedders import Embedding
+# from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
+# from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+# from allennlp.nn.util import get_text_field_mask
+
+# from allennlp.nn.util import move_to_device
+# from allennlp.common.util import lazy_groups_of
 
 # from torchvision import datasets, transforms
 import sys
 
-sys.path.append("..")
-from pipeline import Pipeline, Scenario, Attacker, model_wrapper
-from data import get_data
+
+def process_batch(model_wrapper, batch):
+    with torch.no_grad():
+        batch = move_to_device(batch, cuda_device=1)
+        outputs = model_wrapper.get_batch_output(batch)
+    return outputs
 
 
 def get_accuracy(
     model_wrapper: model_wrapper,
     dev_data,
-    vocab,
+    tokenizer,
     trigger_token_ids,
-    batch=True,
     triggers=False,
+    batch=False,
 ) -> None:
-    model_wrapper.model.get_metrics(reset=True)
+    # model_wrapper.model.get_metrics(reset=True)
     model_wrapper.model.eval()  # model should be in eval() already, but just in case
+
+    model_wrapper.model.to(1)
     if batch:
-        with torch.no_grad():
-            batch = move_to_device(dev_data, cuda_device=1)
-            model_wrapper.get_batch_output(batch)
-    else:
-        train_sampler = BucketBatchSampler(
-            dev_data, batch_size=128, sorting_keys=["tokens"]
-        )
-        train_dataloader = AllenDataLoader(dev_data, batch_sampler=train_sampler)
-        model_wrapper.model.to(1)
         if triggers:
             print_string = ""
             for idx in trigger_token_ids:
-                print_string = print_string + vocab.get_token_from_index(idx) + ", "
+                print_string = (
+                    print_string + str(tokenizer.convert_ids_to_tokens(int(idx))) + ", "
+                )
+            print("triggers:", print_string)
+            outputs = eval_with_triggers(
+                model_wrapper, dev_data, trigger_token_ids, False
+            )
+            logits = outputs[1]
+            preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
+            term = preds == dev_data["labels"].cpu().detach().numpy()
+            print("accuracy: ", np.array(term).mean())
+        else:
+            outputs = process_batch(model_wrapper, dev_data)
+            logits = outputs[1]
+            preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
+            term = preds == dev_data["labels"].cpu().detach().numpy()
+            print("accuracy: ", np.array(term).mean())
+    else:
+        train_sampler = RandomSampler(dev_data, replacement=False)
+        train_dataloader = DataLoader(
+            dev_data,
+            batch_size=64,
+            sampler=train_sampler,
+            collate_fn=default_data_collator,
+        )
+        if triggers:
+            print_string = ""
+            for idx in trigger_token_ids:
+                print_string = (
+                    print_string + str(tokenizer.convert_ids_to_tokens(int(idx))) + ", "
+                )
+            print("triggers:", print_string)
             with torch.no_grad():
+                all_vals = []
                 for batch in train_dataloader:
-                    eval_with_triggers(model_wrapper, batch, trigger_token_ids, False)
+                    outputs = eval_with_triggers(
+                        model_wrapper, batch, trigger_token_ids, False
+                    )
+                    logits = outputs[1]
+                    preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
+                    term = preds == batch["labels"].cpu().detach().numpy()
+                    all_vals.extend(term)
+                print("accuracy: ", np.array(all_vals).mean())
         else:
             with torch.no_grad():
+                all_vals = []
                 for batch in train_dataloader:
-                    batch = move_to_device(batch, cuda_device=1)
-                    model_wrapper.get_batch_output(batch)
+                    # batch = move_to_device(batch, cuda_device=1)
+                    outputs = process_batch(model_wrapper, batch)
+                    logits = outputs[1]
+                    preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
+                    term = preds == batch["labels"].cpu().detach().numpy()
+                    all_vals.extend(term)
+                print("accuracy: ", np.array(all_vals).mean())
 
-    print(model_wrapper.model.get_metrics(True)["accuracy"])
-    model_wrapper.model.train()
-
-
-def get_accuracy_with_triggers(
-    model_wrapper: model_wrapper, dev_data, vocab, trigger_token_ids
-) -> None:
-    model_wrapper.model.get_metrics(reset=True)
-    model_wrapper.model.eval()  # model should be in eval() already, but just in case
-    train_sampler = BucketBatchSampler(
-        dev_data, batch_size=128, sorting_keys=["tokens"]
-    )
-    train_dataloader = AllenDataLoader(dev_data, batch_sampler=train_sampler)
-    model_wrapper.model.to(1)
-    print_string = ""
-    for idx in trigger_token_ids:
-        print_string = print_string + vocab.get_token_from_index(idx) + ", "
-    with torch.no_grad():
-        for batch in train_dataloader:
-            eval_with_triggers(model_wrapper, batch, trigger_token_ids, False)
-
-    print(model_wrapper.model.get_metrics(True)["accuracy"])
     model_wrapper.model.train()
 
 
@@ -105,21 +141,58 @@ def eval_with_triggers(
 ) -> Dict[str, Any]:
     # if gradient is true, this function returns the gradient of the input with the appended trigger tokens
     trigger_sequence_tensor = torch.LongTensor(deepcopy(trigger_token_ids))
+    attention_mask_tensor = torch.LongTensor([1, 1, 1])
+    token_type_ids = torch.LongTensor([0, 0, 0])
     with torch.cuda.device(1):
         trigger_sequence_tensor = trigger_sequence_tensor.repeat(
-            len(batch["label"]), 1
-        ).cuda()
-        original_tokens = batch["tokens"]["tokens"]["tokens"].clone().cuda()
-    batch["tokens"]["tokens"]["tokens"] = torch.cat(
-        (trigger_sequence_tensor, original_tokens), 1
-    )
+            len(batch["labels"]), 1
+        ).to(1)
+        original_tokens = batch["input_ids"].clone().to(1)
+
+        attention_mask_tensor = attention_mask_tensor.repeat(
+            len(batch["labels"]), 1
+        ).to(1)
+        original_attention_mask = batch["attention_mask"].clone().to(1)
+
+        token_type_ids_tensor = token_type_ids.repeat(len(batch["labels"]), 1).to(1)
+        original_token_type_ids = batch["token_type_ids"].clone().to(1)
+
+    def hook_add_trigger_tokens(x):
+
+        x["input_ids"] = torch.cat(
+            (original_tokens[:, :1], trigger_sequence_tensor, original_tokens[:, 1:]), 1
+        )
+        x["attention_mask"] = torch.cat(
+            (
+                original_attention_mask[:, :1],
+                attention_mask_tensor,
+                original_attention_mask[:, 1:],
+            ),
+            1,
+        )
+        x["token_type_ids"] = torch.cat(
+            (
+                original_token_type_ids[:, :1],
+                token_type_ids_tensor,
+                original_token_type_ids[:, 1:],
+            ),
+            1,
+        )
+        return x
+
     if gradient:
-        data_grad = model_wrapper.get_batch_input_gradient(batch)
-        batch["tokens"]["tokens"]["tokens"] = original_tokens
+        data_grad = model_wrapper.get_batch_input_gradient(
+            batch, hook_add_trigger_tokens
+        )
+        # batch["input_ids"] = original_tokens
+        # batch["attention_mask"] = original_attention_mask
+        # batch["token_type_ids"] = original_token_type_ids
         return data_grad
     else:
-        outputs = model_wrapper.get_batch_output(batch)
-        batch["tokens"]["tokens"]["tokens"] = original_tokens
+        outputs = model_wrapper.get_batch_output(batch, hook_add_trigger_tokens)
+        # batch["input_ids"] = original_tokens
+        # batch["attention_mask"] = original_attention_mask
+        # batch["token_type_ids"] = original_token_type_ids
         return outputs
 
 
@@ -173,14 +246,13 @@ def get_loss_per_candidate(
     For a particular index, the function tries all of the candidate tokens for that index.
     The function returns a list containing the candidate triggers it tried, along with their loss.
     """
-    if isinstance(cand_trigger_token_ids[0], (numpy.int64, int)):
+    if isinstance(cand_trigger_token_ids[0], (np.int64, int)):
         print("Only 1 candidate for index detected, not searching")
         return trigger_token_ids
-    model_wrapper.model.get_metrics(reset=True)
     loss_per_candidate = []
     # loss for the trigger without trying the candidates
     curr_loss = (
-        eval_with_triggers(model_wrapper, batch, trigger_token_ids, False)["loss"]
+        eval_with_triggers(model_wrapper, batch, trigger_token_ids, False)[0]
         .cpu()
         .detach()
         .numpy()
@@ -194,7 +266,7 @@ def get_loss_per_candidate(
         loss = (
             eval_with_triggers(
                 model_wrapper, batch, trigger_token_ids_one_replaced, False
-            )["loss"]
+            )[0]
             .cpu()
             .detach()
             .numpy()
@@ -244,46 +316,45 @@ def get_best_candidates(
     return max(top_candidates, key=itemgetter(1))[0]
 
 
-def test(model_wrapper, device, num_tokens_change, vocab):
-    dataset_label_filter = "0"
+def test(model_wrapper, device, num_tokens_change):
+    dataset_label_filter = 0
     dev_data = model_wrapper.dev_data.get_write_data()
-    print(dev_data)
     targeted_dev_data = []
-    for instance, label in dev_data:
-        print(instance, label)
-        if instance["label"].label == dataset_label_filter:
+    for instance in dev_data:
+        # print(instance)
+        if instance["label"].numpy() == dataset_label_filter:
             targeted_dev_data.append(instance)
-    exit(0)
-    universal_perturb_batch_size = 128
+    universal_perturb_batch_size = 64
     num_trigger_tokens = 3
-    trigger_token_ids = [vocab.get_token_index("the")] * num_trigger_tokens
-
-    iterator_dataloader = AllenDataLoader(
-        targeted_dev_data, batch_size=universal_perturb_batch_size, shuffle=True
+    tokenizer = model_wrapper.get_tokenizer()
+    trigger_token_ids = [tokenizer.convert_tokens_to_ids("the")] * num_trigger_tokens
+    iterator_dataloader = DataLoader(
+        targeted_dev_data,
+        batch_size=universal_perturb_batch_size,
+        shuffle=True,
+        collate_fn=default_data_collator,
     )
-    print(iterator_dataloader)
+
     print("started the process")
-    get_accuracy(model_wrapper, dev_data, vocab, trigger_token_ids, False)
+    get_accuracy(model_wrapper, dev_data, tokenizer, trigger_token_ids, False, False)
+    # best_triggers = [22775, 17950, 17087]
+    # trigger_token_ids = best_triggers
+    # get_accuracy(model_wrapper, dev_data, tokenizer, best_triggers, True, False)
+    # print(torch.cuda.memory_summary(device=1, abbreviated=True))
     for batch in iterator_dataloader:
         # get accuracy with current triggers
         print("start_batch")
-        # print(batch)
-        get_accuracy(model_wrapper, batch, vocab, trigger_token_ids, True, True)
+        get_accuracy(model_wrapper, batch, tokenizer, trigger_token_ids, False, True)
+        # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         # model.train() # rnn cannot do backwards in train mode
-
         # get gradient w.r.t. trigger embeddings for current batch
         data_grad = eval_with_triggers(model_wrapper, batch, trigger_token_ids)
-        # print(data_grad[0])
-        # print(data_grad[0].shape)
-        averaged_grad = torch.sum(data_grad[0], dim=0)
+        # print(torch.cuda.memory_summary(device=1, abbreviated=True))
+        averaged_grad = torch.sum(data_grad, dim=0)
         averaged_grad = averaged_grad[0 : len(trigger_token_ids)]
-        # print(averaged_grad)
-        # print(averaged_grad.shape)
         # pass the gradients to a particular attack to generate token candidates for each token.
-        print(model_wrapper.model.word_embeddings._token_embedders)
-        embedding_weight = model_wrapper.model.word_embeddings._token_embedders[
-            "tokens"
-        ].weight.cpu()
+        embedding = get_embedding(model_wrapper.model)
+        embedding_weight = embedding.weight.cpu()
         cand_trigger_token_ids = hotflip_attack(
             averaged_grad,
             embedding_weight,
@@ -291,18 +362,24 @@ def test(model_wrapper, device, num_tokens_change, vocab):
             num_candidates=40,
             increase_loss=True,
         )
-        print("cand ids", cand_trigger_token_ids)
-        # Tries all of the candidates and returns the trigger sequence with highest loss.
         trigger_token_ids = get_best_candidates(
             model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids
         )
-    print("triggers: ", trigger_token_ids)
-    get_accuracy(model_wrapper, dev_data, vocab, trigger_token_ids, False, True)
+        print("after:")
+        get_accuracy(model_wrapper, batch, tokenizer, trigger_token_ids, True, True)
+    get_accuracy(
+        model_wrapper, targeted_dev_data, tokenizer, trigger_token_ids, True, False
+    )
 
 
 def compute_metrics1(p: EvalPrediction) -> Dict:
     preds = np.argmax(p.predictions, axis=1)
-    return preds == p.label_ids.mean()
+    return {"accuracy": (preds == p.label_ids).mean()}
+
+
+def compute_metrics(p: EvalPrediction) -> Dict:
+    preds = np.argmax(p.predictions, axis=1)
+    return glue_compute_metrics("sst-2", preds, p.label_ids)
 
 
 def main():
@@ -313,93 +390,14 @@ def main():
     )
     bert = True
     checkpoint_path = ""
+    dataset_name = "SST2"
     if bert:
-        model_path = "models/" + "BERT_SST_label/"
+        model_path = "models_temp/" + "BERT_sst2_label/"
         name = "bert-base-uncased"
     else:
-        model_path = "models/" + "textattackLSTM/"
+        model_path = "models_temp/" + "textattackLSTM/"
         name = "LSTM"
     checkpoint_path = model_path
-    dataset_name = "SST"
-
-    train_dataset = HuggingFaceDataset(
-        name="imdb", subset=None, split="train", label_map=None, shuffle=True
-    )
-    validation_dataset = HuggingFaceDataset(
-        name="imdb", subset=None, split="test", label_map=None, shuffle=True
-    )
-    # train_dataset, validation_dataset = get_data("SST")
-
-    if not os.path.isdir(model_path):
-        os.mkdir(model_path)
-        model_path = None
-
-    model = build_model(name, model_path, num_labels=2, max_length=128, device=1)
-    tokenizer = model.tokenizer
-    print(train_dataset._dataset[0])
-    print(train_dataset.examples[0])
-    # train_dataloader = make_text_dataloader(tokenizer, train_dataset, batch_size=32)
-    # validation_dataloader = make_text_dataloader(
-    #     tokenizer, validation_dataset, batch_size=32
-    # )
-    # test_dataloader = None
-
-    print("-------")
-    train_dataset_huggingface = train_dataset.indexed(tokenizer)
-    validation_dataset_huggingface = validation_dataset.indexed(tokenizer)
-    # print(train_dataset_huggingface[0])
-    print("-------")
-    if not model_path:
-        print("start training")
-        optimizer = optim.Adam(model.model.parameters())
-        # scheduler = optim.lr_scheduler.LambdaLR(optimizer)
-        training_args = TrainingArguments(
-            output_dir=checkpoint_path,
-            do_train=True,
-            do_eval=True,
-            num_train_epochs=3,
-            evaluation_strategy="steps",
-            save_steps=500,
-            eval_steps=500,
-            save_total_limit=5,
-        )
-        trainer = Trainer(
-            args=training_args,
-            model=model.model,
-            optimizers=(optimizer, None),
-            train_dataset=train_dataset,
-            eval_dataset=validation_dataset,
-            compute_metrics=compute_metrics1,
-        )
-        trainer.train()
-        with open(checkpoint_path + "model.th", "wb") as f:
-            torch.save(model.state_dict(), f)
-    else:
-        print("load model")
-        model.model.from_pretrained("models/BERT_SST1/checkpoint-4500")
-
-    # print(validation_dataset[0])
-    test_sampler = RandomSampler(validation_dataset, replacement=False)
-    test_dataloader = DataLoader(
-        validation_dataset,
-        sampler=test_sampler,
-        batch_size=32,
-        collate_fn=default_data_collator,
-    )
-    # test_dataloader = validation_dataset.make_text_dataloader(tokenizer, 32)
-    model.model.to(1)
-    print(test_dataloader)
-    model.model.eval()
-    for batch in test_dataloader:
-        # print(batch)
-        batch = move_to_device(batch, cuda_device=1)
-        outputs = model.model(**batch)
-        print(outputs)
-    print(model.model.get_metrics(True)["accuracy"])
-    model.model.train()
-    exit(0)
-    # print("accuracy: ",get_accuracy(model_wrapper,dev_data,vocab))
-    device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "cpu")
     training_process = None
 
     # initialize Atacker, which specifies access rights
@@ -418,18 +416,36 @@ def main():
     )
 
     # initialize Scenario. This defines our target
-    target = None
+    target = "Universal Perturbation"
     myscenario = Scenario(target, myattacker)
-
-    model_wrapper = Pipeline(
+    pipeline = AutoPipelineForNLP.initialize(
+        name,
+        dataset_name,
+        model_path,
+        checkpoint_path,
+        compute_metrics,
         myscenario,
-        train_dataloader,
-        validation_dataloader,
-        test_dataloader,
-        model,
-        training_process,
-        device,
-    ).get_object()
+        training_process=None,
+        device=1,
+        finetune=True,
+    )
+
+    # if dataset_name == "IMDB":
+    #     train_dataset = HuggingFaceDataset(
+    #         name="imdb", subset=None, split="train", label_map=None, shuffle=True
+    #     )
+    #     validation_dataset = HuggingFaceDataset(
+    #         name="imdb", subset=None, split="test", label_map=None, shuffle=True
+    #     )
+    # else:
+    #     train_dataset = HuggingFaceDataset(
+    #         name="glue", subset="sst2", split="train", label_map=None, shuffle=True
+    #     )
+    #     validation_dataset = HuggingFaceDataset(
+    #         name="glue", subset="sst2", split="validation", label_map=None, shuffle=True
+    #     )
+
+    model_wrapper = pipeline.get_object()
     test(model_wrapper, device, 5)
 
 

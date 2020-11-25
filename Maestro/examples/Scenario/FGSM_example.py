@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 import sys
 
 from Maestro.pipeline import Pipeline, Scenario, Attacker
-from Maestro.model import build_model
+from Maestro.models.model import build_model
 from Maestro.data.DataModifier import get_data
 
 

@@ -6,6 +6,7 @@ import torch.optim as optim
 from functools import wraps
 import yaml
 from Maestro.data import DataModifier
+from Maestro.utils import move_to_device, get_embedding
 
 # not supposed to use this
 # from allennlp.nn.util import move_to_device
@@ -95,9 +96,9 @@ class model_wrapper:
         self.model = model
         self.scenario = scenario
         self.device = device
-        self.train_data = train_data
-        self.dev_data = dev_data
-        self.test_data = test_data
+        # self.train_data = train_data
+        # self.dev_data = dev_data
+        # self.test_data = test_data
 
 
 def add_method(cls):
@@ -130,6 +131,7 @@ class Pipeline:
         model: nn.Module,
         training_process,
         device: int,
+        tokenizer,
     ) -> None:
         self.scenario = scenario
         self.training_data = training_data
@@ -138,6 +140,7 @@ class Pipeline:
         self.model = model
         self.training_process = training_process
         self.device = device
+        self.tokenizer = tokenizer
 
     def get_object(self) -> model_wrapper:
         obj = model_wrapper(
@@ -160,10 +163,11 @@ class Pipeline:
                 return output
 
             @add_method(model_wrapper)
-            def get_batch_output(x) -> Dict[str, Any]:
+            def get_batch_output(x, pred_hook=lambda x: x) -> Dict[str, Any]:
                 device = self.device
-                batch = x.to(device)
-                output = self.model(batch["tokens"], batch["label"])
+                with torch.no_grad():
+                    batch = move_to_device(pred_hook(x), cuda_device=device)
+                    output = self.model(**batch)
                 return output
 
             if self.scenario.attacker.output_access_level > 1:
@@ -182,28 +186,28 @@ class Pipeline:
                     return x_grad
 
                 @add_method(model_wrapper)
-                def get_batch_input_gradient(x):
+                def get_batch_input_gradient(x, pred_hook=lambda x: x):
                     device = self.device
                     embedding_outputs = []
 
                     def hook_layers(module, grad_in, grad_out):
-                        # print("just pass",grad_out.shape)
-                        grad_out.requires_grad = True
+                        # grad_out.requires_grad = True
                         embedding_outputs.append(grad_out)
 
                     hooks = []
-                    hooks.append(
-                        self.model.word_embeddings.register_forward_hook(hook_layers)
-                    )
+                    embedding = get_embedding(self.model)
+                    hooks.append(embedding.register_forward_hook(hook_layers))
+                    # print(torch.cuda.memory_summary(device=0, abbreviated=True))
                     outputs = self.model.forward(
-                        x["tokens"].to(device), x["label"].to(device)
+                        **move_to_device(pred_hook(x), cuda_device=1)
                     )
-                    loss = outputs["loss"]
+                    loss = outputs[0]
                     embedding_gradients_auto = torch.autograd.grad(
                         loss, embedding_outputs[0], create_graph=False
                     )
-
-                    return embedding_gradients_auto
+                    for hook in hooks:
+                        hook.remove()
+                    return embedding_gradients_auto[0].cpu().detach()
 
         # getting the data modifier
         obj.training_data = DataModifier(
@@ -215,6 +219,10 @@ class Pipeline:
         obj.test_data = DataModifier(
             self.test_data, self.scenario.attacker.test_data_access_level
         )
+
+        @add_method(model_wrapper)
+        def get_tokenizer():
+            return self.tokenizer
 
         # adding the training method
         # or we could return a trainer object

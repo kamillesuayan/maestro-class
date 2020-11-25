@@ -4,25 +4,30 @@ from typing import List, Iterator, Dict, Tuple, Any, Type, Union
 import torch.nn as nn
 import torch.nn.functional as F
 
-from allennlp.models import Model
-from allennlp.modules.token_embedders import Embedding
-from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
-from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
-from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
-from allennlp.data.vocabulary import Vocabulary
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.nn.util import get_text_field_mask
+# from allennlp.models import Model
+# from allennlp.modules.token_embedders import Embedding
+# from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
+# from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+# from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
+# from allennlp.data.vocabulary import Vocabulary
+# from allennlp.training.metrics import CategoricalAccuracy
+# from allennlp.nn.util import get_text_field_mask
 
 import transformers
 import textattack
 from textattack.models.helpers import GloveEmbeddingLayer
 from textattack.models.helpers.utils import load_cached_state_dict
 from textattack.shared import utils
-from pytorch_lightning.core.lightning import LightningModule
+
+# from pytorch_lightning.core.lightning import LightningModule
 
 
 def build_model(
-    model_name, pretrained_file: str, num_labels: int, max_length: int, device: int
+    model_name,
+    num_labels: int,
+    max_length: int,
+    device: int,
+    pretrained_file: str = None,
 ):
     if model_name == "FGSM_example_model":
         model = FGSM_example_model()
@@ -39,26 +44,33 @@ def build_model(
         return model
     else:
         config = transformers.AutoConfig.from_pretrained(
-            model_name, num_labels=num_labels
+            model_name, num_labels=num_labels, finetuning_task="imdb"
         )
-        config.architectures = ["BertForSequenceClassification"]
+        # config.architectures = ["BertForSequenceClassification"]
         model = transformers.AutoModelForSequenceClassification.from_pretrained(
-            model_name
+            model_name, config=config
         ).to(device)
-        tokenizer = textattack.models.tokenizers.AutoTokenizer(
-            model_name, use_fast=True, max_length=max_length
-        )
+        # model = transformers.AutoModelForSequenceClassification.from_config(
+        #     config=config
+        # ).to(device)
 
-        model = textattack.models.wrappers.HuggingFaceModelWrapper(model, tokenizer)
+        # tokenizer = textattack.models.tokenizers.AutoTokenizer(
+        #     model_name, use_fast=True, max_length=max_length
+        # )
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+        print(tokenizer)
+        model = Model_and_Tokenizer(model, tokenizer)
         return model
 
 
-class model(nn.Module):
-    def __init__(self) -> None:
-        super(model, self).__init__()
+class Model_and_Tokenizer(nn.Module):
+    def __init__(self, model, tokenizer) -> None:
+        super(Model_and_Tokenizer, self).__init__()
+        self.model = model
+        self.tokenizer = tokenizer
 
 
-class BasicClassifier(model):
+class BasicClassifier(nn.Module):
     def __init__(self, model_name, pretrained_file: str, regularizer) -> None:
         super(BasicClassifier, self).__init__()
         self._regularizer = regularizer

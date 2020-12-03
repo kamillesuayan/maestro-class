@@ -39,76 +39,98 @@ from transformers import (
 # from allennlp.data.token_indexers import SingleIdTokenIndexer
 # from allennlp.training.trainer import Trainer, GradientDescentTrainer
 # from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.data.samplers import BucketBatchSampler
-from allennlp.data import PyTorchDataLoader as AllenDataLoader
-from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
-from allennlp.modules.token_embedders import Embedding
-from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
-from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
-from allennlp.nn.util import get_text_field_mask
+# from allennlp.data.samplers import BucketBatchSampler
+# from allennlp.data import PyTorchDataLoader as AllenDataLoader
+# from allennlp.modules.token_embedders.embedding import _read_pretrained_embeddings_file
+# from allennlp.modules.token_embedders import Embedding
+# from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
+# from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+# from allennlp.nn.util import get_text_field_mask
 
 # from allennlp.nn.util import move_to_device
-from allennlp.common.util import lazy_groups_of
+# from allennlp.common.util import lazy_groups_of
 
 # from torchvision import datasets, transforms
 import sys
 
 
-def process_batch(model_wrapper, batch):
+def process_batch(model_wrapper, batch, data_type):
     with torch.no_grad():
         batch = move_to_device(batch, cuda_device=1)
-        outputs = model_wrapper.get_batch_output(batch)
+        outputs = model_wrapper.get_batch_output(batch["uid"], data_type)
     return outputs
 
 
 def get_accuracy(
-    model_wrapper: model_wrapper, dev_data, tokenizer, batch=False,
+    model_wrapper: model_wrapper,
+    dev_data,
+    tokenizer,
+    indexes,
+    cand_ids,
+    batch=False,
+    loader=True,
 ) -> None:
     # model_wrapper.model.get_metrics(reset=True)
     model_wrapper.model.eval()  # model should be in eval() already, but just in case
-
     model_wrapper.model.to(1)
     if batch:
-        outputs = process_batch(model_wrapper, dev_data)
+        outputs = eval_tokens(
+            model_wrapper, dev_data, indexes, cand_ids, "validation", False
+        )
         logits = outputs[1]
         preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
         term = preds == dev_data["labels"].cpu().detach().numpy()
-        print("accuracy: ", np.array(term).mean())
+        a = np.array(term).mean()
+        print("accuracy: ", a)
+        return a, logits
     else:
-        train_sampler = RandomSampler(dev_data, replacement=False)
-        train_dataloader = DataLoader(
-            dev_data,
-            batch_size=64,
-            sampler=train_sampler,
-            collate_fn=default_data_collator,
-        )
+        if loader:
+            train_sampler = RandomSampler(dev_data, replacement=False)
+            train_dataloader = DataLoader(
+                dev_data,
+                batch_size=64,
+                sampler=train_sampler,
+                collate_fn=default_data_collator,
+            )
+        else:
+            train_dataloader = dev_data
         with torch.no_grad():
             all_vals = []
             for batch in train_dataloader:
                 # batch = move_to_device(batch, cuda_device=1)
-                outputs = process_batch(model_wrapper, batch)
+                outputs = eval_tokens(
+                    model_wrapper, batch, indexes, cand_ids, "validation", False
+                )
                 logits = outputs[1]
                 preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
                 term = preds == batch["labels"].cpu().detach().numpy()
                 all_vals.extend(term)
-            print("accuracy: ", np.array(all_vals).mean())
+            a = np.array(all_vals).mean()
+            print("accuracy: ", a)
+            return a
 
     model_wrapper.model.train()
 
 
-def eval_tokens(model_wrapper: nn.Module, batch, gradient=True) -> Dict[str, Any]:
+def eval_tokens(
+    model_wrapper: nn.Module, batch, indexes, cand_ids, data_type, gradient=True
+) -> Dict[str, Any]:
     # if gradient is true, this function returns the gradient of the input with the appended trigger tokens
 
     def hook_add_trigger_tokens(x):
+        for i, idx in enumerate(indexes):
+            x["input_ids"][0][idx] = cand_ids[i]
         return x
 
     if gradient:
         data_grad = model_wrapper.get_batch_input_gradient(
-            batch, hook_add_trigger_tokens
+            batch["uid"], data_type, hook_add_trigger_tokens
         )
         return data_grad
     else:
-        outputs = model_wrapper.get_batch_output(batch, hook_add_trigger_tokens)
+        outputs = model_wrapper.get_batch_output(
+            batch["uid"], data_type, hook_add_trigger_tokens
+        )
         return outputs
 
 
@@ -128,7 +150,7 @@ def hotflip_attack(
     """
     # averaged_grad = averaged_grad.cpu()
     # embedding_matrix = embedding_matrix.cpu()
-    grad = move_to_device(torch.from_numpy(grad), 1)
+    grad = move_to_device(grad, 1)
     embedding_matrix = move_to_device(embedding_matrix, 1)
     token_embeds = (
         torch.nn.functional.embedding(
@@ -137,106 +159,41 @@ def hotflip_attack(
         .detach()
         .unsqueeze(0)
     )
-    grad = grad.unsqueeze(0)
+    grad = grad.unsqueeze(0).unsqueeze(0)
     gradient_dot_embedding_matrix = torch.einsum(
         "bij,kj->bik", (grad, embedding_matrix)
     )
-    print(gradient_dot_embedding_matrix.shape)
+    # print(gradient_dot_embedding_matrix.shape)
+
+    # prev_embed_dot_grad = torch.einsum("bij,bij->bi", (grad, token_embeds)).unsqueeze(
+    #     -1
+    # )
+    # # print(prev_embed_dot_grad.shape)
+    # neg_dir_dot_grad = 1 * (prev_embed_dot_grad - gradient_dot_embedding_matrix)
+    # neg_dir_dot_grad = neg_dir_dot_grad.detach().cpu().numpy()
+    # best_at_each_step = neg_dir_dot_grad.argmax(2)
+    # return [best_at_each_step[0].data[0]]
+
     if not increase_loss:
         gradient_dot_embedding_matrix *= (
             -1
         )  # lower versus increase the class probability.
     if num_candidates > 1:  # get top k options
         _, best_k_ids = torch.topk(gradient_dot_embedding_matrix, num_candidates, dim=2)
-        print(best_k_ids[0])
-        print(len(best_k_ids))
-        print(len(best_k_ids[0]))
         return best_k_ids.detach().cpu().numpy()[0]
     _, best_at_each_step = gradient_dot_embedding_matrix.max(2)
 
     return best_at_each_step[0].detach().cpu().numpy()
 
 
-def get_loss_per_candidate(
-    index, model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids, snli=False
-):
-    """
-    For a particular index, the function tries all of the candidate tokens for that index.
-    The function returns a list containing the candidate triggers it tried, along with their loss.
-    """
-    if isinstance(cand_trigger_token_ids[0], (np.int64, int)):
-        print("Only 1 candidate for index detected, not searching")
-        return trigger_token_ids
-    loss_per_candidate = []
-    # loss for the trigger without trying the candidates
-    curr_loss = (
-        eval_with_triggers(model_wrapper, batch, trigger_token_ids, False)[0]
-        .cpu()
-        .detach()
-        .numpy()
-    )
-    loss_per_candidate.append((deepcopy(trigger_token_ids), curr_loss))
-    for cand_id in range(len(cand_trigger_token_ids[0])):
-        trigger_token_ids_one_replaced = deepcopy(trigger_token_ids)  # copy trigger
-        trigger_token_ids_one_replaced[index] = cand_trigger_token_ids[index][
-            cand_id
-        ]  # replace one token
-        loss = (
-            eval_with_triggers(
-                model_wrapper, batch, trigger_token_ids_one_replaced, False
-            )[0]
-            .cpu()
-            .detach()
-            .numpy()
-        )
-        loss_per_candidate.append((deepcopy(trigger_token_ids_one_replaced), loss))
-    return loss_per_candidate
-
-
-def get_best_candidates(
-    model_wrapper,
-    batch,
-    trigger_token_ids,
-    cand_trigger_token_ids,
-    snli=False,
-    beam_size=1,
-) -> List[int]:
-    """"
-    Given the list of candidate trigger token ids (of number of trigger words by number of candidates
-    per word), it finds the best new candidate trigger.
-    This performs beam search in a left to right fashion.
-    """
-    # first round, no beams, just get the loss for each of the candidates in index 0.
-    # (indices 1-end are just the old trigger)
-    loss_per_candidate = get_loss_per_candidate(
-        0, model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids, snli
-    )
-    # maximize the loss
-    top_candidates = heapq.nlargest(beam_size, loss_per_candidate, key=itemgetter(1))
-
-    # top_candidates now contains beam_size trigger sequences, each with a different 0th token
-    for idx in range(
-        1, len(trigger_token_ids)
-    ):  # for all trigger tokens, skipping the 0th (we did it above)
-        loss_per_candidate = []
-        for (
-            cand,
-            _,
-        ) in top_candidates:  # for all the beams, try all the candidates at idx
-            loss_per_candidate.extend(
-                get_loss_per_candidate(
-                    idx, model_wrapper, batch, cand, cand_trigger_token_ids, snli
-                )
-            )
-        top_candidates = heapq.nlargest(
-            beam_size, loss_per_candidate, key=itemgetter(1)
-        )
-    return max(top_candidates, key=itemgetter(1))[0]
+def flip_batch(batch, index_of_token_to_flip, cand_ids):
+    batch["input_ids"][0][index_of_token_to_flip] = cand_ids[0]
+    return batch
 
 
 def test(model_wrapper, device, num_tokens_change):
     dataset_label_filter = 0
-    dev_data = model_wrapper.dev_data.get_write_data()
+    dev_data = model_wrapper.validation_data.get_write_data()
     targeted_dev_data = []
     for instance in dev_data:
         # print(instance)
@@ -251,51 +208,73 @@ def test(model_wrapper, device, num_tokens_change):
         collate_fn=default_data_collator,
     )
     print("started the process")
-    get_accuracy(model_wrapper, dev_data, tokenizer, batch=False)
-    flipped = [0]
+    all_vals = []
+    indexes = []
+    cand_ids = []
+    og_acc = get_accuracy(
+        model_wrapper, dev_data, tokenizer, indexes, cand_ids, batch=False
+    )
+    new_batches = []
     for batch in iterator_dataloader:
         print("start_batch")
         # print(batch)
-        get_accuracy(model_wrapper, batch, tokenizer, batch=True)
-        # model.train() # rnn cannot do backwards in train mode
-        # get gradient w.r.t. trigger embeddings for current batch
-        data_grad = eval_tokens(model_wrapper, batch)
-        data_grad = data_grad[0][0].detach().cpu().numpy()
-        grads_magnitude = [g.dot(g) for g in data_grad]
-        print(grads_magnitude)
-        # only flip a token once
-        for index in flipped:
-            grads_magnitude[index] = -1
-
-        # We flip the token with highest gradient norm.
-        index_of_token_to_flip = np.argmax(grads_magnitude)
-        if grads_magnitude[index_of_token_to_flip] == -1:
-            # If we've already flipped all of the tokens, we give up.
-            break
-        flipped.append(index_of_token_to_flip)
-        index_of_token_to_flip = 1
-
-        embedding = get_embedding(model_wrapper.model)
-        embedding_weight = embedding.weight.cpu()
-        token_ids_to_flip = batch["input_ids"][0][index_of_token_to_flip].to(1)
-        grad = data_grad[index_of_token_to_flip]
-        print(grad.shape)
-        print(token_ids_to_flip)
-        cand_trigger_token_ids = hotflip_attack(
-            data_grad,
-            embedding_weight,
-            token_ids_to_flip,
-            num_candidates=40,
-            increase_loss=True,
+        flipped = [0]
+        acc, oglogits = get_accuracy(
+            model_wrapper, batch, tokenizer, indexes, cand_ids, batch=True
         )
-        print(cand_trigger_token_ids)
-        exit(0)
-        trigger_token_ids = get_best_candidates(
-            model_wrapper, batch, trigger_token_ids, cand_trigger_token_ids
-        )
-        print("after:")
-        get_accuracy(model_wrapper, batch, tokenizer, True)
-    get_accuracy(model_wrapper, targeted_dev_data, tokenizer, False)
+        indexes = []
+        cand_ids = []
+        for i in range(1):
+            # model.train() # rnn cannot do backwards in train mode
+            # get gradient w.r.t. trigger embeddings for current batch
+            data_grad = eval_tokens(
+                model_wrapper, batch, indexes, cand_ids, "validation", True
+            )
+            data_grad = data_grad[0]
+            grads_magnitude = [g.dot(g) for g in data_grad]
+
+            # only flip a token once
+            for index in flipped:
+                grads_magnitude[index] = -1
+
+            # We flip the token with highest gradient norm.
+            index_of_token_to_flip = np.argmax(grads_magnitude)
+            print("index of token to flip: {}".format(index_of_token_to_flip))
+            if grads_magnitude[index_of_token_to_flip] == -1:
+                # If we've already flipped all of the tokens, we give up.
+                break
+            flipped.append(index_of_token_to_flip)
+            # index_of_token_to_flip = 1
+            embedding = get_embedding(model_wrapper.model)
+            embedding_weight = embedding.weight.cpu()
+            token_ids_to_flip = batch["input_ids"][0][index_of_token_to_flip].to(1)
+            grad = data_grad[index_of_token_to_flip]
+            indexes.append(index_of_token_to_flip)
+            cand_id = hotflip_attack(
+                grad,
+                embedding_weight,
+                token_ids_to_flip,
+                num_candidates=1,
+                increase_loss=True,
+            )
+            print("cand ids:", cand_id)
+            cand_ids.append(cand_id[0])
+            acc, logits = eval_tokens(
+                model_wrapper, batch, indexes, cand_ids, "validation", False
+            )
+            logits = logits.cpu().detach().numpy()
+            print("og label", batch["labels"].cpu().detach().numpy()[0])
+            print("oglogits: {}, logits: {}".format(oglogits[0], logits[0]))
+            print()
+        preds = np.argmax(logits, axis=1)
+        term = preds == batch["labels"].cpu().detach().numpy()
+        all_vals.extend(term)
+        new_batches.append(batch)
+    print("After attack accuracy of validation dataset:")
+    a = np.array(all_vals).mean()
+    print("accuracy: ", a)
+    # get_accuracy(model_wrapper, new_batches, tokenizer, indexes, cand_ids, False, False)
+    print("og accuracy =", og_acc)
 
 
 def compute_metrics1(p: EvalPrediction) -> Dict:

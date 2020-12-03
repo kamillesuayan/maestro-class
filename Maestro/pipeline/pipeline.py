@@ -7,6 +7,7 @@ from functools import wraps
 import yaml
 from Maestro.data import DataModifier
 from Maestro.utils import move_to_device, get_embedding
+from transformers.data.data_collator import default_data_collator
 
 # not supposed to use this
 # from allennlp.nn.util import move_to_device
@@ -126,7 +127,7 @@ class Pipeline:
         self,
         scenario: Scenario,
         training_data,
-        dev_data,
+        validation_data,
         test_data,
         model: nn.Module,
         training_process,
@@ -135,7 +136,7 @@ class Pipeline:
     ) -> None:
         self.scenario = scenario
         self.training_data = training_data
-        self.dev_data = dev_data
+        self.validation_data = validation_data
         self.test_data = test_data
         self.model = model
         self.training_process = training_process
@@ -147,13 +148,27 @@ class Pipeline:
             self.model,
             self.scenario,
             self.training_data,
-            self.dev_data,
+            self.validation_data,
             self.test_data,
             self.training_process,
             self.device,
         )
         # adding methods for getting the prediction and the outputs
         if self.scenario.attacker.output_access_level > 0:
+
+            @add_method(model_wrapper)
+            def _get_inputs(x_idx, data_type="train"):
+                data = None
+                if data_type == "train":
+                    data = self.training_data[x_idx]
+                elif data_type == "validation":
+                    data = self.validation_data[x_idx]
+
+                elif data_type == "test":
+                    data = self.test_data[x_idx]
+                data = default_data_collator(data)
+                del data["uid"]
+                return data
 
             @add_method(model_wrapper)
             def get_output(x):
@@ -163,8 +178,11 @@ class Pipeline:
                 return output
 
             @add_method(model_wrapper)
-            def get_batch_output(x, pred_hook=lambda x: x) -> Dict[str, Any]:
+            def get_batch_output(
+                x_ids, data_type="train", pred_hook=lambda x: x
+            ) -> Dict[str, Any]:
                 device = self.device
+                x = obj._get_inputs(x_ids, data_type)
                 with torch.no_grad():
                     batch = move_to_device(pred_hook(x), cuda_device=device)
                     output = self.model(**batch)
@@ -186,7 +204,9 @@ class Pipeline:
                     return x_grad
 
                 @add_method(model_wrapper)
-                def get_batch_input_gradient(x, pred_hook=lambda x: x):
+                def get_batch_input_gradient(
+                    x_ids, data_type="train", pred_hook=lambda x: x
+                ):
                     device = self.device
                     embedding_outputs = []
 
@@ -198,6 +218,8 @@ class Pipeline:
                     embedding = get_embedding(self.model)
                     hooks.append(embedding.register_forward_hook(hook_layers))
                     # print(torch.cuda.memory_summary(device=0, abbreviated=True))
+
+                    x = obj._get_inputs(x_ids, data_type)
                     outputs = self.model.forward(
                         **move_to_device(pred_hook(x), cuda_device=1)
                     )
@@ -207,14 +229,14 @@ class Pipeline:
                     )
                     for hook in hooks:
                         hook.remove()
-                    return embedding_gradients_auto[0].cpu().detach()
+                    return embedding_gradients_auto[0]
 
         # getting the data modifier
         obj.training_data = DataModifier(
             self.training_data, self.scenario.attacker.training_data_access_level
         )
-        obj.dev_data = DataModifier(
-            self.dev_data, self.scenario.attacker.dev_data_access_level
+        obj.validation_data = DataModifier(
+            self.validation_data, self.scenario.attacker.dev_data_access_level
         )
         obj.test_data = DataModifier(
             self.test_data, self.scenario.attacker.test_data_access_level

@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import os
 import torch.optim as optim
 from copy import deepcopy
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import heapq
+import requests
+import os
+from flask import jsonify
 from operator import itemgetter
 from transformers.data.data_collator import default_data_collator
 from torch.utils.data.sampler import BatchSampler, RandomSampler
@@ -318,16 +320,30 @@ def get_best_candidates(
     return max(top_candidates, key=itemgetter(1))[0]
 
 
-def test(model_wrapper, device, num_tokens_change):
+def test(url, device):
     dataset_label_filter = 0
-    dev_data = model_wrapper.validation_data.get_write_data()
+    # dev_data = model_wrapper.validation_data.get_write_data()
+    ### TODO make this code more abstract
+    data = {"Application_Name": "Universal_Attack", "data_type": "validation"}
+    final_url = "{0}/get_data".format(url)
+    response = requests.post(final_url, data=data)
+    retruned_json = response.json()
+    dev_data = []
+    for instance in retruned_json["data"]:
+        new_instance = {}
+        for field in instance:
+            if isinstance(instance[field], List):
+                new_instance[field] = torch.Tensor(instance[field])
+            else:
+                new_instance[field] = instance[field]
+        dev_data.append(new_instance)
+    print(dev_data[0])
+
     targeted_dev_data = []
     for idx, instance in enumerate(dev_data):
         # print(instance)
         if instance["label"].numpy() == dataset_label_filter:
             targeted_dev_data.append(instance)
-    print(targeted_dev_data[0])
-    exit(0)
     universal_perturb_batch_size = 64
     num_trigger_tokens = 3
     tokenizer = model_wrapper.get_tokenizer()
@@ -377,81 +393,17 @@ def test(model_wrapper, device, num_tokens_change):
     )
 
 
-def compute_metrics1(p: EvalPrediction) -> Dict:
-    preds = np.argmax(p.predictions, axis=1)
-    return {"accuracy": (preds == p.label_ids).mean()}
-
-
-def compute_metrics(p: EvalPrediction) -> Dict:
-    preds = np.argmax(p.predictions, axis=1)
-    return glue_compute_metrics("sst-2", preds, p.label_ids)
-
-
 def main():
-    use_cuda = True
-    print("CUDA Available: ", torch.cuda.is_available())
-    device = torch.device(
-        "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
+    # test the server
+    url = "http://127.0.0.1:5000"
+    payload = {"Application_Name": "Universal_Attacks", "uids": [1, 2, 3]}
+    final_url = url + "/get_batch_input"
+    response = requests.post(final_url, data=payload)
+    print(response.json())
+
+    test(
+        url, 1,
     )
-    bert = True
-    checkpoint_path = ""
-    dataset_name = "SST2"
-    if bert:
-        model_path = "models_temp/" + "BERT_sst2_label/"
-        name = "bert-base-uncased"
-    else:
-        model_path = "models_temp/" + "textattackLSTM/"
-        name = "LSTM"
-    checkpoint_path = model_path
-    training_process = None
-
-    # initialize Atacker, which specifies access rights
-
-    training_data_access = 0
-    validation_data_access = 3
-    test_data_access = 0
-    model_access = 0
-    output_access = 2
-    myattacker = Attacker(
-        training_data_access,
-        validation_data_access,
-        test_data_access,
-        model_access,
-        output_access,
-    )
-
-    # initialize Scenario. This defines our target
-    target = "Universal Perturbation"
-    myscenario = Scenario(target, myattacker)
-    pipeline = AutoPipelineForNLP.initialize(
-        name,
-        dataset_name,
-        model_path,
-        checkpoint_path,
-        compute_metrics,
-        myscenario,
-        training_process=None,
-        device=1,
-        finetune=True,
-    )
-
-    # if dataset_name == "IMDB":
-    #     train_dataset = HuggingFaceDataset(
-    #         name="imdb", subset=None, split="train", label_map=None, shuffle=True
-    #     )
-    #     validation_dataset = HuggingFaceDataset(
-    #         name="imdb", subset=None, split="test", label_map=None, shuffle=True
-    #     )
-    # else:
-    #     train_dataset = HuggingFaceDataset(
-    #         name="glue", subset="sst2", split="train", label_map=None, shuffle=True
-    #     )
-    #     validation_dataset = HuggingFaceDataset(
-    #         name="glue", subset="sst2", split="validation", label_map=None, shuffle=True
-    #     )
-
-    model_wrapper = pipeline.get_object()
-    test(model_wrapper, device, 5)
 
 
 if __name__ == "__main__":

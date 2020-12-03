@@ -7,7 +7,7 @@ import sys
 
 from Maestro.pipeline import Pipeline, Scenario, Attacker
 from Maestro.models.model import build_model
-from Maestro.data.DataModifier import get_data
+from Maestro.data import get_dataset
 
 
 def fgsm_attack(image, epsilon, data_grad) -> torch.Tensor:
@@ -67,7 +67,7 @@ def main():
     # (1) prepare the data loaders and the model
     pretrained_model = "data/lenet_mnist_model.pth"
     use_cuda = True
-    train_loader, dev_loader, test_loader, vocab = get_data("MNIST")
+    train_loader, dev_loader, test_loader, vocab = get_dataset("MNIST")
 
     print("CUDA Available: ", torch.cuda.is_available())
     device = torch.device(

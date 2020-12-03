@@ -1,3 +1,4 @@
+import os
 from Maestro.pipeline import Pipeline
 from Maestro.data import HuggingFaceDataset, get_dataset
 from Maestro.models import build_model
@@ -34,9 +35,9 @@ class AutoPipelineForNLP:
     ):
         datasets = get_dataset(dataset_name)
         model = build_model(model_name, num_labels=2, max_length=128, device=1)
-        tokenizer = model.tokenizer
+        self.tokenizer = model.tokenizer
         for dataset in datasets:
-            dataset_huggingface = dataset.indexed(tokenizer, 128)
+            dataset.indexed(self.tokenizer, 128)
 
         train_dataset = datasets[0]
         if len(datasets) == 2:
@@ -63,7 +64,7 @@ class AutoPipelineForNLP:
             model,
             training_process,
             device,
-            tokenizer,
+            self.tokenizer,
         )
 
     def fine_tune_on_task(
@@ -75,7 +76,7 @@ class AutoPipelineForNLP:
         checkpoint_path,
         compute_metrics=None,
     ):
-        if not model_path:
+        if not model_path or len(os.listdir(model_path)) == 0:
             print("start training")
             # optimizer = optim.Adam(model.model.parameters())
             # scheduler = optim.lr_scheduler.LambdaLR(optimizer)
@@ -95,8 +96,8 @@ class AutoPipelineForNLP:
                 args=training_args,
                 model=model.model,
                 # optimizers=(optimizer, None),
-                train_dataset=train_dataset,
-                eval_dataset=validation_dataset,
+                train_dataset=train_dataset.get_trainable_data(self.tokenizer, 128),
+                eval_dataset=validation_dataset.get_trainable_data(self.tokenizer, 128),
                 compute_metrics=compute_metrics,
             )
             trainer.train()

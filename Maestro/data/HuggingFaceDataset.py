@@ -7,6 +7,7 @@ import textattack
 from textattack.datasets import TextAttackDataset
 import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
+import torch
 
 # from textattack.shared import AttackedText
 def prepare_dataset_for_training(nlp_dataset, _format_raw_example):
@@ -151,15 +152,17 @@ class HuggingFaceDataset(TextAttackDataset):
         shuffle=False,
     ):
         self._name = name
-
-        self._dataset = datasets.load_dataset(name, subset)
-        self._dataset = self._dataset[split]
-
+        if name != None:
+            self._dataset = datasets.load_dataset(name, subset)
+            self._dataset = self._dataset[split]
+        else:
+            self._dataset = None
         # subset_print_str = f", subset {_cb(subset)}" if subset else ""
         # textattack.shared.logger.info(
         #     f"Loading {_cb('datasets')} dataset {_cb(name)}{subset_print_str}, split {_cb(split)}."
         # )
         # Input/output column order, like (('premise', 'hypothesis'), 'label')
+        self.dataset_columns = dataset_columns
         (
             self.input_columns,
             self.output_column,
@@ -205,9 +208,9 @@ class HuggingFaceDataset(TextAttackDataset):
             raise ValueError
         if isinstance(i, int):
             return self.examples_indexed[i]
+        elif isinstance(i, list) or isinstance(i, torch.Tensor):
+            return [self.examples_indexed[ex] for ex in i]
         else:
-            # `i` could be a slice or an integer. if it's a slice,
-            # return the formatted version of the proper slice of the list
             return [ex for ex in self.examples_indexed[i]]
 
     def _format_raw_example(self, raw_example):
@@ -222,7 +225,7 @@ class HuggingFaceDataset(TextAttackDataset):
 
         return (input_dict, output)
 
-    def indexed(self, tokenizer, max_length):
+    def indexed(self, tokenizer, max_length, uid=True):
         input_columns, output_column = get_datasets_dataset_columns(self._dataset)
         if whether_two_inputs(self._dataset):
             data = self._dataset.map(
@@ -257,8 +260,14 @@ class HuggingFaceDataset(TextAttackDataset):
         #     inputs = {k: batch_encoding[k][i] for k in batch_encoding}
         #     inputs["labels"] = labels[i]
         #     data.append(inputs)
-        self.examples_indexed = data
-        return data
+        indexed_data = data
+        if uid:
+            indexed_data = []
+            for i, dict_instance in enumerate(data):
+                dict_instance["uid"] = i
+                indexed_data.append(dict_instance)
+            self.examples_indexed = indexed_data
+        return indexed_data
 
     def make_text_dataloader(self, tokenizer, batch_size):
         """
@@ -281,4 +290,21 @@ class HuggingFaceDataset(TextAttackDataset):
         sampler = RandomSampler(data)
         dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
         return dataloader
+
+    def get_trainable_data(self, tokenizer, max_length):
+        new_dataset = self.indexed(tokenizer, max_length, False)
+        return new_dataset
+
+    def get_json_data(self):
+        if self.examples_indexed:
+            new_data = []
+            for instance in self.examples_indexed:
+                new_instance = {}
+                for field in instance:
+                    if isinstance(instance[field], torch.Tensor):
+                        new_instance[field] = instance[field].numpy().tolist()
+                    else:
+                        new_instance[field] = instance[field]
+                new_data.append(new_instance)
+        return new_data
 

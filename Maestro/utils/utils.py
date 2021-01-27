@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 import torch
+import json
 
 
 def int_to_device(device: Union[int, torch.device]) -> torch.device:
@@ -49,6 +50,16 @@ def move_to_device(obj, cuda_device: Union[torch.device, int]):
         return tuple(move_to_device(item, cuda_device) for item in obj)
     else:
         return obj
+
+
+def make_json(x):
+    """ assumes x to be a list of objects"""
+    for idx, element in enumerate(x):
+        if isinstance(element, torch.Tensor):
+            x[idx] = element.detach().cpu().numpy().tolist()
+        elif isinstance(element, list):
+            x[idx] = make_json(element)
+    return json.dumps(x)
 
 
 def get_embedding(model):

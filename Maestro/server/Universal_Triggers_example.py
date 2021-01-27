@@ -1,7 +1,3 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from copy import deepcopy
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
@@ -9,7 +5,14 @@ import heapq
 import requests
 import os
 from flask import jsonify
+import json
 from operator import itemgetter
+import pickle
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 from transformers.data.data_collator import default_data_collator
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 from torch.utils.data import DataLoader
@@ -332,21 +335,39 @@ def test(url, device):
     for instance in retruned_json["data"]:
         new_instance = {}
         for field in instance:
+
             if isinstance(instance[field], List):
                 new_instance[field] = torch.Tensor(instance[field])
             else:
+                # print(field)
+                # print(instance[field])
+                # print(type(instance[field]))
+                # print(torch.Tensor(instance[field]))
                 new_instance[field] = instance[field]
+        # print(new_instance)
+
         dev_data.append(new_instance)
-    print(dev_data[0])
 
     targeted_dev_data = []
     for idx, instance in enumerate(dev_data):
         # print(instance)
         if instance["label"].numpy() == dataset_label_filter:
             targeted_dev_data.append(instance)
+    print(targeted_dev_data[0])
     universal_perturb_batch_size = 64
     num_trigger_tokens = 3
-    tokenizer = model_wrapper.get_tokenizer()
+
+    data = {"Application_Name": "Universal_Attack"}
+    final_url = "{0}/get_tokenizer".format(url)
+    response = requests.post(final_url, data=data)
+    retruned_json = response.json()
+
+    data = {"Application_Name": "Universal_Attack", "text": "the"}
+    final_url = "{0}/convert_tokens_to_ids".format(url)
+    response = requests.post(final_url, data=data)
+    retruned_json = response.json()
+    print(retruned_json)
+
     trigger_token_ids = [tokenizer.convert_tokens_to_ids("the")] * num_trigger_tokens
     iterator_dataloader = DataLoader(
         targeted_dev_data,
@@ -393,12 +414,37 @@ def test(url, device):
     )
 
 
+class pred_hook:
+    def __init__(self, fn):
+        self._fn = fn
+
+    def __call__(self, *args, **kwargs):
+        return self._fun(*args, **kwargs)
+
+    def as_pickle(self):
+        import dill as pickle
+
+        return pickle.dumps(self._fn, protocol=2)
+
+
 def main():
     # test the server
     url = "http://127.0.0.1:5000"
-    payload = {"Application_Name": "Universal_Attacks", "uids": [1, 2, 3]}
-    final_url = url + "/get_batch_input"
-    response = requests.post(final_url, data=payload)
+    a = lambda x: x
+    method_class = pred_hook(a)
+    pickled_method = method_class.as_pickle()  # pickle.dumps(method_class, protocol=2)
+    payload = {
+        "Application_Name": "Universal_Attack",
+        "uids": [1, 2, 3],
+        "data_type": "train",
+    }
+    final_url = url + "/get_batch_output"
+    # print(json.dumps(payload))
+    # headers = {"Content-type": "multipart/form-data"}
+    # headers = {"Content-type": "application/json", "Accept": "text/plain"}
+    response = requests.post(
+        final_url, data=payload, files={"file": ("holder", pickled_method)}
+    )
     print(response.json())
 
     test(

@@ -34,8 +34,9 @@ class AutoPipelineForNLP:
         finetune=True,
     ):
         datasets = get_dataset(dataset_name)
-        model = build_model(model_name, num_labels=2, max_length=128, device=1)
+        model = build_model(model_name, num_labels=2, max_length=128, device=device)
         self.tokenizer = model.tokenizer
+        self.device = device
         for dataset in datasets:
             dataset.indexed(self.tokenizer, 128)
 
@@ -114,12 +115,13 @@ class AutoPipelineForNLP:
             batch_size=32,
             collate_fn=default_data_collator,
         )
-        model.to(1)
+        model.to(self.device)
         # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         # all_vals = []
         # with torch.no_grad():
         #     for batch in test_dataloader:
-        #         batch = move_to_device(batch, cuda_device=1)
+        #         batch = move_to_device(batch, cuda_device=self.device)
+        #         del batch["uid"]
         #         outputs = model(**batch)
         #         logits = outputs[1]
         #         preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
@@ -149,24 +151,17 @@ class AutoPipelineForVision:
         finetune=True,
     ):
         datasets = get_dataset(dataset_name)
-        model = build_model(model_name, num_labels=2, max_length=128, device=1)
-        tokenizer = model.tokenizer
-        for dataset in datasets:
-            dataset_huggingface = dataset.indexed(tokenizer, 128)
-
-        train_dataset = datasets[0]
-        if len(datasets) == 2:
-            validation_dataset = datasets[1]
-            test_dataset = datasets[1]
-        else:
-            validation_dataset = datasets[1]
-            test_dataset = datasets[2]
+        model = build_model(model_name, num_labels=2, max_length=128, device=device)
+        self.device = device
+        print(datasets)
+        train_dataset = datasets["train"]
+        test_dataset = datasets["test"]
         if finetune:
-            model = AutoPipeline.fine_tune_on_task(
-                AutoPipeline,
+            model = AutoPipelineForVision.fine_tune_on_task(
+                AutoPipelineForVision,
                 model,
                 train_dataset,
-                validation_dataset,
+                test_dataset,
                 model_path,
                 checkpoint_path,
                 compute_metrics=compute_metrics,
@@ -174,12 +169,12 @@ class AutoPipelineForVision:
         return Pipeline(
             scenario,
             train_dataset,
-            validation_dataset,
-            validation_dataset,
+            test_dataset,
+            test_dataset,
             model,
             training_process,
             device,
-            tokenizer,
+            None,
         )
 
     def fine_tune_on_task(
@@ -191,52 +186,10 @@ class AutoPipelineForVision:
         checkpoint_path,
         compute_metrics=None,
     ):
-        if not model_path:
+        if not model_path or len(os.listdir(checkpoint_path)) == 0:
             print("start training")
-            # optimizer = optim.Adam(model.model.parameters())
-            # scheduler = optim.lr_scheduler.LambdaLR(optimizer)
-            training_args = TrainingArguments(
-                output_dir=checkpoint_path,
-                do_train=True,
-                do_eval=True,
-                num_train_epochs=1,
-                evaluation_strategy="steps",
-                save_steps=200,
-                eval_steps=200,
-                per_device_train_batch_size=32,
-                per_device_eval_batch_size=128,
-                save_total_limit=5,
-            )
-            trainer = Trainer(
-                args=training_args,
-                model=model.model,
-                # optimizers=(optimizer, None),
-                train_dataset=train_dataset,
-                eval_dataset=validation_dataset,
-                compute_metrics=compute_metrics,
-            )
-            trainer.train()
-            trainer.save_model(checkpoint_path)
-            model = model.model
+            pass
         else:
-            print("loading model from", model_path)
-            model = model.model.from_pretrained(model_path)
-        test_sampler = RandomSampler(validation_dataset, replacement=False)
-        test_dataloader = DataLoader(
-            validation_dataset,
-            sampler=test_sampler,
-            batch_size=32,
-            collate_fn=default_data_collator,
-        )
-        model.to(1)
-        # all_vals = []
-        # for batch in test_dataloader:
-        #     batch = move_to_device(batch, cuda_device=1)
-        #     outputs = model(**batch)
-        #     logits = outputs[1]
-        #     preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
-        #     term = preds == batch["labels"].cpu().detach().numpy()
-        #     all_vals.extend(term)
-        # print("accuracy: ", np.array(all_vals).mean())
-
+            model.load_state_dict(torch.load(model_path, map_location=self.device))
+        model.to(self.device)
         return model

@@ -52,14 +52,19 @@ def move_to_device(obj, cuda_device: Union[torch.device, int]):
         return obj
 
 
-def make_json(x):
+def list_to_json(x):
     """ assumes x to be a list of objects"""
     for idx, element in enumerate(x):
         if isinstance(element, torch.Tensor):
             x[idx] = element.detach().cpu().numpy().tolist()
         elif isinstance(element, list):
-            x[idx] = make_json(element)
-    return json.dumps(x)
+            # x[idx] = list_to_json(element)
+            x[idx] = element
+
+    returned = json.dumps(x)
+    # print("list to json:", type(x))
+    # print("list to json:", type(returned))
+    return returned
 
 
 def get_embedding(model):

@@ -31,6 +31,10 @@ from transformers import (
     glue_compute_metrics,
 )
 
+use_cuda = True
+print("CUDA Available: ", torch.cuda.is_available())
+device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
+print(device)
 # from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
 #     StanfordSentimentTreeBankDatasetReader,
 # )
@@ -57,7 +61,7 @@ import sys
 
 def process_batch(model_wrapper, batch, data_type):
     with torch.no_grad():
-        batch = move_to_device(batch, cuda_device=1)
+        batch = move_to_device(batch, cuda_device=device)
         outputs = model_wrapper.get_batch_output(batch["uid"], data_type)
     return outputs
 
@@ -72,8 +76,7 @@ def get_accuracy(
 ) -> None:
     # model_wrapper.model.get_metrics(reset=True)
     model_wrapper.model.eval()  # model should be in eval() already, but just in case
-
-    model_wrapper.model.to(1)
+    model_wrapper.model.to(device)
     if batch:
         if triggers:
             print_string = ""
@@ -143,19 +146,21 @@ def eval_with_triggers(
     trigger_sequence_tensor = torch.LongTensor(deepcopy(trigger_token_ids))
     attention_mask_tensor = torch.LongTensor([1, 1, 1])
     token_type_ids = torch.LongTensor([0, 0, 0])
-    with torch.cuda.device(1):
+    with torch.cuda.device(device):
         trigger_sequence_tensor = trigger_sequence_tensor.repeat(
             len(batch["labels"]), 1
-        ).to(1)
-        original_tokens = batch["input_ids"].clone().to(1)
+        ).to(device)
+        original_tokens = batch["input_ids"].clone().to(device)
 
         attention_mask_tensor = attention_mask_tensor.repeat(
             len(batch["labels"]), 1
-        ).to(1)
-        original_attention_mask = batch["attention_mask"].clone().to(1)
+        ).to(device)
+        original_attention_mask = batch["attention_mask"].clone().to(device)
 
-        token_type_ids_tensor = token_type_ids.repeat(len(batch["labels"]), 1).to(1)
-        original_token_type_ids = batch["token_type_ids"].clone().to(1)
+        token_type_ids_tensor = token_type_ids.repeat(len(batch["labels"]), 1).to(
+            device
+        )
+        original_token_type_ids = batch["token_type_ids"].clone().to(device)
 
     def hook_add_trigger_tokens(x):
 
@@ -326,12 +331,11 @@ def test(model_wrapper, device, num_tokens_change):
         # print(instance)
         if instance["label"].numpy() == dataset_label_filter:
             targeted_dev_data.append(instance)
-    print(targeted_dev_data[0])
-    exit(0)
     universal_perturb_batch_size = 64
     num_trigger_tokens = 3
     tokenizer = model_wrapper.get_tokenizer()
     trigger_token_ids = [tokenizer.convert_tokens_to_ids("the")] * num_trigger_tokens
+    print(targeted_dev_data[0])
     iterator_dataloader = DataLoader(
         targeted_dev_data,
         batch_size=universal_perturb_batch_size,
@@ -388,11 +392,6 @@ def compute_metrics(p: EvalPrediction) -> Dict:
 
 
 def main():
-    use_cuda = True
-    print("CUDA Available: ", torch.cuda.is_available())
-    device = torch.device(
-        "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
-    )
     bert = True
     checkpoint_path = ""
     dataset_name = "SST2"
@@ -431,7 +430,7 @@ def main():
         compute_metrics,
         myscenario,
         training_process=None,
-        device=1,
+        device=device,
         finetune=True,
     )
 

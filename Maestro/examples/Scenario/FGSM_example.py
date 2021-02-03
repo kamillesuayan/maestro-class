@@ -27,6 +27,7 @@ def test(model_wrapper, device, epsilon):
     test_loader = model_wrapper.test_data.get_write_data()
     for data, target in test_loader:
         data = data.to(device)
+        print(data.shape)
         output = model_wrapper.get_output(data)
         init_pred = output.max(1, keepdim=True)[1]
         print(init_pred, target)
@@ -67,8 +68,9 @@ def main():
     # (1) prepare the data loaders and the model
     pretrained_model = "data/lenet_mnist_model.pth"
     use_cuda = True
-    train_loader, dev_loader, test_loader, vocab = get_dataset("MNIST")
-
+    datasets = get_dataset("MNIST")
+    train_loader = datasets["train"]
+    test_loader = datasets["test"]
     print("CUDA Available: ", torch.cuda.is_available())
     device = torch.device(
         "cuda:1" if (use_cuda and torch.cuda.is_available()) else "cpu"
@@ -90,11 +92,12 @@ def main():
     model_wrapper = Pipeline(
         myscenario,
         train_loader,
-        dev_loader,
+        test_loader,
         test_loader,
         model,
         training_process,
         device,
+        None,
     ).get_object()
 
     # (4) test FGSM

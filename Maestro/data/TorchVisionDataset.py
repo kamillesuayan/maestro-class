@@ -1,5 +1,8 @@
+from numpy.lib.polynomial import RankWarning
 from textattack.datasets import TextAttackDataset
 from torchvision import datasets
+import collections
+
 import random
 
 
@@ -37,17 +40,19 @@ class TorchVisionDataset(TextAttackDataset):
             random.shuffle(self.examples)
 
     def _format_raw_example(self, raw_example):
-        input_dict = collections.OrderedDict(
-            [(c, raw_example[c]) for c in self.input_columns]
-        )
+        # input_dict = collections.OrderedDict(
+        #     [(c, raw_example[c]) for c in self.input_columns]
+        # )
 
-        output = raw_example[self.output_column]
-        if self.label_map:
-            output = self.label_map[output]
-        if self.output_scale_factor:
-            output = output / self.output_scale_factor
+        # output = raw_example[self.output_column]
+        # if self.label_map:
+        #     output = self.label_map[output]
+        # if self.output_scale_factor:
+        #     output = output / self.output_scale_factor
 
-        return (input_dict, output)
+        # return (input_dict, output)
+
+        return raw_example
 
     def __next__(self):
         if self._i >= len(self.examples):
@@ -63,3 +68,14 @@ class TorchVisionDataset(TextAttackDataset):
             # `i` could be a slice or an integer. if it's a slice,
             # return the formatted version of the proper slice of the list
             return [self._format_raw_example(ex) for ex in self.examples[i]]
+
+    def get_json_data(self):
+        if self.examples:
+            new_data = []
+            for idx, instance in enumerate(self.examples):
+                new_instance = {}
+                new_instance["image"] = instance[0].numpy().tolist()
+                new_instance["label"] = instance[1]
+                new_instance["uid"] = idx
+                new_data.append(new_instance)
+        return new_data

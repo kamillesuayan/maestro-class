@@ -25,8 +25,8 @@ from textattack.shared import utils
 def build_model(
     model_name,
     num_labels: int,
-    max_length: int,
-    device: int,
+    max_length: int = 128,
+    device: int = 0,
     pretrained_file: str = None,
 ):
     if model_name == "FGSM_example_model":

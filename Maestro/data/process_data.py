@@ -32,7 +32,7 @@ def _read_mnist_dataset():
         transforms=transforms.Compose([transforms.ToTensor(),]),
     )
 
-    return {"train": train_data, "dev": test_data}
+    return {"train": train_data, "test": test_data}
 
 
 def _read_sst_dataset():

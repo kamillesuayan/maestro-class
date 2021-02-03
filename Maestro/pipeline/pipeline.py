@@ -157,24 +157,32 @@ class Pipeline:
         if self.scenario.attacker.output_access_level > 0:
 
             @add_method(model_wrapper)
-            def _get_inputs(x_idx, data_type="train"):
+            def _get_inputs(x_idx, data_type="train", nlp=True):
                 data = None
                 if data_type == "train":
                     data = self.training_data[x_idx]
                 elif data_type == "validation":
                     data = self.validation_data[x_idx]
-
                 elif data_type == "test":
                     data = self.test_data[x_idx]
-                data = default_data_collator(data)
-                del data["uid"]
+                if nlp:
+                    data = default_data_collator(data)
+                    # print("get_inputs:", data)
+                    # print("training:", self.training_data[x_idx])
+                    # print("get_inputs:", data["uid"])
+                    del data["uid"]
+                else:
+                    data = data[0]
                 return data
 
             @add_method(model_wrapper)
-            def get_output(x):
+            def get_output(x_id, data_type="train", pred_hook=lambda x: x):
                 device = self.device
+                x = obj._get_inputs(x_id, data_type, nlp=False)
+                x = x.unsqueeze(0)
+                print(x.shape)
                 x = x.to(device)
-                output = self.model(x)
+                output = self.model(pred_hook(x))
                 return output
 
             @add_method(model_wrapper)
@@ -185,14 +193,17 @@ class Pipeline:
                 x = obj._get_inputs(x_ids, data_type)
                 with torch.no_grad():
                     batch = move_to_device(pred_hook(x), cuda_device=device)
+                    # print("get batch output:", batch)
                     output = self.model(**batch)
                 return output
 
             if self.scenario.attacker.output_access_level > 1:
 
                 @add_method(model_wrapper)
-                def get_input_gradient(x):
+                def get_input_gradient(x_id, data_type="train", pred_hook=lambda x: x):
                     device = self.device
+                    x = obj._get_inputs(x_id, data_type, nlp=False)
+                    x = x.unsqueeze(0)
                     x = x.to(device)
                     x.requires_grad = True
                     output = self.model(x)
@@ -220,8 +231,10 @@ class Pipeline:
                     # print(torch.cuda.memory_summary(device=0, abbreviated=True))
 
                     x = obj._get_inputs(x_ids, data_type)
-                    outputs = self.model.forward(
-                        **move_to_device(pred_hook(x), cuda_device=1)
+                    # print(x["input_ids"])
+                    # print(pred_hook(x)["input_ids"])
+                    outputs = self.model(
+                        **move_to_device(pred_hook(x), cuda_device=device)
                     )
                     loss = outputs[0]
                     embedding_gradients_auto = torch.autograd.grad(

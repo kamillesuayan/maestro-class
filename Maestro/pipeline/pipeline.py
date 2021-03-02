@@ -180,8 +180,8 @@ class Pipeline:
                 device = self.device
                 x = obj._get_inputs(x_id, data_type, nlp=False)
                 x = x.unsqueeze(0)
-                print(x.shape)
                 x = x.to(device)
+                print(pred_hook(x))
                 output = self.model(pred_hook(x))
                 return output
 
@@ -189,6 +189,7 @@ class Pipeline:
             def get_batch_output(
                 x_ids, data_type="train", pred_hook=lambda x: x
             ) -> Dict[str, Any]:
+                # TODO Combine this with the top ones. This may get complicated as this method needs to handle for both NLP and CV
                 device = self.device
                 x = obj._get_inputs(x_ids, data_type)
                 with torch.no_grad():
@@ -206,12 +207,15 @@ class Pipeline:
                     x = x.unsqueeze(0)
                     x = x.to(device)
                     x.requires_grad = True
-                    output = self.model(x)
+                    transformed_x = pred_hook(x)
+                    output = self.model(transformed_x)
                     pred = output.max(1, keepdim=True)[1]
                     loss = F.nll_loss(output, pred[0])
                     self.model.zero_grad()
                     loss.backward()
                     x_grad = x.grad.data
+                    print("pipeline")
+                    print(x_grad)
                     return x_grad
 
                 @add_method(model_wrapper)

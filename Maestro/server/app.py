@@ -78,8 +78,8 @@ def main(applications):
         )
         # print(outputs)
         # print(type(outputs[1]))
-        returned = list_to_json([x.cpu().numpy().tolist() for x in outputs])
-        # print(returned)
+        returned = [x.cpu().numpy().tolist() for x in outputs]
+        print("apppy:", returned)
         # print(type(returned))
         return {"outputs": returned}
 

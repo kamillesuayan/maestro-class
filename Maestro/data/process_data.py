@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import textattack
 from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
 from Maestro.data.TorchVisionDataset import TorchVisionDataset
 import numpy as np

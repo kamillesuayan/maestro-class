@@ -64,6 +64,8 @@ def universal_trigger_attack(iterator_dataloader:List[List[int]],dev_data,vm:vir
         # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         # model.train() # rnn cannot do backwards in train mode
         # get gradient w.r.t. trigger embeddings for current batch
+
+        # -------- TODO --------
         data_grad = eval_with_triggers(vm, batch, trigger_token_ids)
         # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         print(np.array(data_grad).shape)
@@ -82,6 +84,7 @@ def universal_trigger_attack(iterator_dataloader:List[List[int]],dev_data,vm:vir
         trigger_token_ids = get_best_candidates(
             vm, batch, trigger_token_ids, cand_trigger_token_ids
         )
+        # -------- TODO END--------
         print("after:")
         get_accuracy(vm, batch, trigger_token_ids, True, True)
     get_accuracy(vm, dev_data, trigger_token_ids, True, False)

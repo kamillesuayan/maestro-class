@@ -50,6 +50,7 @@ def hotflip_attack(original_tokens:List[List[int]], labels:List[int],vm:virtual_
     print(original_tokens,original_tokens.shape)
     perturbed_tokens = copy.deepcopy(original_tokens)
     for i in range(constraint):
+    # -------- TODO --------
         data_grad = vm.get_batch_input_gradient(perturbed_tokens,labels)
         # print(len(data_grad))
         # data_grad of shape [B, T, D] e.g., [1,128,768]
@@ -90,7 +91,7 @@ def hotflip_attack(original_tokens:List[List[int]], labels:List[int],vm:virtual_
         print("attack success")
     else:
         print("attack fail")
-
+    # -------- TODO END--------
     return perturbed_tokens,term
 
 
@@ -182,6 +183,7 @@ def main():
         # get gradient w.r.t. trigger embeddings for current batch
         labels = batch["labels"]
         perturbed,success = hotflip_attack(batch["input_ids"].cpu().detach().numpy(),labels.cpu().detach().numpy(),vm,constraint=1)
+
         all_vals.append(success)
         
     print("After attack attack success rate")

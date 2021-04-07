@@ -7,7 +7,7 @@ runs/
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.pkl
 # C extensions
 *.so
 

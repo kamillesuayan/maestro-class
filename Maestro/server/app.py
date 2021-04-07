@@ -37,24 +37,20 @@ def main(applications):
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        print("recieved!")
-        # print(request)
-        # print(request.form)
-        # print(request.get_data())
-        # print(request.files)
-        # print(request.json)
-
-        uid_list = [int(x) for x in request.form.getlist("uids")]
-        print("uid_list:", uid_list)
-        application = request.form["Application_Name"]
-        print("application name:", application, request.form["data_type"])
+        print("recieved! get_batch_output")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        print("application name:", application)
         print(app.applications)
+        # uid_list = [int(x) for x in request.form.getlist("uids")]
+        # print("uid_list:", uid_list)
         # print(request.files["file"])
-        pred_hook = pickle.loads(request.files["file"].read())
-        # print(pred_hook(1))
-        outputs = app.applications[application].get_batch_output(
-            uid_list, request.form["data_type"], pred_hook
-        )
+        # pred_hook = pickle.loads(request.files["file"].read())
+        batch_input = json_data["data"]
+        labels = json_data["labels"]
+        # batch_input = [int(x) for x in batch_input]
+        # print(batch_input)
+        outputs = app.applications[application].get_batch_output(batch_input, labels)
         # print(outputs)
         # print(outputs)
         # print(type(outputs[1]))
@@ -66,16 +62,17 @@ def main(applications):
     @app.route("/get_input_gradient", methods=["POST"])
     def get_input_gradient():
         print("recieved!")
-        uid = request.form["uids"]
-        print("uid:", type(uid))
         application = request.form["Application_Name"]
-        print("application name:", application, request.form["data_type"])
+        print("application name:", application)
         print(app.applications)
-        pred_hook = pickle.loads(request.files["file"].read())
+
+        # uid = request.form["uids"]
+        # print("uid:", type(uid))
+        # pred_hook = pickle.loads(request.files["file"].read())
         # print(pred_hook(1))
-        outputs = app.applications[application].get_input_gradient(
-            int(uid), request.form["data_type"], pred_hook
-        )
+        batch_input = request.form["data"]
+        print(batch_input)
+        outputs = app.applications[application].get_input_gradient(batch_input)
         # print(outputs)
         # print(type(outputs[1]))
         returned = [x.cpu().numpy().tolist() for x in outputs]
@@ -87,15 +84,14 @@ def main(applications):
     def get_batch_input_gradient():
         print("recieved!")
 
-        uid_list = [int(x) for x in request.form.getlist("uids")]
-        print("uid_list:", uid_list)
-        application = request.form["Application_Name"]
-        print("application name:", application, request.form["data_type"])
-        print(app.applications)
-        pred_hook = pickle.loads(request.files["file"].read())
-        # print(pred_hook(1))
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        print("application name:", application)
+        batch_input = json_data["data"]
+        labels = json_data["labels"]
+
         outputs = app.applications[application].get_batch_input_gradient(
-            uid_list, request.form["data_type"], pred_hook
+            batch_input, labels
         )
         # print(outputs)
         # print(type(outputs[1]))
@@ -149,7 +145,8 @@ def main(applications):
         return {"data": json_data}
 
     print("Server Running...........")
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":

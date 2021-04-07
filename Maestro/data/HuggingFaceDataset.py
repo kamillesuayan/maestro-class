@@ -3,7 +3,7 @@ import random
 
 import datasets
 
-import textattack
+# import textattack
 from textattack.datasets import TextAttackDataset
 import numpy as np
 from torch.utils.data import DataLoader, RandomSampler

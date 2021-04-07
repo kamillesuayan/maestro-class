@@ -157,22 +157,16 @@ class Pipeline:
         if self.scenario.attacker.output_access_level > 0:
 
             @add_method(model_wrapper)
-            def _get_inputs(x_idx, data_type="train", nlp=True):
+            def _get_inputs(x, data_type="train", nlp=True):
                 data = None
-                if data_type == "train":
-                    data = self.training_data[x_idx]
-                elif data_type == "validation":
-                    data = self.validation_data[x_idx]
-                elif data_type == "test":
-                    data = self.test_data[x_idx]
                 if nlp:
-                    data = default_data_collator(data)
+                    data = default_data_collator(x)
                     # print("get_inputs:", data)
                     # print("training:", self.training_data[x_idx])
                     # print("get_inputs:", data["uid"])
                     del data["uid"]
                 else:
-                    data = data[0]
+                    data = x[0]
                 return data
 
             @add_method(model_wrapper)
@@ -181,21 +175,28 @@ class Pipeline:
                 x = obj._get_inputs(x_id, data_type, nlp=False)
                 x = x.unsqueeze(0)
                 x = x.to(device)
-                print(pred_hook(x))
+                # print(pred_hook(x))
                 output = self.model(pred_hook(x))
                 return output
 
             @add_method(model_wrapper)
-            def get_batch_output(
-                x_ids, data_type="train", pred_hook=lambda x: x
-            ) -> Dict[str, Any]:
+            def get_batch_output(x, labels) -> Dict[str, Any]:
                 # TODO Combine this with the top ones. This may get complicated as this method needs to handle for both NLP and CV
                 device = self.device
-                x = obj._get_inputs(x_ids, data_type)
+                # print(x)
+                decoded_x = self.tokenizer.batch_decode(x, skip_special_tokens=True)
+                x = self.tokenizer.batch_encode_plus(
+                    decoded_x,
+                    max_length=128,
+                    truncation=True,
+                    padding=True,
+                    return_tensors="pt",
+                ).to(device)
+                # x = obj._get_inputs(x, data_type)
+                x["labels"] = torch.LongTensor(labels).to(device)
                 with torch.no_grad():
-                    batch = move_to_device(pred_hook(x), cuda_device=device)
-                    # print("get batch output:", batch)
-                    output = self.model(**batch)
+                    print("get batch output:", x["input_ids"].shape)
+                    output = self.model(**x)
                 return output
 
             if self.scenario.attacker.output_access_level > 1:
@@ -219,9 +220,7 @@ class Pipeline:
                     return x_grad
 
                 @add_method(model_wrapper)
-                def get_batch_input_gradient(
-                    x_ids, data_type="train", pred_hook=lambda x: x
-                ):
+                def get_batch_input_gradient(x, labels):
                     device = self.device
                     embedding_outputs = []
 
@@ -234,13 +233,22 @@ class Pipeline:
                     hooks.append(embedding.register_forward_hook(hook_layers))
                     # print(torch.cuda.memory_summary(device=0, abbreviated=True))
 
-                    x = obj._get_inputs(x_ids, data_type)
+                    decoded_x = self.tokenizer.batch_decode(x, skip_special_tokens=True)
+                    print(decoded_x)
+                    x = self.tokenizer.batch_encode_plus(
+                        decoded_x,
+                        max_length=128,
+                        truncation=True,
+                        padding=True,
+                        return_tensors="pt",
+                    ).to(device)
                     # print(x["input_ids"])
                     # print(pred_hook(x)["input_ids"])
-                    outputs = self.model(
-                        **move_to_device(pred_hook(x), cuda_device=device)
-                    )
+                    x["labels"] = torch.LongTensor(labels).to(device)
+                    outputs = self.model(**x)
+                    # print(outputs)
                     loss = outputs[0]
+                    # print(loss)
                     embedding_gradients_auto = torch.autograd.grad(
                         loss, embedding_outputs[0], create_graph=False
                     )

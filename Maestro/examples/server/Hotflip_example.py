@@ -1,17 +1,23 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import os
-import torch.optim as optim
+import sys
 from copy import deepcopy
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import heapq
 from operator import itemgetter
-from transformers.data.data_collator import default_data_collator
+import torch
+import torch.nn as nn
+import torch.optim as optim 
+import torch.nn.functional as F
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 from torch.utils.data import DataLoader
-
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    EvalPrediction,
+    glue_compute_metrics,
+)
+from transformers.data.data_collator import default_data_collator
 from Maestro.models import build_model
 from Maestro.utils import move_to_device, get_embedding
 from Maestro.data import get_dataset
@@ -23,12 +29,7 @@ from Maestro.pipeline import (
     model_wrapper,
 )
 from Maestro.data.HuggingFaceDataset import make_text_dataloader, HuggingFaceDataset
-from transformers import (
-    Trainer,
-    TrainingArguments,
-    EvalPrediction,
-    glue_compute_metrics,
-)
+
 
 # from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
 #     StanfordSentimentTreeBankDatasetReader,

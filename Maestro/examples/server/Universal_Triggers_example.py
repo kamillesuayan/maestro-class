@@ -216,8 +216,8 @@ def hotflip_attack(
     the loss (decrease the model's probability of the true class). For targeted attacks, you want
     to decrease the loss of the target class (increase_loss=False).
     """
-    averaged_grad = torch.LongTensor(averaged_grad)
-    embedding_matrix = torch.LongTensor(embedding_matrix)
+    averaged_grad = torch.FloatTensor(averaged_grad)
+    embedding_matrix = torch.FloatTensor(embedding_matrix)
     print(embedding_matrix.shape)
     # trigger_token_embeds = (
     #     torch.nn.functional.embedding(
@@ -406,7 +406,7 @@ def test(url, device):
         data_grad = eval_with_triggers(url, batch, trigger_token_ids)
         # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         averaged_grad = np.sum(data_grad, axis=0)
-        averaged_grad = averaged_grad[0 : len(trigger_token_ids)]
+        averaged_grad = averaged_grad[1 : len(trigger_token_ids) + 1]
         # pass the gradients to a particular attack to generate token candidates for each token.
         data = {"Application_Name": "Universal_Attack"}
         final_url = "{0}/get_model_embedding".format(url)

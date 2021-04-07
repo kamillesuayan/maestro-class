@@ -85,7 +85,7 @@ def hotflip_attack(original_tokens:List[List[int]], labels:List[int],vm:virtual_
         print(logits)
         # print("og label", batch["labels"].cpu().detach().numpy()[0])
         # print("oglogits: {}, logits: {}".format(oglogits[0], logits[0]))
-    preds = np.argmax(logits[0], axis=1)
+    preds = np.argmax(logits[1], axis=1)
     term = preds != labels
     if term:
         print("attack success")
@@ -136,19 +136,8 @@ def main():
     # print(response.json())
     vm = virtual_model(url)
     dataset_label_filter = 0
-    data = {"Application_Name": "Universal_Attack", "data_type": "validation"}
-    final_url = "{0}/get_data".format(url)
-    response = requests.post(final_url, data=data)
-    retruned_json = response.json()
-    dev_data = []
-    for instance in retruned_json["data"]:
-        new_instance = {}
-        for field in instance:
-            if isinstance(instance[field], List):
-                new_instance[field] = instance[field]
-            else:
-                new_instance[field] = instance[field]
-        dev_data.append(new_instance)
+    dev_data = vm.get_data()
+
     targeted_dev_data = []
     for instance in dev_data:
         if instance["label"] == dataset_label_filter:

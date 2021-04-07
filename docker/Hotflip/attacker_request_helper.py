@@ -52,8 +52,9 @@ class virtual_model:
     def get_data(self):
         data_file = "./data.pkl"
         dev_data = []
-
+        print("getting data",data_file,os.path.isfile(data_file) )
         if os.path.isfile(data_file):
+            print("found local data, loading...")
             dev_data = pickle.load(open(data_file,"rb"))
         else:
             data = {"Application_Name": "Universal_Attack", "data_type": "validation"}

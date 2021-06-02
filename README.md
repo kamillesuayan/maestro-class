@@ -68,6 +68,7 @@ Text:
 | ------------- | ------------- | ------------- | 
 | `Hotflip`  | Untargeted Label Flip Rate  | Number of tokens flipped  | 
 | `Universal Triggers`  | Untargeted Label Flip Rate  | Length of trigger  | 
+
 Image:
 | Application  | Evaluation | Constraints
 | ------------- | ------------- | ------------- | 

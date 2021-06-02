@@ -17,24 +17,6 @@ def main(applications):
     def home():
         return "<h1>The Home of Maestro Server</p>"
 
-    @app.route("/get_output", methods=["POST"])
-    def get_output():
-        print("recieved!")
-        uid = request.form["uids"]
-        print("uid:", type(uid))
-        application = request.form["Application_Name"]
-        print("application name:", application, request.form["data_type"])
-        print(app.applications)
-        pred_hook = pickle.loads(request.files["file"].read())
-        outputs = app.applications[application].get_output(
-            int(uid), request.form["data_type"], pred_hook
-        )
-        print(outputs)
-        returned = list_to_json([x.detach().cpu().numpy().tolist() for x in outputs])
-        print(returned)
-        # print(type(returned))
-        return {"outputs": returned}
-
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
         print("recieved! get_batch_output")
@@ -54,29 +36,8 @@ def main(applications):
         # print(outputs)
         # print(outputs)
         # print(type(outputs[1]))
-        returned = list_to_json([x.cpu().numpy().tolist() for x in outputs])
+        returned = list_to_json([x.cpu().detach().numpy().tolist() for x in outputs])
         # print(returned)
-        # print(type(returned))
-        return {"outputs": returned}
-
-    @app.route("/get_input_gradient", methods=["POST"])
-    def get_input_gradient():
-        print("recieved!")
-        application = request.form["Application_Name"]
-        print("application name:", application)
-        print(app.applications)
-
-        # uid = request.form["uids"]
-        # print("uid:", type(uid))
-        # pred_hook = pickle.loads(request.files["file"].read())
-        # print(pred_hook(1))
-        batch_input = request.form["data"]
-        print(batch_input)
-        outputs = app.applications[application].get_input_gradient(batch_input)
-        # print(outputs)
-        # print(type(outputs[1]))
-        returned = [x.cpu().numpy().tolist() for x in outputs]
-        print("apppy:", returned)
         # print(type(returned))
         return {"outputs": returned}
 
@@ -151,7 +112,7 @@ def main(applications):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("start the allennlp demo")
-    application_names = ["Universal_Attack", "FGSM", "Hotflip"]
+    application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
     parser.add_argument(
         "--application",
         type=str,

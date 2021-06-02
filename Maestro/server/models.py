@@ -7,8 +7,7 @@ from Maestro.pipeline import (
     AutoPipelineForVision,
     Pipeline,
     Scenario,
-    Attacker,
-    model_wrapper,
+    AttackerAccess,
 )
 from transformers import (
     Trainer,
@@ -27,6 +26,8 @@ def compute_metrics_accuracy(p: EvalPrediction) -> Dict:
 def load_all_applications(applications: List[str]):
     print(applications)
     application_list = {}
+
+    # Universal Triggers & Hotflip
     bert = True
     checkpoint_path = ""
     dataset_name = "SST2"
@@ -39,26 +40,9 @@ def load_all_applications(applications: List[str]):
     model_path = checkpoint_path
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-    training_process = None
-
-    # initialize Atacker, which specifies access rights
-
-    training_data_access = 0
-    validation_data_access = 3
-    test_data_access = 0
-    model_access = 0
-    output_access = 2
-    myattacker = Attacker(
-        training_data_access,
-        validation_data_access,
-        test_data_access,
-        model_access,
-        output_access,
-    )
-
-    # initialize Scenario. This defines our target
-    target = "Universal Perturbation"
-    myscenario = Scenario(target, myattacker)
+    myscenario = Scenario()
+    myscenario.load_from_yaml("Attacker_Access/Universal_Trigger.yaml")
+    print(myscenario)
     print("Settting up the Universal Triggers Attack pipeline....")
     pipeline = AutoPipelineForNLP.initialize(
         name,
@@ -71,31 +55,30 @@ def load_all_applications(applications: List[str]):
         device=0,
         finetune=True,
     )
-    application_list["Universal_Attack"] = pipeline.get_object()
+    application_list["Universal_Attack"] = pipeline
+    application_list["Hotflip"] = pipeline
+    application_list["Data_Poisoning"] = pipeline
 
     # FGSM
-    # print("Settting up the FGSM Attack pipeline....")
-    # name = "FGSM_example_model"
-    # dataset_name = "MNIST"
-    # attacker_config = "Attacker_Access/FGSM.yaml"
-    # myattacker = Attacker()
-    # myattacker.load_from_yaml(attacker_config)
-    # target = ""
-    # myscenario = Scenario(target, myattacker)
-    # checkpoint_path = "models_temp/"
-    # model_path = checkpoint_path + "lenet_mnist_model.pth"
-    # device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-    # pipeline2 = AutoPipelineForVision.initialize(
-    #     name,
-    #     dataset_name,
-    #     model_path,
-    #     checkpoint_path,
-    #     compute_metrics_accuracy,
-    #     myscenario,
-    #     training_process=None,
-    #     device=device,
-    #     finetune=True,
-    # )
-    # application_list["FGSM"] = pipeline2.get_object()
+    print("Settting up the FGSM Attack pipeline....")
+    name = "FGSM_example_model"
+    dataset_name = "MNIST"
+    myscenario = Scenario()
+    myscenario.load_from_yaml("Attacker_Access/FGSM.yaml")
+    checkpoint_path = "models_temp/"
+    model_path = checkpoint_path + "lenet_mnist_model.pth"
+    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    pipeline2 = AutoPipelineForVision.initialize(
+        name,
+        dataset_name,
+        model_path,
+        checkpoint_path,
+        compute_metrics_accuracy,
+        myscenario,
+        training_process=None,
+        device=device,
+        finetune=True,
+    )
+    application_list["FGSM"] = pipeline2
 
     return application_list

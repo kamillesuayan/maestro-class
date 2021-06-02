@@ -16,17 +16,17 @@ class DataModifier:
     """
     """
 
-    def __init__(self, data: DataLoader, access: int) -> None:
+    def __init__(self, data: DataLoader, access) -> None:
         self.data = data
         self.access = access
 
     def get_read_data(self):
-        if self.access != 3 and self.access != 1:
+        if self.access["read"] != True:
             raise ValueError("Do not have access to read data")
         return self.data
 
     def get_write_data(self):
-        if self.access != 3 and self.access != 2:
+        if self.access["write"] != True:
             raise ValueError("Do not have access to write data")
         return self.data
 

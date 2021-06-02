@@ -198,20 +198,29 @@ class HuggingFaceDataset(TextAttackDataset):
         if self._i >= len(self.examples_indexed):
             raise StopIteration
         if self.examples_indexed is None:
-            raise ValueError
-        raw_example = self.examples_indexed[self._i]
-        self._i += 1
-        return raw_example
+            raw_example = self.examples[self._i]
+            self._i += 1
+            return raw_example
+        else:
+            raw_example = self.examples_indexed[self._i]
+            self._i += 1
+            return raw_example
 
     def __getitem__(self, i):
         if self.examples_indexed is None:
-            raise ValueError
-        if isinstance(i, int):
-            return self.examples_indexed[i]
-        elif isinstance(i, list) or isinstance(i, torch.Tensor):
-            return [self.examples_indexed[ex] for ex in i]
+            if isinstance(i, int):
+                return self.examples[i]
+            elif isinstance(i, list) or isinstance(i, torch.Tensor):
+                return [self.examples[ex] for ex in i]
+            else:
+                return [ex for ex in self.examples[i]]
         else:
-            return [ex for ex in self.examples_indexed[i]]
+            if isinstance(i, int):
+                return self.examples_indexed[i]
+            elif isinstance(i, list) or isinstance(i, torch.Tensor):
+                return [self.examples_indexed[ex] for ex in i]
+            else:
+                return [ex for ex in self.examples_indexed[i]]
 
     def _format_raw_example(self, raw_example):
         input_dict = collections.OrderedDict(

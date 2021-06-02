@@ -1,2 +1,2 @@
-from Maestro.pipeline.pipeline import Pipeline, Scenario, Attacker, model_wrapper
+from Maestro.pipeline.pipeline import Pipeline, VisionPipeline, Scenario, AttackerAccess
 from Maestro.pipeline.AutoPipeline import AutoPipelineForNLP, AutoPipelineForVision

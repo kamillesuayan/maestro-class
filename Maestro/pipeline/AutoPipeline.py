@@ -1,5 +1,5 @@
 import os
-from Maestro.pipeline import Pipeline
+from Maestro.pipeline import Pipeline, VisionPipeline
 from Maestro.data import HuggingFaceDataset, get_dataset
 from Maestro.models import build_model
 from torch.utils.data.sampler import BatchSampler, RandomSampler
@@ -108,14 +108,14 @@ class AutoPipelineForNLP:
             print("loading model from", model_path)
             model = model.model.from_pretrained(model_path)
 
-        test_sampler = RandomSampler(validation_dataset, replacement=False)
-        test_dataloader = DataLoader(
-            validation_dataset,
-            sampler=test_sampler,
-            batch_size=32,
-            collate_fn=default_data_collator,
-        )
-        model.to(self.device)
+        # test_sampler = RandomSampler(validation_dataset, replacement=False)
+        # test_dataloader = DataLoader(
+        #     validation_dataset,
+        #     sampler=test_sampler,
+        #     batch_size=32,
+        #     collate_fn=default_data_collator,
+        # )
+        # model.to(self.device)
         # print(torch.cuda.memory_summary(device=1, abbreviated=True))
         # all_vals = []
         # with torch.no_grad():
@@ -153,7 +153,6 @@ class AutoPipelineForVision:
         datasets = get_dataset(dataset_name)
         model = build_model(model_name, num_labels=2, max_length=128, device=device)
         self.device = device
-        print(datasets)
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
         if finetune:
@@ -166,7 +165,7 @@ class AutoPipelineForVision:
                 checkpoint_path,
                 compute_metrics=compute_metrics,
             )
-        return Pipeline(
+        return VisionPipeline(
             scenario,
             train_dataset,
             test_dataset,

@@ -1,16 +1,16 @@
 Attack Method:
-  target: Untargeted_Classification
-  constraint: epsilon
+  target: Universal_Perturbation
+  constraint: tokens_perturbed
 Attacker Access:
     training_data_access:
       read: False
       write: False
     dev_data_access:
-      read: False
+      read: True
       write: False
     test_data_access: 
-      read: True
-      write: True
+      read: False
+      write: False
     model_access:
       read: False
       write: False

@@ -123,6 +123,9 @@ def main():
                 loss = F.nll_loss(output, target)
                 loss.backward()
                 optimizer.step()
+
+
+                
         ## update D_poison
         poison_data = []
         for z in perturbed_data:

@@ -55,7 +55,10 @@ pip install -r requirements.txt
 ```
 **Run a local server:**
 ```
-cd Maestr/server
+python -m pip install -e .
+```
+```
+cd Maestro/server
 ```
 ```
 python app.py
@@ -79,6 +82,11 @@ Use files in `Maestro/examples/Attacker_File` to implment the attack. Then put t
 ```
 python FGSM_Eval.py
 ```
+
+### Some Issues
+1. If some problems that are similar to `The current PyTorch install supports CUDA capabilities sm_37 sm_50 sm_60 sm_70 sm_75.` appear, check the [link](https://pytorch.org/get-started/locally/) to reinstall to suitable pytorch version.
+
+
 ## TODOs
 - add full API support for `Data Poisoning`,currently it can only run locally. 
 - text version of `Data Poisoning`

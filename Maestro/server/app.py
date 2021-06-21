@@ -6,7 +6,9 @@ import dill as pickle
 import json
 from Maestro.utils import list_to_json, get_embedding
 import torch
-
+import numpy as np
+import base64
+import zlib
 
 def main(applications):
     app = flask.Flask(__name__)
@@ -20,45 +22,46 @@ def main(applications):
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
         print("recieved! get_batch_output")
-        json_data = request.get_json()
-        application = json_data["Application_Name"]
+        # print(request.form)
+        img = base64.b64decode(request.form["data"].encode())
+        img = zlib.decompress(img)
+        img = np.frombuffer(img)
+        img = img.reshape((1,1,28,28))
+
+        application = request.form["Application_Name"]
         print("application name:", application)
-        print(app.applications)
+        # print(app.applications)
         # uid_list = [int(x) for x in request.form.getlist("uids")]
         # print("uid_list:", uid_list)
         # print(request.files["file"])
         # pred_hook = pickle.loads(request.files["file"].read())
-        batch_input = json_data["data"]
-        labels = json_data["labels"]
+        # batch_input = np.fromstring(request.form["data"], dtype=float)
+        batch_input = img
+        labels = request.form["label"]
         # batch_input = [int(x) for x in batch_input]
-        # print(batch_input)
-        outputs = app.applications[application].get_batch_output(batch_input, labels)
-        # print(outputs)
-        # print(outputs)
-        # print(type(outputs[1]))
+        print("batch_input: ", batch_input.shape)
+
+        outputs = app.applications[application].get_batch_output(batch_input, labels)#.detach().cpu().numpy()
         returned = list_to_json([x.cpu().detach().numpy().tolist() for x in outputs])
-        # print(returned)
-        # print(type(returned))
         return {"outputs": returned}
 
     @app.route("/get_batch_input_gradient", methods=["POST"])
     def get_batch_input_gradient():
         print("recieved!")
+        img = base64.b64decode(request.form["data"].encode())
+        img = zlib.decompress(img)
+        img = np.frombuffer(img)
+        img = img.reshape((1,1,28,28))
 
-        json_data = request.get_json()
-        application = json_data["Application_Name"]
+        application = request.form["Application_Name"]
         print("application name:", application)
-        batch_input = json_data["data"]
-        labels = json_data["labels"]
+        batch_input = img
+        labels = request.form["label"]
 
         outputs = app.applications[application].get_batch_input_gradient(
             batch_input, labels
         )
-        # print(outputs)
-        # print(type(outputs[1]))
         returned = list_to_json([x.cpu().numpy().tolist() for x in outputs])
-        # print(returned)
-        # print(type(returned))
         return {"outputs": returned}
 
     @app.route("/get_data", methods=["POST"])
@@ -72,10 +75,8 @@ def main(applications):
             data = app.applications[application].validation_data.get_write_data()
         elif data_type == "test":
             data = app.applications[application].test_data.get_write_data()
-        print("app.py:", data.examples[0])
         json_data = data.get_json_data()
-        print(json_data[0])
-        return {"data": json_data}
+        return {"data": json_data[0:50]} # {'image': [1*28*28], 'label': 7, 'uid': 0}
 
     ##
     @app.route("/get_model_embedding", methods=["POST"])
@@ -112,7 +113,9 @@ def main(applications):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("start the allennlp demo")
-    application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
+    # application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
+    application_names = ["FGSM"]
+
     parser.add_argument(
         "--application",
         type=str,
@@ -121,6 +124,7 @@ if __name__ == "__main__":
         help="if specified, only load these models",
     )
     args = parser.parse_args()
+
     applications = load_all_applications(args.application)
     print("All Applications Loaded.........")
     main(applications)

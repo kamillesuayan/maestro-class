@@ -10,8 +10,6 @@ import numpy as np
 import base64
 import zlib
 
-
-
 from Maestro.pipeline import Pipeline, Scenario, AutoPipelineForVision
 from Maestro.models.model import build_model
 from Maestro.data import get_dataset
@@ -29,12 +27,20 @@ class pred_hook:
 
         return pickle.dumps(self._fn, protocol=2)
 
+def pgd_attack(url, uid, img, target, test, eps=0.3, alpha=10/255, steps=100, random_start=True):
+    adv_images = np.copy(img)
+    if random_start:
+    # Starting at a uniformly random point
+        adv_images = adv_images + np.random.uniform(-eps, eps, adv_images.shape)
+        adv_images = np.clip(adv_images, 0, 1)
+    for i in range(steps):
+        img_grad = get_output(url, uid, adv_images, target, test, gradient=True)
+        adv_images = adv_images + alpha * np.sign(img_grad)
+        delta = np.clip(adv_images - img, -eps, eps)
+        adv_images = np.clip(img + delta, 0, 1)
+        # print(adv_images)
 
-def fgsm_attack(image, epsilon, data_grad):
-    sign_data_grad = np.sign(data_grad)
-    perturbed_image = image + epsilon * sign_data_grad
-    perturbed_image = np.clip(perturbed_image, 0, 1)
-    return perturbed_image
+    return adv_images
 
 
 def produce_fgsm_hook(image, epsilon, data_grad) -> torch.Tensor:
@@ -113,31 +119,22 @@ def test(url, device, epsilon):
         uid = int(data["uid"])
         print("Attacking data id ", uid)
         target = data["label"]
-        # data = np.array(data["image"]).tostring()
         img = np.array(data["image"])#.tostring()
-        # json_data = np.frombuffer(bytes.fromhex(img), dtype=np.float32)
-        # json_data = np.fromstring(img, dtype=np.float)
-        # data = data.to(device)
         output = get_output(url, uid, img, target, "test", hook=identify_func, gradient=False)
-
         init_pred = np.argmax(output)
+        print(img.mean())
         if init_pred != target:
             continue
-        img_grad = get_output(url, uid, img, target, "test", hook=identify_func, gradient=True)
-        # Call FGSM Attack
-        perturbed_img = fgsm_attack(img, epsilon, img_grad)
 
         # Re-classify the perturbed image
-        # print("type:", type(img_grad), type(img))
-        # print(img.shape)
-        # img_grad = img_grad.tolist()
-        # print(np.array(img_grad).shape)
-        # exit()
 
-        # fgsm_hook = produce_fgsm_hook(img, epsilon, img_grad)
+        perturbed_img = pgd_attack(url, uid, img, target, "test")
+
         output = get_output(url, uid, perturbed_img, target, "test", hook=identify_func, gradient=False)
-        # print(output)
+        print(perturbed_img.mean())
+
         final_pred = np.argmax(output)
+
         print(init_pred, target, final_pred)
 
         if final_pred == target:
@@ -159,7 +156,6 @@ def test(url, device, epsilon):
             epsilon, correct, len(test_loader), final_acc
         )
     )
-
     # Return the accuracy and an adversarial example
     return final_acc, adv_examples
 

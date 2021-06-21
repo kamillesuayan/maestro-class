@@ -20,7 +20,7 @@ WRITE_ACCESS = 0
 
 class Scenario:
     """
-    Defines the scenario which contains the target and the attacker's accesses. 
+    Defines the scenario which contains the target and the attacker's accesses.
     """
 
     def __init__(self) -> None:
@@ -284,6 +284,7 @@ class VisionPipeline:
         device = self.device
         x_tensor = torch.FloatTensor(x)
         x_tensor = x_tensor.to(device)
+        # print(self.model)
         output = self.model(x_tensor)
         return output
 
@@ -300,7 +301,7 @@ class VisionPipeline:
         self.model.zero_grad()
         loss.backward()
         x_grad = x_tensor.grad.data
-        print("pipeline")
-        print(x_grad)
+        print("pipeline, get_batch_input_gradient")
+        # print(x_grad)
         return x_grad
 

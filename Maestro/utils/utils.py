@@ -3,6 +3,17 @@ import torch
 import json
 
 
+def get_json_data(examples):
+    new_data = []
+    for idx, instance in enumerate(examples):
+        new_instance = {}
+        new_instance["image"] = instance[0].numpy().tolist()
+        new_instance["label"] = instance[1]
+        new_instance["uid"] = idx
+        new_data.append(new_instance)
+    return new_data
+
+
 def int_to_device(device: Union[int, torch.device]) -> torch.device:
     if isinstance(device, torch.device):
         return device

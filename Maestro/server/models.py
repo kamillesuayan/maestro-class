@@ -8,6 +8,7 @@ from Maestro.pipeline import (
     Pipeline,
     Scenario,
     AttackerAccess,
+    AutoPipelineForSec,
 )
 from transformers import (
     Trainer,
@@ -82,5 +83,45 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["FGSM"] = pipeline2
+
+    # Security attack Malimg
+    if "Malimg" in applications:
+        print("Settting up the Malimg Attack pipeline....")
+        name = "MalimgClassifier"
+        dataset_name = "Malimg"
+        myscenario = Scenario()
+        myscenario.load_from_yaml("Attacker_Access/FGSM.yaml")
+        checkpoint_path = "models_temp/malimg/"
+        if not os.path.exists(checkpoint_path):
+            os.makedirs(checkpoint_path)
+        model_path = checkpoint_path + "malimg.pth"
+
+        device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+        # pipeline2 = AutoPipelineForVision.initialize(
+        #     name,
+        #     dataset_name,
+        #     model_path,
+        #     checkpoint_path,
+        #     compute_metrics_accuracy,
+        #     myscenario,
+        #     training_process=None,
+        #     device=device,
+        #     finetune=True,
+        # )
+
+        pipeline = AutoPipelineForSec.initialize(
+            name,
+            dataset_name,
+            model_path,
+            checkpoint_path,
+            compute_metrics_accuracy,
+            myscenario,
+            training_process=True,
+            device=0,
+            finetune=False,
+        )
+
+        application_list["Malimg"] = pipeline
+
 
     return application_list

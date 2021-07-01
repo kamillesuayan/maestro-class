@@ -15,6 +15,10 @@ from Maestro.utils import move_to_device, get_embedding
 import numpy as np
 import torch
 
+import torch.nn as nn
+import torch.optim as optim
+
+
 
 class AutoPipelineForNLP:
     def __init__(self):
@@ -192,3 +196,102 @@ class AutoPipelineForVision:
             model.load_state_dict(torch.load(model_path, map_location=self.device))
         model.to(self.device)
         return model
+
+
+class AutoPipelineForSec:
+    def __init__(self):
+        raise EnvironmentError("Use this like the AutoModel from huggingface")
+
+    @classmethod
+    def initialize(
+        self,
+        model_name,
+        dataset_name,
+        model_path,
+        checkpoint_path,
+        compute_metrics,
+        scenario,
+        training_process=None,
+        device=0,
+        finetune=True):
+        print(dataset_name)
+
+        datasets = get_dataset(dataset_name)
+        self.model = build_model(model_name, num_labels=2, max_length=128, device=0)
+        self.model.to(device)
+        train_dataset = datasets["train"]
+        test_dataset = datasets["test"]
+
+        if not model_path or len(os.listdir(checkpoint_path)) == 0:
+            self.model = self.train(self.model, train_dataset, device)
+            torch.save(self.model.state_dict(), checkpoint_path+'malimg.pth')
+
+        else:
+            self.model.load_state_dict(torch.load(model_path, map_location="cuda:"+str(device)))
+            print("train:")
+            self.test(self.model, train_dataset, device)
+            print("test:")
+            self.test(self.model, test_dataset, device)
+
+        tokenizer = 0
+        # print(train_dataset)
+        # print(test_dataset)
+        return VisionPipeline(
+            scenario,
+            train_dataset,
+            test_dataset,
+            test_dataset,
+            self.model,
+            training_process,
+            device,
+            tokenizer)
+
+
+
+    @classmethod
+    def train(self, model, trainset, device, epoches=10):
+        model.train()
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=True, num_workers=10)
+        dataset_size = len(trainset)
+        criterion = nn.CrossEntropyLoss()
+        # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+        optimizer = optim.Adam(model.parameters())
+        for epoch in range(epoches):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, (inputs, labels) in enumerate(trainloader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                # print statistics
+                running_loss += loss.item()
+            print('[%d, %5d] loss: %.3f' %
+                          (epoch + 1, i + 1, running_loss / dataset_size))
+            running_loss = 0.0
+        self.test(model, trainset, device)
+
+        return model
+
+    def test(model, testset, device):
+        model.eval()
+        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=10)
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in testloader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        print('Accuracy of the network on the images: %.3f %%' % (
+            100*correct / total))
+        return

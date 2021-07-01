@@ -32,6 +32,12 @@ def build_model(
             model.load_from_disk(pretrained_file)
         model = textattack.models.wrappers.PyTorchModelWrapper(model, model.tokenizer)
         return model
+    elif model_name == "MalimgClassifier":
+        model = MalimgClassifier()
+        if pretrained_file != None:
+            model.load_state_dict(torch.load(pretrained_file, map_location="cpu"))
+        return model
+
     else:
         config = transformers.AutoConfig.from_pretrained(
             model_name, num_labels=num_labels, finetuning_task="imdb"
@@ -170,3 +176,25 @@ class LSTMForClassification(BasicClassifier):
         logits = self(x)
         loss = F.nll_loss(logits, y)
         return loss
+
+class MalimgClassifier(nn.Module):
+    def __init__(self):
+        super(MalimgClassifier, self).__init__()
+        self.conv1 = nn.Conv2d(3, out_channels=64, kernel_size=3)
+        self.pool1 = nn.MaxPool2d(2)
+        self.conv2 = nn.Conv2d(64, out_channels=128, kernel_size=3)
+        self.pool2 = nn.MaxPool2d(2)
+        self.fc1 = nn.Linear(128*52*14, 128)
+        self.dropout = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(128, 25)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = self.pool1(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool2(x)
+        x = x.view(-1, 128*52*14)
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x

@@ -4,7 +4,7 @@ from flask import request, jsonify
 from models import load_all_applications
 import dill as pickle
 import json
-from Maestro.utils import list_to_json, get_embedding
+from Maestro.utils import list_to_json, get_embedding, get_json_data
 import torch
 import numpy as np
 import base64
@@ -26,7 +26,13 @@ def main(applications):
         img = base64.b64decode(request.form["data"].encode())
         img = zlib.decompress(img)
         img = np.frombuffer(img)
-        img = img.reshape((1,1,28,28))
+        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
+        print("data_shape", data_shape, data_shape.ndim)
+        if data_shape.shape[0] == 4:
+            img = img.reshape(data_shape)
+        else:
+            img = np.expand_dims(img.reshape(data_shape), axis=0)
+        print(img.shape)
 
         application = request.form["Application_Name"]
         print("application name:", application)
@@ -51,10 +57,17 @@ def main(applications):
         img = base64.b64decode(request.form["data"].encode())
         img = zlib.decompress(img)
         img = np.frombuffer(img)
-        img = img.reshape((1,1,28,28))
+        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
+        print("data_shape", data_shape, data_shape.ndim)
+
+        if data_shape.shape[0] == 4:
+            img = img.reshape(data_shape)
+        else:
+            img = np.expand_dims(img.reshape(data_shape), axis=0)
 
         application = request.form["Application_Name"]
         print("application name:", application)
+        print(img.shape)
         batch_input = img
         labels = request.form["label"]
 
@@ -75,8 +88,10 @@ def main(applications):
             data = app.applications[application].validation_data.get_write_data()
         elif data_type == "test":
             data = app.applications[application].test_data.get_write_data()
-        json_data = data.get_json_data()
-        return {"data": json_data[0:50]} # {'image': [1*28*28], 'label': 7, 'uid': 0}
+        # print(data)
+
+        json_data = get_json_data(data)
+        return {"data": json_data[:5]} # {'image': [1*28*28], 'label': 7, 'uid': 0}
 
     ##
     @app.route("/get_model_embedding", methods=["POST"])
@@ -114,7 +129,7 @@ def main(applications):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
-    application_names = ["FGSM"]
+    application_names = ["Malimg", "FGSM"]
 
     parser.add_argument(
         "--application",

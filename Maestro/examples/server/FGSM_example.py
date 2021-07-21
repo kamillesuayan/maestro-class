@@ -60,16 +60,17 @@ def produce_fgsm_hook(image, epsilon, data_grad) -> torch.Tensor:
 def get_output(url, uid, data, label, data_type, hook=None, gradient=False):
     method_class = pred_hook(hook)
     pickled_method = method_class.as_pickle()
-    data = zlib.compress(data)
-    data = base64.b64encode(data)
+    transfer_data = zlib.compress(data)
+    transfer_data = base64.b64encode(transfer_data)
     # json_data = np.fromstring(data, dtype=np.float)
     # print(json_data.shape)
     payload = {
         "Application_Name": "FGSM",
         "uids": uid,
         "data_type": data_type,
-        "data": data,
-        "label": label
+        "data": transfer_data,
+        "label": label,
+        "shape": str(data.shape)
     }
     final_url = url + "/get_batch_output"
     if gradient:
@@ -167,7 +168,7 @@ def test(url, device, epsilon):
 def main():
     url = "http://127.0.0.1:5000"
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-    test(url, device, 0.5)
+    test(url, device, 0.1)
 
 
 if __name__ == "__main__":

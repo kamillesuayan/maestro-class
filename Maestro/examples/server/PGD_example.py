@@ -27,7 +27,7 @@ class pred_hook:
 
         return pickle.dumps(self._fn, protocol=2)
 
-def pgd_attack(url, uid, img, target, test, eps=0.3, alpha=10/255, steps=100, random_start=True):
+def pgd_attack(url, uid, img, target, test, eps=0.3, alpha=5/255, steps=100, random_start=True):
     adv_images = np.copy(img)
     if random_start:
     # Starting at a uniformly random point
@@ -66,16 +66,17 @@ def produce_fgsm_hook(image, epsilon, data_grad) -> torch.Tensor:
 def get_output(url, uid, data, label, data_type, hook=None, gradient=False):
     method_class = pred_hook(hook)
     pickled_method = method_class.as_pickle()
-    data = zlib.compress(data)
-    data = base64.b64encode(data)
+    transfer_data = zlib.compress(data)
+    transfer_data = base64.b64encode(transfer_data)
     # json_data = np.fromstring(data, dtype=np.float)
     # print(json_data.shape)
     payload = {
         "Application_Name": "FGSM",
         "uids": uid,
         "data_type": data_type,
-        "data": data,
-        "label": label
+        "data": transfer_data,
+        "label": label,
+        "shape": str(data.shape)
     }
     final_url = url + "/get_batch_output"
     if gradient:
@@ -114,6 +115,7 @@ def test(url, device, epsilon):
     retruned_json = response.json()["data"]
     # print(retruned_json[0]["label"])
     test_loader = retruned_json
+    # print("test_loader: ", len(test_loader))
 
     for data in test_loader:
         uid = int(data["uid"])
@@ -122,7 +124,7 @@ def test(url, device, epsilon):
         img = np.array(data["image"])#.tostring()
         output = get_output(url, uid, img, target, "test", hook=identify_func, gradient=False)
         init_pred = np.argmax(output)
-        print(img.mean())
+        # print(img.mean())
         if init_pred != target:
             continue
 
@@ -131,7 +133,7 @@ def test(url, device, epsilon):
         perturbed_img = pgd_attack(url, uid, img, target, "test")
 
         output = get_output(url, uid, perturbed_img, target, "test", hook=identify_func, gradient=False)
-        print(perturbed_img.mean())
+        # print(perturbed_img.mean())
 
         final_pred = np.argmax(output)
 
@@ -163,7 +165,7 @@ def test(url, device, epsilon):
 def main():
     url = "http://127.0.0.1:5000"
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-    test(url, device, 0.5)
+    test(url, device, 0.1)
 
 
 if __name__ == "__main__":

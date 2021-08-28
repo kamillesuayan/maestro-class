@@ -225,8 +225,6 @@ class AutoPipelineForVision:
             print('[%d, %5d] loss: %.3f' %
                           (epoch + 1, i + 1, running_loss / dataset_size))
             running_loss = 0.0
-        self.test(model, trainset, device)
-
         return model
 
 

@@ -189,6 +189,7 @@ class AutoPipelineForVision:
         checkpoint_path,
         compute_metrics=None,
     ):
+        print(len(os.listdir(model_path)), os.listdir(model_path))
         if not model_path or len(os.listdir(model_path)) == 0:
             print("start training")
             pass

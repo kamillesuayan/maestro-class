@@ -191,7 +191,7 @@ class AutoPipelineForVision:
     ):
         if not model_path or not os.path.exists(os.path.join(os.getcwd(), model_path)):
             print("start training")
-            model = self.train(model, train_dataset, device)
+            model = self.train(model, train_dataset, self.device)
             torch.save(model.state_dict(), model_path)
         else:
             model.load_state_dict(torch.load(model_path, map_location=self.device))

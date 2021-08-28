@@ -159,6 +159,8 @@ class AutoPipelineForVision:
         self.device = device
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
+        print("HI")
+        print(len(os.listdir(model_path)), model_path)
         if finetune:
             model = AutoPipelineForVision.fine_tune_on_task(
                 AutoPipelineForVision,
@@ -189,7 +191,7 @@ class AutoPipelineForVision:
         checkpoint_path,
         compute_metrics=None,
     ):
-        print("HI")
+        print("HI - 2")
         print(len(os.listdir(model_path)), model_path)
         if not model_path or len(os.listdir(model_path)) == 0:
             print("start training")

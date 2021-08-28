@@ -63,7 +63,7 @@ def load_all_applications(applications: List[str]):
 
     # FGSM
     if "FGSM" in applications:
-        print("Settting up the FGSM Attack pipeline....")
+        print("Setting up the FGSM Attack pipeline....")
         name = "FGSM_example_model"
         dataset_name = "MNIST"
         myscenario = Scenario()
@@ -86,7 +86,7 @@ def load_all_applications(applications: List[str]):
 
     # Security attack Malimg
     if "Malimg" in applications:
-        print("Settting up the Malimg Attack pipeline....")
+        print("Setting up the Malimg Attack pipeline....")
         name = "MalimgClassifier"
         dataset_name = "Malimg"
         myscenario = Scenario()

@@ -190,7 +190,7 @@ class AutoPipelineForVision:
         compute_metrics=None,
     ):
         print("HI")
-        print(len(os.listdir(model_path)), os.listdir(model_path))
+        print(len(os.listdir(model_path)), model_path)
         if not model_path or len(os.listdir(model_path)) == 0:
             print("start training")
             pass

@@ -70,9 +70,9 @@ def main(applications):
         print(img.shape)
         batch_input = img
         labels = request.form["label"]"""
-        
+
         json_data = request.get_json()
-        application - json_data["Application_Name"]
+        application = json_data["Application_Name"]
         batch_input = json_data["data"]
         labels = json_data["label"]
 

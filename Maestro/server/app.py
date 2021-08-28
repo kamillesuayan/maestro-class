@@ -74,7 +74,7 @@ def main(applications):
         json_data = request.get_json()
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
-        labels = json_data["label"]
+        labels = json_data["labels"]
 
 
         outputs = app.applications[application].get_batch_input_gradient(

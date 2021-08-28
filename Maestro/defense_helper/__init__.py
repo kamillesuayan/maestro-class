@@ -1,0 +1,1 @@
+from Maestro.defense_helper.defense_request_helper import virtual_model

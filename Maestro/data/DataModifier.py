@@ -1,11 +1,5 @@
 from torch.utils.data import DataLoader
 
-# from allennlp.data.vocabulary import Vocabulary
-# from allennlp.data.token_indexers import SingleIdTokenIndexer
-# from allennlp.data.samplers import BucketBatchSampler
-# from allennlp.data.dataset_readers.stanford_sentiment_tree_bank import (
-#     StanfordSentimentTreeBankDatasetReader,
-# )
 
 WRITE_ACESS = 1
 READ_ACESS = 2
@@ -42,4 +36,3 @@ class DataModifier:
     #         self.data[idxes] = torch.cat(values, self.data[idxes])
     #     elif type == "back":
     #         self.data[idxes] = torch.cat(self.data[idxes], values)
-

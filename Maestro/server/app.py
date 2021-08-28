@@ -1,15 +1,17 @@
 import flask
 import argparse
 from flask import request, jsonify
-from models import load_all_applications
 import dill as pickle
 import json
-from Maestro.utils import list_to_json, get_embedding, get_json_data
 import torch
 import numpy as np
 import base64
 import zlib
 
+# ------------------ LOCAL IMPORTS ---------------------------------
+from Maestro.utils import list_to_json, get_embedding, get_json_data
+from Maestro.models import load_all_applications
+# ------------------ LOCAL IMPORTS ---------------------------------
 def main(applications):
     app = flask.Flask(__name__)
     app.config["DEBUG"] = True

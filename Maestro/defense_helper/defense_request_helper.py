@@ -101,3 +101,29 @@ class virtual_model:
         print(response)
         outputs = json.loads(response.json()["outputs"])
         return outputs
+
+    def send_augmented_dataset(self, train_set, defender):
+        # if labels == None:
+        #     labels = np.array([])
+        payload = {
+            "Application_Name": self.application_name,
+            "data": defender.defense(train_set),
+        }
+        final_url = self.request_url + "/send_augmented_dataset"
+        response = requests.post(final_url, json=payload)
+        print(response)
+        outputs = json.loads(response.json()["result"])
+        return outputs
+
+    def send_train_signal(self):
+        # if labels == None:
+        #     labels = np.array([])
+        payload = {
+            "Application_Name": self.application_name,
+            "train": True,
+        }
+        final_url = self.request_url + "/send_train_signal"
+        response = requests.post(final_url, json=payload)
+        print(response)
+        outputs = json.loads(response.json()["result"])
+        return outputs

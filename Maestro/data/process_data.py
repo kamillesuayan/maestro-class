@@ -1,11 +1,15 @@
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
-from Maestro.data.TorchVisionDataset import TorchVisionDataset
 import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
 import os
+
+# ------------------ LOCAL IMPORTS ---------------------------------
+from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
+from Maestro.data.TorchVisionDataset import TorchVisionDataset
+# ------------------ LOCAL IMPORTS ---------------------------------
+
 
 def get_dataset(name: str):
     vocab = None
@@ -94,4 +98,3 @@ def _read_malimg_dataset(train_size_ratio=0.7):
     # print(train_data, test_data)
     # print(malimg_datasets)
     return {"train": train_data, "test": test_data}
-

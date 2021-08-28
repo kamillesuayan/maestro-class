@@ -98,6 +98,6 @@ class virtual_model:
         if gradient:
             final_url = url + "/get_batch_input_gradient"
         response = requests.post(final_url, json=payload)
-
+        print(response)
         outputs = json.loads(response.json()["outputs"])
         return outputs

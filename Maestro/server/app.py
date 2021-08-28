@@ -54,7 +54,7 @@ def main(applications):
     @app.route("/get_batch_input_gradient", methods=["POST"])
     def get_batch_input_gradient():
         print("recieved!")
-        img = base64.b64decode(request.form["data"].encode())
+        """img = base64.b64decode(request.form["data"].encode())
         img = zlib.decompress(img)
         img = np.frombuffer(img)
         data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
@@ -69,7 +69,13 @@ def main(applications):
         print("application name:", application)
         print(img.shape)
         batch_input = img
-        labels = request.form["label"]
+        labels = request.form["label"]"""
+        
+        json_data = request.get_json()
+        application - json_data["Application_Name"]
+        batch_input = json_data["data"]
+        labels = json_data["label"]
+
 
         outputs = app.applications[application].get_batch_input_gradient(
             batch_input, labels

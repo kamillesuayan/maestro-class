@@ -20,27 +20,28 @@ def main(applications):
     @app.route("/", methods=["GET"])
     def home():
         return "<h1>The Home of Maestro Server</p>"
+    # ------------------ DEFENSE SERVER FUNCTIONS ------------------------------
+
+    @app.route("/send_augmented_dataset", methods=["POST"])
+    def send_augmented_dataset():
+        print("recieved! send_augmented_dataset")
+        application = request.form["Application_Name"]
+        augmented_dataset = request.form["Application_Name"]
+        app.applications[application].set_training_set(augmented_dataset)
+        return {"result": "OK"}
+
+    @app.route("/send_train_signal", methods=["POST"])
+    def send_train_signal():
+        print("recieved! send_train_signal")
+        application = request.form["Application_Name"]
+        app.applications[application].train()
+        return {"result": "OK"}
+    # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------
+
+    # ------------------ ATTACK SERVER FUNCTIONS -------------------------------
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        """print("recieved! get_batch_output")
-        # print(request.form)
-        img = base64.b64decode(request.form["data"].encode())
-        img = zlib.decompress(img)
-        img = np.frombuffer(img)
-        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
-        print("data_shape", data_shape, data_shape.ndim)
-        if data_shape.shape[0] == 4:
-            img = img.reshape(data_shape)
-        else:
-            img = np.expand_dims(img.reshape(data_shape), axis=0)
-        print(img.shape)
-
-        application = request.form["Application_Name"]
-        print("application name:", application)
-
-        batch_input = img
-        labels = request.form["label"]"""
         print("recieved! get_batch_output")
         json_data = request.get_json()
         application = json_data["Application_Name"]
@@ -56,23 +57,6 @@ def main(applications):
     @app.route("/get_batch_input_gradient", methods=["POST"])
     def get_batch_input_gradient():
         print("recieved!")
-        """img = base64.b64decode(request.form["data"].encode())
-        img = zlib.decompress(img)
-        img = np.frombuffer(img)
-        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
-        print("data_shape", data_shape, data_shape.ndim)
-
-        if data_shape.shape[0] == 4:
-            img = img.reshape(data_shape)
-        else:
-            img = np.expand_dims(img.reshape(data_shape), axis=0)
-
-        application = request.form["Application_Name"]
-        print("application name:", application)
-        print(img.shape)
-        batch_input = img
-        labels = request.form["label"]"""
-
         json_data = request.get_json()
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
@@ -128,6 +112,7 @@ def main(applications):
         json_data = tokenizer.convert_ids_to_tokens(int(request.form["text"]))
         # print(json_data)
         return {"data": json_data}
+    # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")
     # app.run(debug=True)
@@ -136,7 +121,6 @@ def main(applications):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("start the allennlp demo")
-    # application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
     application_names = ["FGSM"]
 
     parser.add_argument(

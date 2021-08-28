@@ -10,7 +10,6 @@ from Maestro.evaluator import FGSM_Evaluator
 from Maestro.models import build_model
 from Maestro.defense_helper.defense_request_helper import virtual_model
 from Maestro.constraints import Epsilon
-from Maestro.trainers import Data_Augmentation_Trainer
 # ------------------  LOCAL IMPORTS --------------------------------
 
 
@@ -56,12 +55,14 @@ iterator_dataloader = DataLoader(
 
 # ------------------ DEFENSE TRAINING ---------------------------------
 print("Start Training")
-T = Data_Augmentation_Trainer(module, train_dataloader, vm, df_constraint=df_constraint)
-response = T.train()
+response = vm.send_augmented_dataset(self, train_dataloader, module)
+print("Augmented dataset received?", response)
+response = vm.send_train_signal()
+print("Model trained?", response)
 # ------------------ END DEFENSE TRAINING -----------------------------
 
 # ------------------ ATTACK -------------------------------------------
-if response["response"] == "OK":
+if response == "OK":
     print("Start Evaluation of your Augmented Defense using FGSM attack")
     test_data = datasets["test"]
     test_dataset = test_data.get_json_data()
@@ -82,5 +83,4 @@ if response["response"] == "OK":
     E.evaluate_attacker()
 else:
     print("There is errors on your data augmentation")
-    print(response["samples"])
 # ------------------ END ATTACK -----------------------------------------

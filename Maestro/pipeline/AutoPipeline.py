@@ -189,13 +189,43 @@ class AutoPipelineForVision:
         checkpoint_path,
         compute_metrics=None,
     ):
-        print(os.listdir(checkpoint_path))
-        if not model_path or len(os.listdir(checkpoint_path)) == 0:
+        if not model_path or len(os.listdir(model_path)) == 0:
             print("start training")
             pass
         else:
             model.load_state_dict(torch.load(model_path, map_location=self.device))
         model.to(self.device)
+        return model
+
+    @classmethod
+    def train(self, model, trainset, device, epoches=10):
+        model.train()
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=True, num_workers=10)
+        dataset_size = len(trainset)
+        criterion = nn.CrossEntropyLoss()
+        # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+        optimizer = optim.Adam(model.parameters())
+        for epoch in range(epoches):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, (inputs, labels) in enumerate(trainloader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                # print statistics
+                running_loss += loss.item()
+            print('[%d, %5d] loss: %.3f' %
+                          (epoch + 1, i + 1, running_loss / dataset_size))
+            running_loss = 0.0
+        self.test(model, trainset, device)
+
         return model
 
 

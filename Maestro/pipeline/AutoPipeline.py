@@ -160,7 +160,7 @@ class AutoPipelineForVision:
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
         print("HI")
-        print(type(os.listdir(model_path)), model_path)
+        print(os.path.exists(os.path.join(os.getcwd(), model_path)))
         if finetune:
             model = AutoPipelineForVision.fine_tune_on_task(
                 AutoPipelineForVision,

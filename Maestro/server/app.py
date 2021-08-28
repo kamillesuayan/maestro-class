@@ -21,7 +21,7 @@ def main(applications):
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        print("recieved! get_batch_output")
+        """print("recieved! get_batch_output")
         # print(request.form)
         img = base64.b64decode(request.form["data"].encode())
         img = zlib.decompress(img)
@@ -36,16 +36,16 @@ def main(applications):
 
         application = request.form["Application_Name"]
         print("application name:", application)
-        # print(app.applications)
-        # uid_list = [int(x) for x in request.form.getlist("uids")]
-        # print("uid_list:", uid_list)
-        # print(request.files["file"])
-        # pred_hook = pickle.loads(request.files["file"].read())
-        # batch_input = np.fromstring(request.form["data"], dtype=float)
+
         batch_input = img
-        labels = request.form["label"]
-        # batch_input = [int(x) for x in batch_input]
-        print("batch_input: ", batch_input.shape)
+        labels = request.form["label"]"""
+        print("recieved! get_batch_output")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        print("application name:", application)
+        print(app.applications)
+        batch_input = json_data["data"]
+        labels = json_data["labels"]
 
         outputs = app.applications[application].get_batch_output(batch_input, labels)#.detach().cpu().numpy()
         returned = list_to_json([x.cpu().detach().numpy().tolist() for x in outputs])

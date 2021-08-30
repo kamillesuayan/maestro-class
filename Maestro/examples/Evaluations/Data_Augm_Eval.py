@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from transformers.data.data_collator import default_data_collator
 
 # ------------------ LOCAL IMPORTS ---------------------------------
-from Maestro.data import HuggingFaceDataset, get_dataset
+from Maestro.data import TorchVisionDataset, get_dataset
 from Maestro.evaluator import FGSM_Evaluator
 from Maestro.models import build_model
 from Maestro.defense_helper.defense_request_helper import virtual_model
@@ -27,15 +27,7 @@ print(datasets)
 train_data = datasets["train"]
 train_dataset = train_data.get_json_data()
 print('train data', len(train_dataset))
-targeted_train_data = train_dataset
-#### RESEARCH ABOUT THIS BATCH SIZE!!!
-perturb_batch_size = 100
-train_dataloader = DataLoader(
-    targeted_train_data,
-    batch_size=perturb_batch_size,
-    shuffle=True,
-    collate_fn=default_data_collator,
-)
+print(train_dataset)
 
 
 test_data = datasets["test"]
@@ -55,7 +47,7 @@ iterator_dataloader = DataLoader(
 
 # ------------------ DEFENSE TRAINING ---------------------------------
 print("Start Training")
-response = vm.send_augmented_dataset(self, train_dataloader, module)
+response = vm.send_augmented_dataset(self, train_dataset, module)
 print("Augmented dataset received?", response)
 response = vm.send_train_signal()
 print("Model trained?", response)

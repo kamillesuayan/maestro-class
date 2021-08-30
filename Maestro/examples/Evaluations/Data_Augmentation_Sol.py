@@ -24,19 +24,9 @@ def attack(
     return perturbed_image.cpu().detach().numpy()
 
 
-def defense(
-    XXX: List[List[int]],
-    vm: virtual_model,
-    noise: float,
-):
+def defense(train_dataset):
     # --------------TODO--------------
+    augmented_dataset = train_dataset
 
-
-    augmented_data = 10
     # ------------END TODO-------------
-    response = vm.send_augmented_dataset(augmented_data)
-    if response == "OK":
-        response = vm.send_train_signal()
-        return response
-    else:
-        return "ERROR"
+    return augmented_dataset

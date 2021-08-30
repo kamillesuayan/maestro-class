@@ -121,7 +121,7 @@ def main(applications):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("start the allennlp demo")
-    application_names = ["FGSM"]
+    application_names = ["Data_Augmentation"]
 
     parser.add_argument(
         "--application",

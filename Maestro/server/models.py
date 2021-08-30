@@ -29,12 +29,12 @@ def load_all_applications(applications: List[str]):
     print(applications)
     application_list = {}
     # FGSM
-    if "FGSM" in applications:
-        print("Setting up the FGSM Attack pipeline....")
+    if "Data_Augmentation" in applications:
+        print("Setting up the Data Augmentation CV pipeline....")
         name = "FGSM_example_model"
         dataset_name = "MNIST"
         myscenario = Scenario()
-        myscenario.load_from_yaml("Defense_Access/FGSM.yaml")
+        myscenario.load_from_yaml("Defense_Access/CV_Data_Augmentation.yaml")
         checkpoint_path = "models_temp/"
         model_path = checkpoint_path + "lenet_mnist_model.pth"
         device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")

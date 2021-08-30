@@ -82,7 +82,6 @@ class AutoPipelineForVision:
         model.to(self.device)
         return model
 
-    @classmethod
     def new_train(self, model, trainset, device=self.device, epoches=10):
         model.train()
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=True, num_workers=10)

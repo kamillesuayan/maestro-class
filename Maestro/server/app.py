@@ -10,7 +10,7 @@ import zlib
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.utils import list_to_json, get_embedding, get_json_data
-from Maestro.models import load_all_applications
+from models import load_all_applications
 # ------------------ LOCAL IMPORTS ---------------------------------
 def main(applications):
     app = flask.Flask(__name__)

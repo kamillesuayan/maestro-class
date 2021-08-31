@@ -111,10 +111,8 @@ class virtual_model:
         }
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
-        json_data1 = json.loads(response.json())
-        print("Printing request", json_data1)
-        outputs = json.loads(response.json()["result"])
-        return outputs
+        output = json.loads(response.json()["Done"])
+        return output
 
     def send_train_signal(self):
         # if labels == None:
@@ -126,7 +124,7 @@ class virtual_model:
         final_url = self.request_url + "/send_train_signal"
         response = requests.post(final_url, json=payload)
         print(response)
-        outputs = json.loads(response.json()["result"])
+        outputs = json.loads(response.json()["Done"])
         return outputs
 
     # ------------------ DEFENSE FUNCTIONS ------------------------------

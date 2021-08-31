@@ -31,7 +31,7 @@ def load_all_applications(applications: List[str]):
     # FGSM
     if "Data_Augmentation" in applications:
         print("Setting up the Data Augmentation CV pipeline....")
-        name = "FGSM_example_model"
+        name = "Data_Augmentation"
         dataset_name = "MNIST"
         myscenario = Scenario()
         myscenario.load_from_yaml("Defense_Access/CV_Data_Augmentation.yaml")

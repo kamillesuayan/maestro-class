@@ -24,7 +24,6 @@ def main(applications):
 
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
-        print(app.applications)
         print("Received! send_augmented_dataset")
         json_data = request.get_json()
         application = json_data["Application_Name"]

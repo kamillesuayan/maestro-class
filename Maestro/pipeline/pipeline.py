@@ -78,7 +78,7 @@ class DefenseAccess:
 
 
 
-class VisionPipeline:
+class AugmentedPipelineCV:
     """
     Pipeline contains everything.
     """
@@ -92,7 +92,6 @@ class VisionPipeline:
         model: nn.Module,
         training_process,
         device: int,
-        tokenizer,
     ) -> None:
         self.scenario = scenario
         self.training_data = training_data
@@ -101,7 +100,6 @@ class VisionPipeline:
         self.model = model
         self.training_process = training_process
         self.device = device
-        self.tokenizer = tokenizer
         self.trainloader = None
 
         # adding methods for getting the prediction and the outputs
@@ -176,10 +174,9 @@ class VisionPipeline:
             print('[%d, %5d] loss: %.3f' %
                           (epoch + 1, i + 1, running_loss / dataset_size))
             running_loss = 0.0
-        self.test(self.model, None, device)
         return
 
-    def test(model, testset, device):
+    def test(self, model, testset, device):
         model.eval()
         if testset == None:
             testloader = self.trainloader
@@ -198,3 +195,46 @@ class VisionPipeline:
         print('Accuracy of the network on the images: %.3f %%' % (
             100*correct / total))
         return
+
+class InputEncodingPipelineCV:
+    """
+    Pipeline contains everything.
+    """
+
+    def __init__(
+        self,
+        scenario: Scenario,
+        training_data,
+        validation_data,
+        test_data,
+        model: nn.Module,
+        training_process,
+        device: int,
+    ) -> None:
+        self.scenario = scenario
+        self.training_data = training_data
+        self.validation_data = validation_data
+        self.test_data = test_data
+        self.model = model
+        self.training_process = training_process
+        self.device = device
+        self.trainloader = None
+
+        # adding methods for getting the prediction and the outputs
+        # getting the data modifier
+        self.training_data = DataModifier(
+            self.training_data, self.scenario.defense_access.training_data_access_level
+        )
+        self.validation_data = DataModifier(
+            self.validation_data, self.scenario.defense_access.dev_data_access_level
+        )
+        self.test_data = DataModifier(
+            self.test_data, self.scenario.defense_access.test_data_access_level
+        )
+    def set_detector(model):
+        self.model = model
+        return
+
+    def detection_test():
+        metrics = Input_Encoding_Evaluator(self.model, self.test_data)
+        return metrics

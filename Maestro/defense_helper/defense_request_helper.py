@@ -102,7 +102,7 @@ class virtual_model:
         outputs = json.loads(response.json()["outputs"])
         return outputs
 
-    # ------------------ DEFENSE FUNCTIONS ------------------------------
+    # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
     def send_augmented_dataset(self, train_set, defender):
         augmented_dataset = defender.defense(train_set)
         payload = {
@@ -126,4 +126,18 @@ class virtual_model:
         returned_json = response.json()
         return returned_json
 
-    # ------------------ DEFENSE FUNCTIONS ------------------------------
+    # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
+
+    # ------------------ INPUT ENCODING DEFENSE FUNCTIONS ----------------------
+    def send_detector_model(self, defender):
+        model = defender.detector()
+        payload = {
+            "Application_Name": self.application_name,
+            "model": model.state_dict(),
+        }
+        final_url = self.request_url + "/send_detector_model"
+        response = requests.post(final_url, json=payload)
+        returned_json = response.json()
+        return returned_json
+
+    # ------------------ INPUT ENCODING DEFENSE FUNCTIONS ----------------------

@@ -15,12 +15,12 @@ import torch.optim as optim
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.utils import move_to_device, get_embedding
-from Maestro.pipeline import VisionPipeline
+from Maestro.pipeline import AugmentedPipelineCV
 from Maestro.data import HuggingFaceDataset, get_dataset
 from Maestro.models import build_model
 # ------------------ LOCAL IMPORTS ---------------------------------
 
-class AutoPipelineForVision:
+class AutoPipelineAugmentedCV:
     def __init__(self):
         raise EnvironmentError("Use this like the AutoModel from Computer Vision")
 
@@ -52,7 +52,7 @@ class AutoPipelineForVision:
                 device,
                 compute_metrics=compute_metrics
             )
-        return VisionPipeline(
+        return AugmentedPipelineCV(
             scenario,
             train_dataset,
             test_dataset,
@@ -115,3 +115,46 @@ class AutoPipelineForVision:
                           (epoch + 1, i + 1, running_loss / dataset_size))
             running_loss = 0.0
         return model
+
+class AutoPipelineInputEncodingCV:
+    def __init__(self):
+        raise EnvironmentError("Use this like the AutoModel from Computer Vision")
+
+    @classmethod
+    def initialize(
+        self,
+        model_name,
+        dataset_name,
+        model_path,
+        checkpoint_path,
+        compute_metrics,
+        scenario,
+        training_process=None,
+        device=0,
+        finetune=True,
+    ):
+        datasets = get_dataset(dataset_name)
+        model = build_model(model_name, num_labels=2, max_length=128, device=device)
+        train_dataset = datasets["train"]
+        test_dataset = datasets["test"]
+        if finetune:
+            model = AutoPipelineForVision.fine_tune_on_task(
+                AutoPipelineForVision,
+                model,
+                train_dataset,
+                test_dataset,
+                model_path,
+                checkpoint_path,
+                device,
+                compute_metrics=compute_metrics
+            )
+        return AugmentedPipelineCV(
+            scenario,
+            train_dataset,
+            test_dataset,
+            test_dataset,
+            model,
+            training_process,
+            device,
+            None,
+        )

@@ -12,8 +12,10 @@ import torch
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.pipeline import (
-    AutoPipelineForVision,
-    VisionPipeline,
+    AutoPipelineAugmentedCV,
+    AutoPipelineInputEncodingCV,
+    AugmentedPipelineCV,
+    InputEncodingPipelineCV,
     Scenario,
     DefenseAccess
 )
@@ -29,7 +31,7 @@ def load_all_applications(applications: List[str]):
     print(applications)
     application_list = {}
     # FGSM
-    if "Data_Augmentation" in applications:
+    if "Data_Augmentation_CV" in applications:
         print("Setting up the Data Augmentation CV pipeline....")
         name = "Data_Augmentation"
         dataset_name = "MNIST"
@@ -38,7 +40,7 @@ def load_all_applications(applications: List[str]):
         checkpoint_path = "models_temp/"
         model_path = checkpoint_path + "lenet_mnist_model.pth"
         device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-        pipeline2 = AutoPipelineForVision.initialize(
+        pipeline2 = AutoPipelineAugmentedCV.initialize(
             name,
             dataset_name,
             model_path,
@@ -49,6 +51,27 @@ def load_all_applications(applications: List[str]):
             device=device,
             finetune=True,
         )
-        application_list["Data_Augmentation"] = pipeline2
+        application_list["Data_Augmentation_CV"] = pipeline2
+    if "Input_Encoding_CV" in applications:
+            print("Setting up the Input Encoding CV pipeline....")
+        name = "Input_Encoding_CV"
+        dataset_name = "MNIST"
+        myscenario = Scenario()
+        myscenario.load_from_yaml("Defense_Access/CV_Input_Encoding.yaml")
+        checkpoint_path = "models_temp/"
+        model_path = checkpoint_path + "lenet_mnist_model.pth"
+        device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+        pipeline2 = AutoPipelineAugmentedCV.initialize(
+            name,
+            dataset_name,
+            model_path,
+            checkpoint_path,
+            compute_metrics_accuracy,
+            myscenario,
+            training_process=None,
+            device=device,
+            finetune=True,
+        )
+        application_list["Input_Encoding_CV"] = pipeline2
 
     return application_list

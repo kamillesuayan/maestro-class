@@ -20,7 +20,7 @@ def main(applications):
     @app.route("/", methods=["GET"])
     def home():
         return "<h1>The Home of Maestro Server</p>"
-    # ------------------ DEFENSE SERVER FUNCTIONS ------------------------------
+    # ------------------ AUGMENTED DATA SERVER FUNCTIONS ------------------------------
 
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
@@ -39,14 +39,18 @@ def main(applications):
         app.applications[application].train()
         return {"Done": "OK"}
 
+    # ------------------ END AUGMENTED DATA SERVER FUNCTIONS --------------------------
+
     @app.route("/send_detector_model", methods=["POST"])
     def send_detector_model():
         print("Received! send_detector_model")
         json_data = request.get_json()
         application = json_data["Application_Name"]
-        #app.applications[application].train()
-        return {"Done": "OK"}
-    # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------
+        model_dict = json_data["model"]
+        model = model.load_state_dict(model_dict)
+        app.applications[application].set_detector(model)
+        metrics = app.applications[application].detection_test()
+        return {"Done": metrics}
 
     # ------------------ ATTACK SERVER FUNCTIONS -------------------------------
 

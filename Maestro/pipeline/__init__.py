@@ -1,2 +1,2 @@
-from Maestro.pipeline.pipeline import VisionPipeline, Scenario, DefenseAccess
-from Maestro.pipeline.AutoPipeline import AutoPipelineForVision
+from Maestro.pipeline.pipeline import AugmentedPipelineCV, InputEncodingPipelineCV, Scenario, DefenseAccess
+from Maestro.pipeline.AutoPipeline import AutoPipelineAugmentedCV, AutoPipelineInputEncodingCV

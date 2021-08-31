@@ -25,7 +25,10 @@ def main(applications):
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
         print("recieved! send_augmented_dataset")
-        print(request.form)
+        multi_dict = request.args
+        for key in multi_dict:
+            print multi_dict.get(key)
+            print multi_dict.getlist(key)
         application = request.form["Application_Name"]
         augmented_dataset = request.form["data"]
         app.applications[application].set_training_set(augmented_dataset)

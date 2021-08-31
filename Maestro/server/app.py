@@ -28,7 +28,6 @@ def main(applications):
         json_data = request.get_json()
         print("Printing request", json_data)
         application = json_data["Application_Name"]
-        augmented_dataset = json_data["Potato"]
         #app.applications[application].set_training_set(augmented_dataset)
         return {"result": "OK"}
 

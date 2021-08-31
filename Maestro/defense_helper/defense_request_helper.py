@@ -104,17 +104,16 @@ class virtual_model:
 
     # ------------------ DEFENSE FUNCTIONS ------------------------------
     def send_augmented_dataset(self, train_set, defender):
-        #augmented_dataset = defender.defense(train_set)
+        augmented_dataset = defender.defense(train_set)
         payload = {
             "Application_Name": self.application_name,
-            "Baked": "Potato"
-            #"data":    defender.defense(train_set),
+            "data": augmented_dataset,
         }
-        print(payload)
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
         print(response)
         outputs = json.loads(response.json()["result"])
+        print(outputs)
         return outputs
 
     def send_train_signal(self):

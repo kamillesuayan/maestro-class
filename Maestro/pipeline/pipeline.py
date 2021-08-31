@@ -151,7 +151,6 @@ class AugmentedPipelineCV:
         assert self.scenario.defense_access.training_access_level["can_train"] == True
         self.model.train()
         trainloader = self.trainloader
-        dataset_size = len(trainset)
         criterion = nn.CrossEntropyLoss()
         # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 

@@ -49,6 +49,6 @@ def load_all_applications(applications: List[str]):
             device=device,
             finetune=True,
         )
-        application_list["FGSM"] = pipeline2
+        application_list["Data_Augmentation"] = pipeline2
 
     return application_list

@@ -1,7 +1,7 @@
 Attack Method:
   target: Untargeted_Classification
   constraint: epsilon
-Attacker Access:
+Defense Access:
     training_data_access:
       read: False
       write: False

@@ -88,7 +88,7 @@ class AutoPipelineForVision:
         self,
         model,
         trainset,
-        device=self.device,
+        device=0,
         epoches=10
     ):
         model.train()

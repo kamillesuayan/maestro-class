@@ -53,7 +53,7 @@ def load_all_applications(applications: List[str]):
         )
         application_list["Data_Augmentation_CV"] = pipeline2
     if "Input_Encoding_CV" in applications:
-            print("Setting up the Input Encoding CV pipeline....")
+        print("Setting up the Input Encoding CV pipeline....")
         name = "Input_Encoding_CV"
         dataset_name = "MNIST"
         myscenario = Scenario()

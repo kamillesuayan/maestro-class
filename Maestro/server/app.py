@@ -36,7 +36,7 @@ def main(applications):
         json_data = request.get_json()
         application = json_data["Application_Name"]
         app.applications[application].train()
-        return {"Done": "OK"}
+        return {"Done": True}
     # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------
 
     # ------------------ ATTACK SERVER FUNCTIONS -------------------------------

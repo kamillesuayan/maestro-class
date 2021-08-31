@@ -141,14 +141,14 @@ class AugmentedPipelineCV:
         return x_grad
 
     def set_training_set(self, augmented_dataset):
-        assert self.scenario.defense_access.output_access_level["can_add_train_set"] == True
+        assert self.scenario.defense_access.training_access_level["can_add_train_set"] == True
         self.trainloader = torch.utils.data.DataLoader(augmented_dataset, batch_size=100, shuffle=True, num_workers=10)
 
         return
 
 
     def send_train_signal(self):
-        assert self.scenario.defense_access.output_access_level["can_train"] == True
+        assert self.scenario.defense_access.training_access_level["can_train"] == True
         self.model.train()
         trainloader = self.trainloader
         dataset_size = len(trainset)

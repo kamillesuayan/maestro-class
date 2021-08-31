@@ -32,7 +32,7 @@ class Scenario:
             self.target = data["Attack Method"]["target"]
             self.constraint = data["Attack Method"]["constraint"]
             self.defense_access = DefenseAccess()
-            self.defense_access.load_from_yaml(data["defense Access"])
+            self.defense_access.load_from_yaml(data["Defense Access"])
 
 
 # def get_access_level(access_dict: Dict[str, bool]) -> int:

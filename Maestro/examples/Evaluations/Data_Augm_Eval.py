@@ -16,7 +16,7 @@ from Maestro.constraints import Epsilon
 module = importlib.import_module("Data_Augmentation_Sol")
 # url = "http://128.195.56.136:5000"
 url = "http://127.0.0.1:5000"
-application_name = "Data_Augmentation"
+application_name = "Data_Augmentation_CV"
 vm = virtual_model(url,application_name=application_name)
 
 # ------------------ SPLIT DATASET --------------------------------

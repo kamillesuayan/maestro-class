@@ -111,9 +111,9 @@ class virtual_model:
         }
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
-        print(response)
+        json_data1 = response.get_json()
+        print("Printing request", json_data1)
         outputs = json.loads(response.json()["result"])
-        print(outputs)
         return outputs
 
     def send_train_signal(self):

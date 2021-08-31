@@ -60,7 +60,6 @@ class AutoPipelineAugmentedCV:
             model,
             training_process,
             device,
-            None,
         )
 
     def fine_tune_on_task(

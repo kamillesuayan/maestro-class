@@ -35,7 +35,7 @@ def main(applications):
         print("Received! send_train_signal")
         json_data = request.get_json()
         application = json_data["Application_Name"]
-        app.applications[application].train()
+        #app.applications[application].train()
         return {"Done": "OK"}
     # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------
 

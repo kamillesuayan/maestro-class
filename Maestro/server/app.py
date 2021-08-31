@@ -24,14 +24,9 @@ def main(applications):
 
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
-        print("recieved! send_augmented_dataset")
-
-        print("Printing request")
-        multi_dict = request.args
-        for key in multi_dict:
-            print(multi_dict.get(key))
-            print(multi_dict.getlist(key))
+        print("Received! send_augmented_dataset")
         json_data = request.get_json()
+        print("Printing request", json_data)
         application = json_data["Application_Name"]
         augmented_dataset = json_data["Potato"]
         #app.applications[application].set_training_set(augmented_dataset)
@@ -39,7 +34,7 @@ def main(applications):
 
     @app.route("/send_train_signal", methods=["POST"])
     def send_train_signal():
-        print("recieved! send_train_signal")
+        print("Received! send_train_signal")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         app.applications[application].train()
@@ -50,7 +45,7 @@ def main(applications):
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        print("recieved! get_batch_output")
+        print("Received! get_batch_output")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         print("application name:", application)
@@ -64,7 +59,7 @@ def main(applications):
 
     @app.route("/get_batch_input_gradient", methods=["POST"])
     def get_batch_input_gradient():
-        print("recieved!")
+        print("Received!")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
@@ -79,7 +74,7 @@ def main(applications):
 
     @app.route("/get_data", methods=["POST"])
     def get_data():
-        print("recieved!")
+        print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
         if data_type == "train":
@@ -96,7 +91,7 @@ def main(applications):
     ##
     @app.route("/get_model_embedding", methods=["POST"])
     def get_model_embedding():
-        print("recieved!")
+        print("Received!")
         application = request.form["Application_Name"]
         embedding = get_embedding(app.applications[application].model).weight
         returned = list_to_json([x.detach().cpu().numpy().tolist() for x in embedding])
@@ -104,7 +99,7 @@ def main(applications):
 
     @app.route("/convert_tokens_to_ids", methods=["POST"])
     def convert_tokens_to_ids():
-        print("recieved! convert_tokens_to_ids")
+        print("Received! convert_tokens_to_ids")
         application = request.form["Application_Name"]
         tokenizer = app.applications[application].get_tokenizer()
         json_data = tokenizer.convert_tokens_to_ids(request.form["text"])
@@ -114,7 +109,7 @@ def main(applications):
 
     @app.route("/convert_ids_to_tokens", methods=["POST"])
     def convert_ids_to_tokens():
-        print("recieved! convert_tokens_to_ids")
+        print("Received! convert_tokens_to_ids")
         application = request.form["Application_Name"]
         tokenizer = app.applications[application].get_tokenizer()
         json_data = tokenizer.convert_ids_to_tokens(int(request.form["text"]))

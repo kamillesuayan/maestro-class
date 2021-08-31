@@ -111,7 +111,7 @@ class virtual_model:
         }
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
-        json_data1 = response.get_json()
+        json_data1 = json.loads(response.json())
         print("Printing request", json_data1)
         outputs = json.loads(response.json()["result"])
         return outputs

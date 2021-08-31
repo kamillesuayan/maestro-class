@@ -15,5 +15,8 @@ Defense Access:
       read: False
       write: False
     output_access:
-      gradient: True
-      output: True
+      gradient: False
+      output: False
+    training_access:
+      can_add_train_set: False
+      can_train: False

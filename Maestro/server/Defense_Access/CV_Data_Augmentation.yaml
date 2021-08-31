@@ -17,3 +17,6 @@ Defense Access:
     output_access:
       gradient: True
       output: True
+    training_access:
+      can_add_train_set: True
+      can_train: True

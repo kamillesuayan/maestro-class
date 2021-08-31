@@ -57,15 +57,15 @@ class DefenseAccess:
         test_data_access_level: int = None,
         model_access_level: int = None,
         output_access_level: int = None,
+        training_access_level: int=None,
     ) -> None:
         # 0 = no acess,1 = write acess,2 = read acess and 3 = write/read access
         self.training_data_access_level = training_data_access_level
         self.dev_data_access_level = dev_data_access_level
         self.test_data_access_level = test_data_access_level
         self.model_access_level = model_access_level
-
-        # 0 = no acess,1 = output access only, 2 = gradient access only, 2 = output acess and gradient access
         self.output_access_level = output_access_level
+        self.training_access_level = training_access_level
 
     def load_from_yaml(self, data) -> None:
 
@@ -74,6 +74,7 @@ class DefenseAccess:
         self.test_data_access_level = data["test_data_access"]
         self.model_access_level = data["model_access"]
         self.output_access_level = data["output_access"]
+        self.training_access_level = data["training_access_level"]
 
 
 
@@ -101,6 +102,7 @@ class VisionPipeline:
         self.training_process = training_process
         self.device = device
         self.tokenizer = tokenizer
+        self.trainloader = None
 
         # adding methods for getting the prediction and the outputs
         # getting the data modifier
@@ -139,3 +141,60 @@ class VisionPipeline:
         print("pipeline, get_batch_input_gradient")
         # print(x_grad)
         return x_grad
+
+    def set_training_set(self, augmented_dataset):
+        assert self.scenario.defense_access.output_access_level["can_add_train_set"] == True
+        self.trainloader = torch.utils.data.DataLoader(augmented_dataset, batch_size=100, shuffle=True, num_workers=10)
+
+        return
+
+
+    def send_train_signal(self):
+        assert self.scenario.defense_access.output_access_level["can_train"] == True
+        self.model.train()
+        trainloader = self.trainloader
+        dataset_size = len(trainset)
+        criterion = nn.CrossEntropyLoss()
+        # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+        optimizer = optim.Adam(self.model.parameters())
+        for epoch in range(epoches):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, (inputs, labels) in enumerate(trainloader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                # print statistics
+                running_loss += loss.item()
+            print('[%d, %5d] loss: %.3f' %
+                          (epoch + 1, i + 1, running_loss / dataset_size))
+            running_loss = 0.0
+        self.test(self.model, None, device)
+        return
+
+    def test(model, testset, device):
+        model.eval()
+        if testset == None:
+            testloader = self.trainloader
+        else:
+            testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=10)
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in testloader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        print('Accuracy of the network on the images: %.3f %%' % (
+            100*correct / total))
+        return

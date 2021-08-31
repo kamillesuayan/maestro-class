@@ -28,12 +28,20 @@ def main(applications):
         print("Received! send_augmented_dataset")
         json_data = request.get_json()
         application = json_data["Application_Name"]
-        #app.applications[application].set_training_set(augmented_dataset)
+        app.applications[application].set_training_set(augmented_dataset)
         return {"Done": "OK"}
 
     @app.route("/send_train_signal", methods=["POST"])
     def send_train_signal():
         print("Received! send_train_signal")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        app.applications[application].train()
+        return {"Done": "OK"}
+
+    @app.route("/send_detector_model", methods=["POST"])
+    def send_detector_model():
+        print("Received! send_detector_model")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         #app.applications[application].train()

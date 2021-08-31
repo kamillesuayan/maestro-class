@@ -24,10 +24,11 @@ def attack(
     return perturbed_image.cpu().detach().numpy()
 
 
-def defense(train_dataset):
+
+def detector():
     # --------------TODO--------------
-    augmented_dataset = train_dataset
-    
+
+
 
     # ------------END TODO-------------
-    return augmented_dataset
+    return model

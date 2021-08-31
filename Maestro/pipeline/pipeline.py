@@ -74,7 +74,7 @@ class DefenseAccess:
         self.test_data_access_level = data["test_data_access"]
         self.model_access_level = data["model_access"]
         self.output_access_level = data["output_access"]
-        self.training_access_level = data["training_access_level"]
+        self.training_access_level = data["training_access"]
 
 
 

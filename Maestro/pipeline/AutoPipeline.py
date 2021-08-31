@@ -51,7 +51,8 @@ class AutoPipelineForVision:
                 test_dataset,
                 model_path,
                 checkpoint_path,
-                compute_metrics=compute_metrics,
+                self.device,
+                compute_metrics=compute_metrics
             )
         return VisionPipeline(
             scenario,
@@ -71,11 +72,12 @@ class AutoPipelineForVision:
         validation_dataset,
         model_path,
         checkpoint_path,
+        device=0,
         compute_metrics=None,
     ):
         if not model_path or not os.path.exists(os.path.join(os.getcwd(), model_path)):
             print("start training")
-            self.model = AutoPipelineForVision.new_train(self, model, train_dataset, self.device)
+            self.model = AutoPipelineForVision.new_train(AutoPipelineForVision, model, train_dataset, device)
             torch.save(model.state_dict(), model_path)
         else:
             model.load_state_dict(torch.load(model_path, map_location=self.device))

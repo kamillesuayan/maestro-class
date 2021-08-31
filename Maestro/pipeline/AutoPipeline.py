@@ -59,7 +59,7 @@ class AutoPipelineForVision:
             train_dataset,
             test_dataset,
             test_dataset,
-            model,
+            self.model,
             training_process,
             device,
             None,

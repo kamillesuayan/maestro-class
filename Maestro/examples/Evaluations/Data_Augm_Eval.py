@@ -46,13 +46,13 @@ iterator_dataloader = DataLoader(
 # ------------------ DEFENSE TRAINING ---------------------------------
 print("Start Training")
 response = vm.send_augmented_dataset(train_dataset, module)
-print("Augmented dataset received?", response)
+print("Augmented dataset received?", response["Done"])
 response = vm.send_train_signal()
-print("Model trained?", response)
+print("Model trained?", response["Done"])
 # ------------------ END DEFENSE TRAINING -----------------------------
 
 # ------------------ ATTACK -------------------------------------------
-if response == "OK":
+if response["Done"] == "OK":
     print("Start Evaluation of your Augmented Defense using FGSM attack")
     test_data = datasets["test"]
     test_dataset = test_data.get_json_data()

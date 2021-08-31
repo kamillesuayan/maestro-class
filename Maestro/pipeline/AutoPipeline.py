@@ -42,8 +42,8 @@ class AutoPipelineAugmentedCV:
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
         if finetune:
-            model = AutoPipelineForVision.fine_tune_on_task(
-                AutoPipelineForVision,
+            model = AutoPipelineAugmentedCV.fine_tune_on_task(
+                AutoPipelineAugmentedCV,
                 model,
                 train_dataset,
                 test_dataset,

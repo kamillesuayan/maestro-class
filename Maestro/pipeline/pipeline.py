@@ -152,10 +152,9 @@ class AugmentedPipelineCV:
         self.model.train()
         trainloader = self.trainloader
         criterion = nn.CrossEntropyLoss()
-        # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
+        epochs = 10
         optimizer = optim.Adam(self.model.parameters())
-        for epoch in range(epoches):  # loop over the dataset multiple times
+        for epoch in range(epochs):  # loop over the dataset multiple times
             running_loss = 0.0
             for i, (inputs, labels) in enumerate(trainloader, 0):
                 # get the inputs; data is a list of [inputs, labels]

@@ -33,8 +33,8 @@ def main(applications):
             print(multi_dict.getlist(key))
         json_data = request.get_json()
         application = json_data["Application_Name"]
-        augmented_dataset = json_data["data"]
-        app.applications[application].set_training_set(augmented_dataset)
+        augmented_dataset = json_data["Potato"]
+        #app.applications[application].set_training_set(augmented_dataset)
         return {"result": "OK"}
 
     @app.route("/send_train_signal", methods=["POST"])

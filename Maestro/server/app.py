@@ -25,19 +25,23 @@ def main(applications):
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
         print("recieved! send_augmented_dataset")
+
+        print("Printing request")
         multi_dict = request.args
         for key in multi_dict:
             print(multi_dict.get(key))
             print(multi_dict.getlist(key))
-        application = request.form["Application_Name"]
-        augmented_dataset = request.form["data"]
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        augmented_dataset = json_data["data"]
         app.applications[application].set_training_set(augmented_dataset)
         return {"result": "OK"}
 
     @app.route("/send_train_signal", methods=["POST"])
     def send_train_signal():
         print("recieved! send_train_signal")
-        application = request.form["Application_Name"]
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
         app.applications[application].train()
         return {"result": "OK"}
     # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------

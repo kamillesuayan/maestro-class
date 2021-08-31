@@ -108,7 +108,7 @@ class virtual_model:
             "Application_Name": self.application_name,
             "data": defender.defense(train_set),
         }
-        print(payload)
+        print(payload["Application_Name"])
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
         print(response)

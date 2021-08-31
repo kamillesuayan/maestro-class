@@ -28,6 +28,7 @@ def main(applications):
         print("Received! send_augmented_dataset")
         json_data = request.get_json()
         application = json_data["Application_Name"]
+        augmented_dataset = json_data["data"]
         app.applications[application].set_training_set(augmented_dataset)
         return {"Done": "OK"}
 

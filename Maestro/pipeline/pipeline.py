@@ -147,7 +147,7 @@ class AugmentedPipelineCV:
         return
 
 
-    def send_train_signal(self):
+    def train(self):
         assert self.scenario.defense_access.training_access_level["can_train"] == True
         self.model.train()
         trainloader = self.trainloader

@@ -36,7 +36,7 @@ def main(applications):
         json_data = request.get_json()
         application = json_data["Application_Name"]
         app.applications[application].train()
-        return {"Done": "OK"}
+        return {"Done": augmented_dataset}
     # ------------------ END DEFENSE SERVER FUNCTIONS --------------------------
 
     # ------------------ ATTACK SERVER FUNCTIONS -------------------------------

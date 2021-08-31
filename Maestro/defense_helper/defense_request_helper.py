@@ -111,7 +111,6 @@ class virtual_model:
         }
         final_url = self.request_url + "/send_augmented_dataset"
         response = requests.post(final_url, json=payload)
-        print("Printing Response", response.content)
         returned_json = response.json()
         return returned_json
 
@@ -124,8 +123,7 @@ class virtual_model:
         }
         final_url = self.request_url + "/send_train_signal"
         response = requests.post(final_url, json=payload)
-        print(response)
-        outputs = json.loads(response.json()["Done"])
-        return outputs
+        returned_json = response.json()
+        return returned_json
 
     # ------------------ DEFENSE FUNCTIONS ------------------------------

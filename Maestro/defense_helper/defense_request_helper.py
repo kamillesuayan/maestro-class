@@ -102,6 +102,7 @@ class virtual_model:
         outputs = json.loads(response.json()["outputs"])
         return outputs
 
+    # ------------------ DEFENSE FUNCTIONS ------------------------------
     def send_augmented_dataset(self, train_set, defender):
 
         payload = {
@@ -127,3 +128,5 @@ class virtual_model:
         print(response)
         outputs = json.loads(response.json()["result"])
         return outputs
+
+    # ------------------ DEFENSE FUNCTIONS ------------------------------

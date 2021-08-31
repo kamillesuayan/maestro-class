@@ -103,8 +103,7 @@ class virtual_model:
         return outputs
 
     def send_augmented_dataset(self, train_set, defender):
-        # if labels == None:
-        #     labels = np.array([])
+        
         payload = {
             "Application_Name": self.application_name,
             "data": defender.defense(train_set),

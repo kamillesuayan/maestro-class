@@ -25,8 +25,9 @@ def main(applications):
     @app.route("/send_augmented_dataset", methods=["POST"])
     def send_augmented_dataset():
         print("recieved! send_augmented_dataset")
+        print(request.form)
         application = request.form["Application_Name"]
-        augmented_dataset = request.form["Application_Name"]
+        augmented_dataset = request.form["data"]
         app.applications[application].set_training_set(augmented_dataset)
         return {"result": "OK"}
 

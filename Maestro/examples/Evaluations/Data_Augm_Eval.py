@@ -26,13 +26,11 @@ print(datasets)
 
 train_data = datasets["train"]
 train_dataset = train_data.get_json_data()
-print('train data', len(train_dataset))
-print(train_dataset)
-
+print('train data', len(train_dataset), type(train_dataset))
 
 test_data = datasets["test"]
 test_dataset = test_data.get_json_data()
-print('train data', len(test_dataset))
+print('test data', len(test_dataset))
 targeted_dev_data = test_dataset
 targeted_dev_data = targeted_dev_data[:10]
 perturb_batch_size = 1

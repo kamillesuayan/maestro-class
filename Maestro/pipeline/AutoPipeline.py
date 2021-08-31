@@ -22,7 +22,7 @@ from Maestro.models import build_model
 
 class AutoPipelineForVision:
     def __init__(self):
-        raise EnvironmentError("Use this like the AutoModel from huggingface")
+        raise EnvironmentError("Use this like the AutoModel from Computer Vision")
 
     @classmethod
     def initialize(
@@ -75,7 +75,7 @@ class AutoPipelineForVision:
     ):
         if not model_path or not os.path.exists(os.path.join(os.getcwd(), model_path)):
             print("start training")
-            self.model = self.new_train(model, train_dataset, self.device)
+            self.model = AutoPipelineForVision.new_train(self, model, train_dataset, self.device)
             torch.save(model.state_dict(), model_path)
         else:
             model.load_state_dict(torch.load(model_path, map_location=self.device))
@@ -83,6 +83,7 @@ class AutoPipelineForVision:
         return model
 
     def new_train(
+        self,
         model,
         trainset,
         device=self.device,

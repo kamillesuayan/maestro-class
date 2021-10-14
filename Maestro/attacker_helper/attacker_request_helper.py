@@ -25,38 +25,6 @@ class virtual_model:
             self.request_url, perturbed_tokens, labels, gradient=True,
         )
 
-    def get_embedding(self):
-        embedding_file = "./embedding.pkl"
-        if os.path.isfile(embedding_file):
-            embedding = pickle.load(open(embedding_file, "rb"))
-        else:
-
-            data = {"Application_Name": self.application_name}
-            final_url = "{0}/get_model_embedding".format(self.request_url)
-            response = requests.post(final_url, data=data)
-            retruned_json = json.loads(response.json()["data"])
-            embedding = retruned_json
-            print("embedding", len(embedding))
-            with open(embedding_file, mode="wb") as f:
-                pickle.dump(
-                    embedding, f,
-                )
-        return embedding
-
-    def convert_tokens_to_ids(self, text):
-        data = {"Application_Name": self.application_name, "text": text}
-        final_url = "{0}/convert_tokens_to_ids".format(self.request_url)
-        response = requests.post(final_url, data=data)
-        retruned_json = response.json()
-        return retruned_json["data"]
-
-    def convert_ids_to_tokens(self, id):
-        data = {"Application_Name": self.application_name, "text": id}
-        final_url = "{0}/convert_ids_to_tokens".format(self.request_url)
-        response = requests.post(final_url, data=data)
-        retruned_json = response.json()
-        return retruned_json["data"]
-
     def get_data(self, data_type="validation"):
         data_file = "./data_" + self.application_name + ".pkl"
         dev_data = []
@@ -98,6 +66,39 @@ class virtual_model:
         if gradient:
             final_url = url + "/get_batch_input_gradient"
         response = requests.post(final_url, json=payload)
-        print(response)
+        # print(response)
         outputs = json.loads(response.json()["outputs"])
         return outputs
+
+    # For NLP applications
+    def get_embedding(self):
+        embedding_file = "./embedding.pkl"
+        if os.path.isfile(embedding_file):
+            embedding = pickle.load(open(embedding_file, "rb"))
+        else:
+
+            data = {"Application_Name": self.application_name}
+            final_url = "{0}/get_model_embedding".format(self.request_url)
+            response = requests.post(final_url, data=data)
+            retruned_json = json.loads(response.json()["data"])
+            embedding = retruned_json
+            print("embedding", len(embedding))
+            with open(embedding_file, mode="wb") as f:
+                pickle.dump(
+                    embedding, f,
+                )
+        return embedding
+
+    def convert_tokens_to_ids(self, text):
+        data = {"Application_Name": self.application_name, "text": text}
+        final_url = "{0}/convert_tokens_to_ids".format(self.request_url)
+        response = requests.post(final_url, data=data)
+        retruned_json = response.json()
+        return retruned_json["data"]
+
+    def convert_ids_to_tokens(self, id):
+        data = {"Application_Name": self.application_name, "text": id}
+        final_url = "{0}/convert_ids_to_tokens".format(self.request_url)
+        response = requests.post(final_url, data=data)
+        retruned_json = response.json()
+        return retruned_json["data"]

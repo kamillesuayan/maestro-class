@@ -1,6 +1,7 @@
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import torch
+from copy import deepcopy
 from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from transformers.data.data_collator import default_data_collator
@@ -12,8 +13,10 @@ def attack(
     vm: virtual_model,
     epsilon: float,
 ):
+    perturbed_image = deepcopy(original_image)
     # --------------TODO--------------
-    data_grad = vm.get_batch_input_gradient(original_image, labels)
+    print(iter)
+    data_grad = vm.get_batch_input_gradient(perturbed_image, labels)
     data_grad = torch.FloatTensor(data_grad)
     sign_data_grad = data_grad.sign()
     perturbed_image = torch.FloatTensor(original_image) + epsilon * sign_data_grad
@@ -56,7 +59,7 @@ def main():
     for batch in test_loader:
         # Call FGSM Attack
         labels = batch["labels"]
-        print(batch)
+        # print(batch)
         perturbed_data = attack(
             batch["image"].cpu().detach().numpy(),
             labels.cpu().detach().numpy(),
@@ -68,7 +71,7 @@ def main():
         output = vm.get_batch_output(perturbed_data, labels)
         final_pred = np.argmax(output[0])
         # final_pred = output.max(1, keepdim=True)[1]
-        print(output, final_pred)
+        # print(output, final_pred)
         if final_pred.item() == labels.item():
             correct += 1
 

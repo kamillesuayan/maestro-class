@@ -15,10 +15,8 @@ class virtual_model:
         self.request_url = request_url
         self.application_name = application_name
 
-    def get_batch_output(self, perturbed_tokens, labels):
-        return self._process_batch(
-            self.request_url, perturbed_tokens, labels, gradient=False,
-        )
+    def get_batch_output(self, perturbed_tokens, labels=[]):
+        return self._process_batch(self.request_url, perturbed_tokens, gradient=False,)
 
     def get_batch_input_gradient(self, perturbed_tokens, labels):
         return self._process_batch(
@@ -54,13 +52,19 @@ class virtual_model:
                 )
         return dev_data
 
-    def _process_batch(self, url, batch, labels, gradient=False):
-        # if labels == None:
-        #     labels = np.array([])
+    def _process_batch(self, url, batch, labels=[], gradient=False):
+        """ 
+        batch: batch to process, has the shape of [batch_size, channel, height of image, width of image]
+
+        """
+        # print(batch)
+        batch = self.convert_np_matrix_to_list(batch)
+        labels = self.convert_np_matrix_to_list(labels)
+        # print(batch)
         payload = {
             "Application_Name": self.application_name,
-            "data": batch.tolist(),
-            "labels": labels.tolist(),
+            "data": batch,
+            "labels": labels,
         }
         final_url = url + "/get_batch_output"
         if gradient:
@@ -68,7 +72,7 @@ class virtual_model:
         response = requests.post(final_url, json=payload)
         # print(response)
         outputs = json.loads(response.json()["outputs"])
-        return outputs
+        return np.array(outputs)
 
     # For NLP applications
     def get_embedding(self):
@@ -102,3 +106,7 @@ class virtual_model:
         response = requests.post(final_url, data=data)
         retruned_json = response.json()
         return retruned_json["data"]
+
+    def convert_np_matrix_to_list(self, arr):
+        arr = np.array(arr)
+        return arr.tolist()

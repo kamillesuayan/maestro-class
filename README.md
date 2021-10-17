@@ -1,6 +1,6 @@
 # Maestro
 
-A service for educational purposes in the domain of adversarial attacks/defense. 
+A service for educational purposes in the domain of adversarial attacks/defense.
 
 
 ## Structure overview
@@ -10,7 +10,7 @@ A service for educational purposes in the domain of adversarial attacks/defense.
 	-   Contains wrapper for huggingface datasets.
 	-   Wrapper for Torchvision datasets
 -   `Maestro/evaluator/`
-    
+
 	-   Evaluator class to evaluate different applications
 	-   Compute attack rate/constraint violations etc.
 -   `Maestro/constraint/`
@@ -18,32 +18,32 @@ A service for educational purposes in the domain of adversarial attacks/defense.
 -   `Maestro/attacker_helper/`
 	-   Contains helper file for the attacker to query the server
 -   `Maestro/examples/`
-    
+
     - Examples for loading custom models and datasets (good for getting around NLP libraries)
-	-   Examples for several scenarios (outdated, pre REST API examples) 
+	-   Examples for several scenarios (outdated, pre REST API examples)
 	-   Server Examples (example code using REST API)
 	-   Attacker File (contains starting files for the attacker)
 	-   Evaluation (contains evaluations for the attacker file as well as sample complete attacker files)
-    
+
 
 -   `Maestro/models/`
 
 	-   Handles model loading (from HugginFace)
-    
+
 	-   A couple customized models such as LSTM
-    
+
 
 -   `Maestro/pipeline/`
-    
+
 	-   Contains AutoPipeline,Pipeline, and Model_Wrapper. Crucial logics from the backend of the server.
-        
+
 
 -   `Maestro/server/`
-    
+
 	-   Handles the flask api server
-    
+
 	-   Complete the methods that handle POST requests
-    
+
 -   `Maestro/utils/`
 	- Utility functions such as move_to_device
 
@@ -67,20 +67,28 @@ change or update `app.py` and `model.py` accordingly for what models to load and
 
 ### Attacker Side
 Text:
-| Application  | Evaluation | Constraints 
-| ------------- | ------------- | ------------- | 
-| `Hotflip`  | Untargeted Label Flip Rate  | Number of tokens flipped  | 
-| `Universal Triggers`  | Untargeted Label Flip Rate  | Length of trigger  | 
+| Application  | Evaluation | Constraints
+| ------------- | ------------- | ------------- |
+| `Hotflip`  | Untargeted Label Flip Rate  | Number of tokens flipped  |
+| `Universal Triggers`  | Untargeted Label Flip Rate  | Length of trigger  |
 
 Image:
 | Application  | Evaluation | Constraints
-| ------------- | ------------- | ------------- | 
-| `FGSM`  | Untargeted Label Flip Rate  | Within Epsilon Ball | 
-| `Data Poisoning`  | Targeted Label Flip Rate  | Number of Data Poisoned  | 
+| ------------- | ------------- | ------------- |
+| `FGSM`  | Untargeted Label Flip Rate  | Within Epsilon Ball |
+| `Data Poisoning`  | Targeted Label Flip Rate  | Number of Data Poisoned  |
 
 Use files in `Maestro/examples/Attacker_File` to implment the attack. Then put the finished file in the same folder as the evaluation file and then call evaluation:
 ```
 python FGSM_Eval.py
+```
+
+### Evalutor tutorial
+```
+python ./Maestro/server/app.py # run the server
+# upload the file to ./Maestro/tmp/attack_homework/GeneticAttack_117036910009.py
+python examples/Evaluations/CV/Attack-Homework/Ask_Result.py # change the line 4: test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+
 ```
 
 ### Some Issues
@@ -88,5 +96,5 @@ python FGSM_Eval.py
 
 
 ## TODOs
-- add full API support for `Data Poisoning`,currently it can only run locally. 
+- add full API support for `Data Poisoning`,currently it can only run locally.
 - text version of `Data Poisoning`

@@ -9,6 +9,10 @@ import torch
 import numpy as np
 import base64
 import zlib
+from Maestro.attacker_helper.attacker_request_helper import virtual_model
+import datetime
+from concurrent.futures import ThreadPoolExecutor
+from Maestro.evaluator import Evaluator
 
 def main(applications):
     app = flask.Flask(__name__)
@@ -127,12 +131,64 @@ def main(applications):
         # print(json_data)
         return {"data": json_data}
 
+    @app.route("/attack_evaluator", methods=['POST'])
+    def attack_evaluator():
+        print("Evaluate the students' attack method")
+        student_id = request.form["id"]
+        application = request.form["Application_Name"]
+        record_path = "../tmp/attack_homework/recording.txt"
+        now = datetime.datetime.now()
+
+        with open(record_path, 'a+') as f:
+            f.write(str(student_id)+'\t'+ now.strftime("%Y-%m-%d %H:%M:%S")+'\t'+ str(application) +'\t')
+        # record_scores(application, student_id, record_path)
+        try:
+            executor.submit(record_scores, application, student_id, record_path)
+        except (RuntimeError, TypeError, NameError):
+            print("error")
+
+        print(student_id)
+        return {"score": "server is working on it..."}
+
+    def record_scores(student_id, application, record_path):
+        print("\n working in the records")
+        vm = virtual_model("http://127.0.0.1:5000", application_name="FGSM")
+
+        evaluator = Evaluator(student_id, application, vm)
+        score = evaluator.attack_evaluator()
+        print("evaluator")
+        print(score)
+        with open(record_path, 'a+') as f:
+            f.write(str(score)+'\n')
+        return
+
+
+    @app.route("/evaluate_result", methods=['POST'])
+    def evaluate_result():
+        print("check the score of the defense method")
+        record_path = "../tmp/evaluator/recording.txt"
+
+        student_id = request.form["id"]
+        application = request.form["Application_Name"]
+        output = []
+        with open(record_path, 'r') as f:
+            data = f.readlines()
+            for i in data:
+                print(i)
+                recording = i.split('\t')
+                if recording[0] == student_id:
+                    output.append(recording)
+        return {"score": output}
+
+
     print("Server Running...........")
     # app.run(debug=True)
     app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":
+    executor = ThreadPoolExecutor(20)
+
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
     application_names = ["FGSM"]

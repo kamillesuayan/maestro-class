@@ -1,10 +1,8 @@
 import flask
 import argparse
 from flask import request, jsonify
-from models import load_all_applications
 import dill as pickle
 import json
-from Maestro.utils import list_to_json, get_embedding, get_json_data
 import torch
 import numpy as np
 import base64
@@ -14,6 +12,10 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor
 from Maestro.evaluator import Evaluator
 
+# ------------------ LOCAL IMPORTS ---------------------------------
+from Maestro.utils import list_to_json, get_embedding, get_json_data
+from models import load_all_applications
+# ------------------ LOCAL IMPORTS ---------------------------------
 def main(applications):
     app = flask.Flask(__name__)
     app.config["DEBUG"] = True
@@ -22,28 +24,44 @@ def main(applications):
     @app.route("/", methods=["GET"])
     def home():
         return "<h1>The Home of Maestro Server</p>"
+    # ------------------ AUGMENTED DATA SERVER FUNCTIONS ------------------------------
+
+    @app.route("/send_augmented_dataset", methods=["POST"])
+    def send_augmented_dataset():
+        print(app.applications)
+        print("Received! send_augmented_dataset")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        augmented_dataset = json_data["data"]
+        app.applications[application].set_training_set(augmented_dataset)
+        return {"Done": "OK"}
+
+    @app.route("/send_train_signal", methods=["POST"])
+    def send_train_signal():
+        print("Received! send_train_signal")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        app.applications[application].train()
+        return {"Done": "OK"}
+
+    # ------------------ END AUGMENTED DATA SERVER FUNCTIONS --------------------------
+
+    @app.route("/send_detector_model", methods=["POST"])
+    def send_detector_model():
+        print("Received! send_detector_model")
+        json_data = request.get_json()
+        application = json_data["Application_Name"]
+        model_dict = json_data["model"]
+        model = model.load_state_dict(model_dict)
+        app.applications[application].set_detector(model)
+        metrics = app.applications[application].detection_test()
+        return {"Done": metrics}
+
+    # ------------------ ATTACK SERVER FUNCTIONS -------------------------------
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        """print("recieved! get_batch_output")
-        # print(request.form)
-        img = base64.b64decode(request.form["data"].encode())
-        img = zlib.decompress(img)
-        img = np.frombuffer(img)
-        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
-        print("data_shape", data_shape, data_shape.ndim)
-        if data_shape.shape[0] == 4:
-            img = img.reshape(data_shape)
-        else:
-            img = np.expand_dims(img.reshape(data_shape), axis=0)
-        print(img.shape)
-
-        application = request.form["Application_Name"]
-        print("application name:", application)
-
-        batch_input = img
-        labels = request.form["label"]"""
-        print("recieved! get_batch_output")
+        print("Received! get_batch_output")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         print("application name:", application)
@@ -57,24 +75,7 @@ def main(applications):
 
     @app.route("/get_batch_input_gradient", methods=["POST"])
     def get_batch_input_gradient():
-        print("recieved!")
-        """img = base64.b64decode(request.form["data"].encode())
-        img = zlib.decompress(img)
-        img = np.frombuffer(img)
-        data_shape = np.array(request.form["shape"].strip(')(').split(', '), dtype=int)
-        print("data_shape", data_shape, data_shape.ndim)
-
-        if data_shape.shape[0] == 4:
-            img = img.reshape(data_shape)
-        else:
-            img = np.expand_dims(img.reshape(data_shape), axis=0)
-
-        application = request.form["Application_Name"]
-        print("application name:", application)
-        print(img.shape)
-        batch_input = img
-        labels = request.form["label"]"""
-
+        print("Received!")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
@@ -89,7 +90,7 @@ def main(applications):
 
     @app.route("/get_data", methods=["POST"])
     def get_data():
-        print("recieved!")
+        print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
         if data_type == "train":
@@ -106,7 +107,7 @@ def main(applications):
     ##
     @app.route("/get_model_embedding", methods=["POST"])
     def get_model_embedding():
-        print("recieved!")
+        print("Received!")
         application = request.form["Application_Name"]
         embedding = get_embedding(app.applications[application].model).weight
         returned = list_to_json([x.detach().cpu().numpy().tolist() for x in embedding])
@@ -114,7 +115,7 @@ def main(applications):
 
     @app.route("/convert_tokens_to_ids", methods=["POST"])
     def convert_tokens_to_ids():
-        print("recieved! convert_tokens_to_ids")
+        print("Received! convert_tokens_to_ids")
         application = request.form["Application_Name"]
         tokenizer = app.applications[application].get_tokenizer()
         json_data = tokenizer.convert_tokens_to_ids(request.form["text"])
@@ -124,12 +125,13 @@ def main(applications):
 
     @app.route("/convert_ids_to_tokens", methods=["POST"])
     def convert_ids_to_tokens():
-        print("recieved! convert_tokens_to_ids")
+        print("Received! convert_tokens_to_ids")
         application = request.form["Application_Name"]
         tokenizer = app.applications[application].get_tokenizer()
         json_data = tokenizer.convert_ids_to_tokens(int(request.form["text"]))
         # print(json_data)
         return {"data": json_data}
+    # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     @app.route("/attack_evaluator", methods=['POST'])
     def attack_evaluator():
@@ -190,8 +192,7 @@ if __name__ == "__main__":
     executor = ThreadPoolExecutor(20)
 
     parser = argparse.ArgumentParser("start the allennlp demo")
-    # application_names = ["Universal_Attack", "FGSM", "Hotflip", "Data_Poisoning"]
-    application_names = ["FGSM"]
+    application_names = ["Data_Augmentation_CV"]
 
     parser.add_argument(
         "--application",

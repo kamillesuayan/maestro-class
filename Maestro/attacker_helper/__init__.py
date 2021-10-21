@@ -1,1 +1,0 @@
-from Maestro.attacker_helper.attacker_request_helper import virtual_model

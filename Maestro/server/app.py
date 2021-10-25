@@ -195,8 +195,8 @@ if __name__ == "__main__":
     executor = ThreadPoolExecutor(20)
 
     parser = argparse.ArgumentParser("start the allennlp demo")
-    application_names = ["Data_Augmentation_CV"]
-    # application_names = ["FGSM"]
+    # application_names = ["Data_Augmentation_CV"]
+    application_names = ["FGSM"]
     parser.add_argument(
         "--application",
         type=str,

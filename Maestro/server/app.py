@@ -7,15 +7,17 @@ import torch
 import numpy as np
 import base64
 import zlib
-from Maestro.attacker_helper.attacker_request_helper import virtual_model
 import datetime
 from concurrent.futures import ThreadPoolExecutor
-from Maestro.evaluator import Evaluator
+
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.utils import list_to_json, get_embedding, get_json_data
 from models import load_all_applications
+from Maestro.evaluator import Evaluator
+from Maestro.attacker_helper.attacker_request_helper import virtual_model
 # ------------------ LOCAL IMPORTS ---------------------------------
+
 def main(applications):
     app = flask.Flask(__name__)
     app.config["DEBUG"] = True
@@ -46,14 +48,14 @@ def main(applications):
 
     # ------------------ END AUGMENTED DATA SERVER FUNCTIONS --------------------------
 
-    @app.route("/send_detector_model", methods=["POST"])
+    @app.route("/send_loss_function", methods=["POST"])
     def send_detector_model():
-        print("Received! send_detector_model")
+        print("Received! send_loss_function")
         json_data = request.get_json()
         application = json_data["Application_Name"]
         model_dict = json_data["model"]
         model = model.load_state_dict(model_dict)
-        app.applications[application].set_detector(model)
+        app.applications[application].set_loss_function(model)
         metrics = app.applications[application].detection_test()
         return {"Done": metrics}
 
@@ -131,7 +133,6 @@ def main(applications):
         json_data = tokenizer.convert_ids_to_tokens(int(request.form["text"]))
         # print(json_data)
         return {"data": json_data}
-    # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     @app.route("/attack_evaluator", methods=['POST'])
     def attack_evaluator():
@@ -182,6 +183,8 @@ def main(applications):
                     output.append(recording)
         return {"score": output}
 
+    # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
+
 
     print("Server Running...........")
     # app.run(debug=True)
@@ -193,7 +196,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("start the allennlp demo")
     application_names = ["Data_Augmentation_CV"]
-
+    # application_names = ["FGSM"]
     parser.add_argument(
         "--application",
         type=str,

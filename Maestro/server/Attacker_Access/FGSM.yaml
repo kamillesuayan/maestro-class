@@ -1,16 +1,16 @@
 Type:
-  Name: Defense
+  Name: Attack
 Attack Method:
   target: Untargeted_Classification
   constraint: epsilon
-Defense Access:
+Attacker Access:
     training_data_access:
       read: False
       write: False
     dev_data_access:
       read: False
       write: False
-    test_data_access:
+    test_data_access: 
       read: True
       write: True
     model_access:
@@ -19,6 +19,5 @@ Defense Access:
     output_access:
       gradient: True
       output: True
-    training_access:
-      can_add_train_set: True
-      can_train: True
+
+      

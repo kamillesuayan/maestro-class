@@ -1,3 +1,5 @@
+Type:
+  Name: Defense
 Attack Method:
   target: Untargeted_Classification
   constraint: epsilon

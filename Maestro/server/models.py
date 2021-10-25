@@ -13,11 +13,17 @@ import torch
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.pipeline import (
     AutoPipelineAugmentedCV,
-    AutoPipelineInputEncodingCV,
+    AutoPipelineLossFuncCV,
     AugmentedPipelineCV,
-    InputEncodingPipelineCV,
+    LossFuncPipelineCV,
     Scenario,
     DefenseAccess
+)
+
+from Maestro.pipeline import (
+    AutoPipelineForVision,
+    Scenario,
+    AttackerAccess
 )
 # ------------------ LOCAL IMPORTS ---------------------------------
 
@@ -52,16 +58,16 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["Data_Augmentation_CV"] = pipeline2
-    if "Input_Encoding_CV" in applications:
+    if "Loss_Function_CV" in applications:
         print("Setting up the Input Encoding CV pipeline....")
-        name = "Input_Encoding_CV"
+        name = "Loss_Function_CV"
         dataset_name = "MNIST"
         myscenario = Scenario()
-        myscenario.load_from_yaml("Defense_Access/CV_Input_Encoding.yaml")
+        myscenario.load_from_yaml("Defense_Access/Loss_Function_CV.yaml")
         checkpoint_path = "models_temp/"
         model_path = checkpoint_path + "lenet_mnist_model.pth"
         device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-        pipeline2 = AutoPipelineAugmentedCV.initialize(
+        pipeline2 = AutoPipelineLossFuncCV.initialize(
             name,
             dataset_name,
             model_path,
@@ -72,6 +78,28 @@ def load_all_applications(applications: List[str]):
             device=device,
             finetune=True,
         )
-        application_list["Input_Encoding_CV"] = pipeline2
+        application_list["Loss_Function_CV"] = pipeline2
+    # FGSM
+    if "FGSM" in applications:
+        print("Setting up the FGSM Attack pipeline....")
+        name = "FGSM_example_model"
+        dataset_name = "MNIST"
+        myscenario = Scenario()
+        myscenario.load_from_yaml("Attacker_Access/FGSM.yaml")
+        checkpoint_path = "models_temp/"
+        model_path = checkpoint_path + "lenet_mnist_model.pth"
+        device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+        pipeline2 = AutoPipelineForVision.initialize(
+            name,
+            dataset_name,
+            model_path,
+            checkpoint_path,
+            compute_metrics_accuracy,
+            myscenario,
+            training_process=None,
+            device=device,
+            finetune=True,
+        )
+        application_list["FGSM"] = pipeline2
 
     return application_list

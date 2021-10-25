@@ -332,7 +332,4 @@ class VisionPipeline:
         # print(x_grad)
         return x_grad
 
-
-
-
 # ---------------------- END ATTACK PIPELINE -------------------------

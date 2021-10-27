@@ -8,7 +8,7 @@ from transformers.data.data_collator import default_data_collator
 from Maestro.data import TorchVisionDataset, get_dataset
 from Maestro.evaluator import FGSM_Evaluator
 from Maestro.models import build_model
-from Maestro.defense_helper.defense_request_helper import virtual_model
+from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.constraints import Epsilon
 # ------------------  LOCAL IMPORTS --------------------------------
 

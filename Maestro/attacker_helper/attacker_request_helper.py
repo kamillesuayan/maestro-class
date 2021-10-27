@@ -110,3 +110,44 @@ class virtual_model:
     def convert_np_matrix_to_list(self, arr):
         arr = np.array(arr)
         return arr.tolist()
+
+
+   # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
+    def send_augmented_dataset(self, train_set, defender):
+        augmented_dataset = defender.defense(train_set)
+        payload = {
+            "Application_Name": self.application_name,
+            "data": augmented_dataset,
+        }
+        final_url = self.request_url + "/send_augmented_dataset"
+        response = requests.post(final_url, json=payload)
+        returned_json = response.json()
+        return returned_json
+
+    def send_train_signal(self):
+        # if labels == None:
+        #     labels = np.array([])
+        payload = {
+            "Application_Name": self.application_name,
+            "train": True,
+        }
+        final_url = self.request_url + "/send_train_signal"
+        response = requests.post(final_url, json=payload)
+        returned_json = response.json()
+        return returned_json
+
+    # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
+
+    # ------------------ INPUT ENCODING DEFENSE FUNCTIONS ----------------------
+    def send_detector_model(self, defender):
+        model = defender.detector()
+        payload = {
+            "Application_Name": self.application_name,
+            "model": model.state_dict(),
+        }
+        final_url = self.request_url + "/send_detector_model"
+        response = requests.post(final_url, json=payload)
+        returned_json = response.json()
+        return returned_json
+
+    # ------------------ INPUT ENCODING DEFENSE FUNCTIONS ----------------------

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from transformers.data.data_collator import default_data_collator
 
 # ------------------ LOCAL IMPORTS ---------------------------------
-from Maestro.defense_helper.defense_request_helper import virtual_model
+from Maestro.attacker_helper.attacker_request_helper import virtual_model
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 def attack(

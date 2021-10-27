@@ -15,6 +15,7 @@ class FGSM_Evaluator:
         all_vals = []
         new_batches = []
         constraint_violations = 0
+
         for batch in self.iterator_dataloader:
             print("start_batch")
             # print(batch)
@@ -31,7 +32,7 @@ class FGSM_Evaluator:
             logits = np.array(logits)
             print(logits)
             preds = np.argmax(logits, axis=1)
-            print(preds,labels)
+            print(preds, labels)
             success = preds != labels
             print(success)
             constraint_violation = self._constraint(
@@ -44,4 +45,5 @@ class FGSM_Evaluator:
         print(f"Constraint Violation Cases: {constraint_violations}")
 
     def _constraint(self, original_input, perturbed_input):
-        return self.constraint.violate(original_input,perturbed_input)
+        return self.constraint.violate(original_input, perturbed_input)
+

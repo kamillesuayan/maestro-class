@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from typing import List, Iterator, Dict, Tuple, Any, Type, Union
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,6 +16,7 @@ def build_model(
     if pretrained_file != None:
         model.load_state_dict(torch.load(pretrained_file, map_location="cpu"))
     return model
+
 
 class FGSM_example_model(nn.Module):
     def __init__(self) -> None:

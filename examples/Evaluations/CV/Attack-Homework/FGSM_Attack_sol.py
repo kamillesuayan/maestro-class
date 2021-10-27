@@ -15,7 +15,6 @@ def attack(
 ):
     perturbed_image = deepcopy(original_image)
     # --------------TODO--------------
-    print(iter)
     data_grad = vm.get_batch_input_gradient(perturbed_image, labels)
     data_grad = torch.FloatTensor(data_grad)
     sign_data_grad = data_grad.sign()

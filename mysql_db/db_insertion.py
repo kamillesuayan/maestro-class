@@ -10,17 +10,25 @@ conn = mysql.connector.connect(
 #Creating a cursor object using the cursor() method
 cursor = conn.cursor()
 
-tomorrow = datetime.now().date() + timedelta(days=1)
+submission_time = datetime.now().date()
 
-add_employee = ("INSERT INTO employees "
-               "(first_name, last_name, hire_date, gender, birth_date) "
-               "VALUES (%s, %s, %s, %s, %s)")
+add_student_homework = ("INSERT INTO attack_homework "
+               "(student_id, code_snippet, time) "
+               "VALUES (%s, %s, %s)")
 
+text_file = open("data.txt", "r")
+ 
+#read whole file to a string
+data = text_file.read()
+ 
+#close file
+text_file.close()
+ 
 
-data_employee = ('Geert', 'Vanderkelen', tomorrow, 'M', date(1977, 6, 14))
+data_employee = (22766303, data, submission_time)
 
 # Insert new employee
-cursor.execute(add_employee, data_employee)
+cursor.execute(add_student_homework, data_employee)
 emp_no = cursor.lastrowid
 
 # Make sure data is committed to the database

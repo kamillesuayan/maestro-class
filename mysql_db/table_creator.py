@@ -12,42 +12,14 @@ cursor = conn.cursor()
 cursor.execute("DROP TABLE IF EXISTS HOMEWORK")
 
 #Creating table as per requirement
-sql ='''CREATE TABLE EMPLOYEE(
-   ID CHAR(20) NOT NULL,
-   LAST_NAME CHAR(20),
-   AGE INT,
-   SEX CHAR(1),
-   INCOME FLOAT
+sql ='''CREATE TABLE attack_homework(
+   student_id INT NOT NULL,
+   code_snippet LONGBLOB NOT NULL,
+   submission_time date NOT NULL,
+   PRIMARY KEY ( student_id )
 )'''
 cursor.execute(sql)
 
-"""sql ='''CREATE TABLE ATTACK_PROJECT(
-   FIRST_NAME CHAR(20) NOT NULL,
-   LAST_NAME CHAR(20),
-   AGE INT,
-   SEX CHAR(1),
-   INCOME FLOAT
-)'''
-cursor.execute(sql)
-
-
-sql ='''CREATE TABLE DEFENSE_HOMEWORK(
-   FIRST_NAME CHAR(20) NOT NULL,
-   LAST_NAME CHAR(20),
-   AGE INT,
-   SEX CHAR(1),
-   INCOME FLOAT
-)'''
-cursor.execute(sql)
-
-sql ='''CREATE TABLE DEFENSE_PROJECT(
-   FIRST_NAME CHAR(20) NOT NULL,
-   LAST_NAME CHAR(20),
-   AGE INT,
-   SEX CHAR(1),
-   INCOME FLOAT
-)'''
-cursor.execute(sql)"""
 
 
 #Closing the connection

@@ -166,9 +166,9 @@ def main():
     manager = MYSQL_Manager()
 
     if True:
-    manager.generate_tables()
+        manager.generate_tables()
     else:
-    manager.input_attack_homework(22466303, None)
+        manager.input_attack_homework(22466303, None)
 
 if __name__ == "__main__":
     main()

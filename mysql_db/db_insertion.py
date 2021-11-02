@@ -13,7 +13,7 @@ cursor = conn.cursor()
 submission_time = datetime.now().date()
 
 add_student_homework = ("INSERT INTO attack_homework "
-               "(student_id, code_snippet, time) "
+               "(student_id, code_snippet, submission_time) "
                "VALUES (%s, %s, %s)")
 
 text_file = open("data.txt", "r")
@@ -29,7 +29,6 @@ data_employee = (22766303, data, submission_time)
 
 # Insert new employee
 cursor.execute(add_student_homework, data_employee)
-emp_no = cursor.lastrowid
 
 # Make sure data is committed to the database
 conn.commit()

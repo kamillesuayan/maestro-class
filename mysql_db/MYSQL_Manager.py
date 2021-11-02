@@ -165,7 +165,7 @@ class MYSQL_Manager:
 def main():
     manager = MYSQL_Manager()
 
-    if True:
+    if False:
         manager.generate_tables()
     else:
         manager.input_attack_homework(22466303, None)

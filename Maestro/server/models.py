@@ -36,7 +36,7 @@ def compute_metrics_accuracy(p: EvalPrediction) -> Dict:
 def load_all_applications(applications: List[str]):
     print(applications)
     application_list = {}
-    # FGSM
+    # Data_Augmentation_CV
     if "Data_Augmentation_CV" in applications:
         print("Setting up the Data Augmentation CV pipeline....")
         name = "Data_Augmentation"
@@ -58,6 +58,7 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["Data_Augmentation_CV"] = pipeline2
+    # Loss_Function_CV
     if "Loss_Function_CV" in applications:
         print("Setting up the Input Encoding CV pipeline....")
         name = "Loss_Function_CV"

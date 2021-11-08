@@ -9,7 +9,7 @@ import base64
 import zlib
 import datetime
 from concurrent.futures import ThreadPoolExecutor
-
+import os
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.utils import list_to_json, get_embedding, get_json_data
@@ -134,31 +134,42 @@ def main(applications):
         # print(json_data)
         return {"data": json_data}
 
-    @app.route("/attack_evaluator", methods=['POST'])
-    def attack_evaluator():
+    @app.route("/file_evaluator", methods=['POST'])
+    def file_evaluator():
         print("Evaluate the students' attack method")
         student_id = request.form["id"]
         application = request.form["Application_Name"]
-        record_path = "../tmp/attack_homework/recording.txt"
+        task = request.form["task"]
+        record_path = "../tmp/"+task+"/recording.txt"
         now = datetime.datetime.now()
-
         with open(record_path, 'a+') as f:
             f.write(str(student_id)+'\t'+ now.strftime("%Y-%m-%d %H:%M:%S")+'\t'+ str(application) +'\t')
         # record_scores(application, student_id, record_path)
         try:
-            executor.submit(record_scores, application, student_id, record_path)
-        except (RuntimeError, TypeError, NameError):
-            print("error")
-
+            executor.submit(record_scores, application, student_id, record_path, task)
+        # except (RuntimeError, TypeError, NameError):
+        except BaseException as error:
+            print('An exception occurred: {}'.format(error))
         print(student_id)
         return {"score": "server is working on it..."}
 
-    def record_scores(student_id, application, record_path):
-        print("\n working in the records")
-        vm = virtual_model("http://127.0.0.1:5000", application_name="FGSM")
+    def record_scores(student_id, application, record_path, task):
+        print("\n working in the records: ", task)
 
-        evaluator = Evaluator(student_id, application, vm)
-        score = evaluator.attack_evaluator()
+        if task == "defense_project":
+            evaluator = Evaluator(student_id, application, None, task)
+            score = evaluator.defense_evaluator(task)
+        else:
+            vm = virtual_model("http://127.0.0.1:5000", application_name="FGSM")
+            evaluator = Evaluator(student_id, application, vm, task)
+            if task == "attack_homework":
+                score = evaluator.attack_evaluator()
+            elif task == "defense_homework":
+                print("\n", task)
+                score = evaluator.defense_evaluator(task)
+            else:
+                print("loading evaulator error")
+
         print("evaluator")
         print(score)
         with open(record_path, 'a+') as f:
@@ -169,11 +180,13 @@ def main(applications):
     @app.route("/evaluate_result", methods=['POST'])
     def evaluate_result():
         print("check the score of the defense method")
-        record_path = "../tmp/evaluator/recording.txt"
-
+        task = request.form["task"]
+        record_path = "../tmp/"+ str(task)+"/recording.txt"
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         output = []
+        if ~os.path.exists(record_path):
+            return {"score": "No result!"}
         with open(record_path, 'r') as f:
             data = f.readlines()
             for i in data:

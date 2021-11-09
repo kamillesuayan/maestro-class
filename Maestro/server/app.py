@@ -162,7 +162,7 @@ def main(applications):
         else:
             vm = virtual_model("http://127.0.0.1:5000", application_name="FGSM")
             evaluator = Evaluator(student_id, application, vm, task)
-            if task == "attack_homework":
+            if ((task == "attack_homework") | (task == "attack_project")):
                 score = evaluator.attack_evaluator()
             elif task == "defense_homework":
                 print("\n", task)

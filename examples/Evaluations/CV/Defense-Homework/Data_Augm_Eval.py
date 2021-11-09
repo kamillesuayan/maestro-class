@@ -17,7 +17,7 @@ module = importlib.import_module("Data_Augmentation_Sol")
 # url = "http://128.195.56.136:5000"
 url = "http://127.0.0.1:5000"
 application_name = "Data_Augmentation_CV"
-vm = virtual_model(url,application_name=application_name)
+vm = virtual_model(url, application_name=application_name)
 
 # ------------------ SPLIT DATASET --------------------------------
 dataset_name = "MNIST"
@@ -45,6 +45,7 @@ iterator_dataloader = DataLoader(
 
 # ------------------ DEFENSE TRAINING ---------------------------------
 print("Start Training")
+# CHANGE INSTEAD LET SERVER DO IT
 response = vm.send_augmented_dataset(train_dataset, module)
 print("Augmented dataset received?", response["Done"])
 response = vm.send_train_signal()

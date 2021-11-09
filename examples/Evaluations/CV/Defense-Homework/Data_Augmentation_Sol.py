@@ -27,7 +27,7 @@ class Data_Augmentation:
         return perturbed_image.cpu().detach().numpy()
 
 
-    def defense(train_dataset, vm: virtual_model,):
+    def defense(train_dataset, vm: virtual_model, epsilon: float):
         augmented_dataset = {}
         # --------------TODO--------------
         for i in np.random.choice(np.arange(0, len(train_dataset["label"])), size=(10,)):

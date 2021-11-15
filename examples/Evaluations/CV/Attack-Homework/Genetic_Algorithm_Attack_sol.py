@@ -130,61 +130,61 @@ def visualize(examples, filename):
     plt.savefig(filename)
 
 
-def main():
-    # (1) prepare the data loaders and the model
-    server_url = "http://128.195.56.136:5000"  # used when the student needs to debug on the server
-    local_url = "http://127.0.0.1:5000"  # used when the student needs to debug locally
+# def main():
+#     # (1) prepare the data loaders and the model
+#     server_url = "http://128.195.56.136:5000"  # used when the student needs to debug on the server
+#     local_url = "http://127.0.0.1:5000"  # used when the student needs to debug locally
 
-    vm = virtual_model(local_url, application_name="FGSM")
-    dataset_label_filter = 0
-    target_label = 7
-    dev_data = vm.get_data(data_type="test")
+#     vm = virtual_model(local_url, application_name="FGSM")
+#     dataset_label_filter = 0
+#     target_label = 7
+#     dev_data = vm.get_data(data_type="test")
 
-    targeted_dev_data = []
-    for instance in dev_data:
-        if instance["label"] == dataset_label_filter:
-            targeted_dev_data.append(instance)
-    print(len(targeted_dev_data))
-    targeted_dev_data = targeted_dev_data[:10]
-    universal_perturb_batch_size = 1
-    # tokenizer = model_wrapper.get_tokenizer()
-    iterator_dataloader = DataLoader(
-        targeted_dev_data,
-        batch_size=universal_perturb_batch_size,
-        shuffle=True,
-        collate_fn=default_data_collator,
-    )
-    print("started the process")
-    all_vals = []
-    n_success_attack = 0
-    adv_examples = []
+#     targeted_dev_data = []
+#     for instance in dev_data:
+#         if instance["label"] == dataset_label_filter:
+#             targeted_dev_data.append(instance)
+#     print(len(targeted_dev_data))
+#     targeted_dev_data = targeted_dev_data[:10]
+#     universal_perturb_batch_size = 1
+#     # tokenizer = model_wrapper.get_tokenizer()
+#     iterator_dataloader = DataLoader(
+#         targeted_dev_data,
+#         batch_size=universal_perturb_batch_size,
+#         shuffle=True,
+#         collate_fn=default_data_collator,
+#     )
+#     print("started the process")
+#     all_vals = []
+#     n_success_attack = 0
+#     adv_examples = []
 
-    GA = GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,)
+#     GA = GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,)
 
-    print("start testing")
-    # Loop over all examples in test set
-    test_loader = iterator_dataloader
-    for batch in test_loader:
-        # Call FGSM Attack
-        labels = batch["labels"].cpu().detach().numpy()
-        batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-        print(labels.item(), labels.item())
-        visualize([(labels.item(), labels.item(), np.squeeze(batch))], "before.png")
-        perturbed_data, success = GA.attack(
-            batch, labels, vm, target_label=target_label,
-        )
-        visualize(
-            [(labels.item(), target_label, np.squeeze(perturbed_data))], "after.png"
-        )
-        n_success_attack += success
-        exit(0)
-    # Calculate final accuracy for this epsilon
-    final_acc = n_success_attack / float(len(test_loader))
-    print(
-        "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
-            target_label, n_success_attack, len(test_loader), final_acc
-        )
-    )
+#     print("start testing")
+#     # Loop over all examples in test set
+#     test_loader = iterator_dataloader
+#     for batch in test_loader:
+#         # Call FGSM Attack
+#         labels = batch["labels"].cpu().detach().numpy()
+#         batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
+#         print(labels.item(), labels.item())
+#         visualize([(labels.item(), labels.item(), np.squeeze(batch))], "before.png")
+#         perturbed_data, success = GA.attack(
+#             batch, labels, vm, target_label=target_label,
+#         )
+#         visualize(
+#             [(labels.item(), target_label, np.squeeze(perturbed_data))], "after.png"
+#         )
+#         n_success_attack += success
+#         exit(0)
+#     # Calculate final accuracy for this epsilon
+#     final_acc = n_success_attack / float(len(test_loader))
+#     print(
+#         "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
+#             target_label, n_success_attack, len(test_loader), final_acc
+#         )
+#     )
 
 
 if __name__ == "__main__":

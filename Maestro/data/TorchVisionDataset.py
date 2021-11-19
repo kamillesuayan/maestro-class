@@ -1,12 +1,11 @@
 from numpy.lib.polynomial import RankWarning
-from textattack.datasets import TextAttackDataset
 from torchvision import datasets
 import collections
 
 import random
 
 
-class TorchVisionDataset(TextAttackDataset):
+class TorchVisionDataset:
     """
     - name: the dataset name
     - subset: the subset of the main dataset. Dataset will be loaded as ``nlp.load_dataset(name, subset)``.

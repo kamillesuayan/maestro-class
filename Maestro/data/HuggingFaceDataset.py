@@ -123,7 +123,7 @@ def get_datasets_dataset_columns(dataset):
     return input_columns, output_column
 
 
-class HuggingFaceDataset(TextAttackDataset):
+class HuggingFaceDataset:
     """Loads a dataset from HuggingFace ``datasets`` and prepares it as a
     TextAttack dataset.
 

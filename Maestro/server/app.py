@@ -16,7 +16,10 @@ from Maestro.utils import list_to_json, get_embedding, get_json_data
 from models import load_all_applications
 from Maestro.evaluator import Evaluator
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
+from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
+
 # ------------------ LOCAL IMPORTS ---------------------------------
+
 
 def main(applications):
     app = flask.Flask(__name__)
@@ -26,6 +29,7 @@ def main(applications):
     @app.route("/", methods=["GET"])
     def home():
         return "<h1>The Home of Maestro Server</p>"
+
     # ------------------ AUGMENTED DATA SERVER FUNCTIONS ------------------------------
 
     @app.route("/send_augmented_dataset", methods=["POST"])
@@ -71,7 +75,9 @@ def main(applications):
         batch_input = json_data["data"]
         labels = json_data["labels"]
 
-        outputs = app.applications[application].get_batch_output(batch_input, labels)#.detach().cpu().numpy()
+        outputs = app.applications[application].get_batch_output(
+            batch_input, labels
+        )  # .detach().cpu().numpy()
         returned = list_to_json([x.cpu().detach().numpy().tolist() for x in outputs])
         return {"outputs": returned}
 
@@ -82,7 +88,6 @@ def main(applications):
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
         labels = json_data["labels"]
-
 
         outputs = app.applications[application].get_batch_input_gradient(
             batch_input, labels
@@ -95,6 +100,7 @@ def main(applications):
         print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
+        print(request.form["perturbation"])
         if data_type == "train":
             data = app.applications[application].training_data.get_write_data()
         elif data_type == "validation":
@@ -102,9 +108,24 @@ def main(applications):
         elif data_type == "test":
             data = app.applications[application].test_data.get_write_data()
         # print(data)
+        if request.form["perturbation"] != "":
+            data = perturb_transform(
+                app.applications[application], data, request.form["perturbation"]
+            )
+        # json_data = get_json_data(data)
+        json_data = data.get_json_data()
+        return {"data": json_data}  # {'image': [1*28*28], 'label': 7, 'uid': 0}
 
-        json_data = get_json_data(data)
-        return {"data": json_data[:5]} # {'image': [1*28*28], 'label': 7, 'uid': 0}
+    @app.route("/switch_weights", methods=["POST"])
+    def switch_weights():
+        print("Received!")
+        application = request.form["Application_Name"]
+        file_path = request.form["file_path"]
+        app.applications[application].model.load_state_dict(
+            torch.load(file_path, map_location="cpu")
+        )
+        print("success")
+        return "sccuess"
 
     ##
     @app.route("/get_model_embedding", methods=["POST"])
@@ -134,22 +155,29 @@ def main(applications):
         # print(json_data)
         return {"data": json_data}
 
-    @app.route("/file_evaluator", methods=['POST'])
+    @app.route("/file_evaluator", methods=["POST"])
     def file_evaluator():
         print("Evaluate the students' method.")
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         task = request.form["task"]
-        record_path = "../tmp/"+task+"/recording.txt"
+        record_path = "../tmp/" + task + "/recording.txt"
         now = datetime.datetime.now()
-        with open(record_path, 'a+') as f:
-            f.write(str(student_id)+'\t'+ now.strftime("%Y-%m-%d %H:%M:%S")+'\t'+ str(application) +'\t')
+        with open(record_path, "a+") as f:
+            f.write(
+                str(student_id)
+                + "\t"
+                + now.strftime("%Y-%m-%d %H:%M:%S")
+                + "\t"
+                + str(application)
+                + "\t"
+            )
         # record_scores(application, student_id, record_path)
         try:
             thread_temp = executor.submit(record_scores, student_id, application, record_path, task)
             print(thread_temp.result()) # multithread debugging: print errors
         except BaseException as error:
-            print('An exception occurred: {}'.format(error))
+            print("An exception occurred: {}".format(error))
         print(student_id)
         return {"score": "server is working on it..."}
 
@@ -174,32 +202,30 @@ def main(applications):
 
         print("evaluator")
         print(score)
-        with open(record_path, 'a+') as f:
-            f.write(str(score)+'\n')
+        with open(record_path, "a+") as f:
+            f.write(str(score) + "\n")
         return
 
-
-    @app.route("/evaluate_result", methods=['POST'])
+    @app.route("/evaluate_result", methods=["POST"])
     def evaluate_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        record_path = "../tmp/"+ str(task)+"/recording.txt"
+        record_path = "../tmp/" + str(task) + "/recording.txt"
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         output = []
         if ~os.path.exists(record_path):
             return {"score": "No result!"}
-        with open(record_path, 'r') as f:
+        with open(record_path, "r") as f:
             data = f.readlines()
             for i in data:
                 print(i)
-                recording = i.split('\t')
+                recording = i.split("\t")
                 if recording[0] == student_id:
                     output.append(recording)
         return {"score": output}
 
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
-
 
     print("Server Running...........")
     # app.run(debug=True)

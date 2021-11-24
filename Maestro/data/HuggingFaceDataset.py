@@ -4,7 +4,6 @@ import random
 import datasets
 
 # import textattack
-from textattack.datasets import TextAttackDataset
 import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
 import torch
@@ -124,7 +123,7 @@ def get_datasets_dataset_columns(dataset):
     return input_columns, output_column
 
 
-class HuggingFaceDataset(TextAttackDataset):
+class HuggingFaceDataset:
     """Loads a dataset from HuggingFace ``datasets`` and prepares it as a
     TextAttack dataset.
 

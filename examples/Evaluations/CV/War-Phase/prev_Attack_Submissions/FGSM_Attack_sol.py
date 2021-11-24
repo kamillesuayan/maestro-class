@@ -6,11 +6,11 @@ from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from transformers.data.data_collator import default_data_collator
 
+
 class FGSMAttack:
-    def __init__(
-        self
-    ):
+    def __init__(self):
         pass
+
     def attack(
         original_image: List[List[int]],
         labels: List[int],

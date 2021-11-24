@@ -23,17 +23,20 @@ class virtual_model:
             self.request_url, perturbed_tokens, labels, gradient=True,
         )
 
-    def get_data(self, data_type="validation"):
-        data_file = "./data_" + self.application_name + ".pkl"
+    def get_data(self, data_type="validation", perturbation=""):
+        data_file = (
+            "./data_" + self.application_name + "_pertb_" + perturbation + ".pkl"
+        )
         dev_data = []
         print("getting data", data_file, os.path.isfile(data_file))
-        if os.path.isfile(data_file):
+        if False:  # os.path.isfile(data_file):
             print("found local data, loading...")
             dev_data = pickle.load(open(data_file, "rb"))
         else:
             data = {
                 "Application_Name": self.application_name,
                 "data_type": data_type,
+                "perturbation": perturbation,
             }
             final_url = "{0}/get_data".format(self.request_url)
             response = requests.post(final_url, data=data)
@@ -111,8 +114,7 @@ class virtual_model:
         arr = np.array(arr)
         return arr.tolist()
 
-
-   # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
+    # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
     def send_augmented_dataset(self, train_set, defender):
         # print(defender)
         # defender = defender()
@@ -153,3 +155,13 @@ class virtual_model:
         return returned_json
 
     # ------------------ INPUT ENCODING DEFENSE FUNCTIONS ----------------------
+
+    # function that make a model switch its weights
+    def switch_weights(self, file_path):
+        data = {
+            "Application_Name": self.application_name,
+            "file_path": file_path,
+        }
+        final_url = "{0}/switch_weights".format(self.request_url)
+        response = requests.post(final_url, data=data)
+        return response

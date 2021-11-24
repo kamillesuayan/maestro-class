@@ -17,14 +17,11 @@ from Maestro.pipeline import (
     AugmentedPipelineCV,
     LossFuncPipelineCV,
     Scenario,
-    DefenseAccess
+    DefenseAccess,
 )
 
-from Maestro.pipeline import (
-    AutoPipelineForVision,
-    Scenario,
-    AttackerAccess
-)
+from Maestro.pipeline import AutoPipelineForVision, Scenario, AttackerAccess
+
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 
@@ -34,7 +31,7 @@ def compute_metrics_accuracy(p: EvalPrediction) -> Dict:
 
 
 def load_all_applications(applications: List[str]):
-    print(applications)
+    print(f"Loading {applications} ......")
     application_list = {}
     # Data_Augmentation_CV
     if "Data_Augmentation_CV" in applications:

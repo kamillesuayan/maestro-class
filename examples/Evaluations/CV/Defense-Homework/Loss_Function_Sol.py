@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from transformers.data.data_collator import default_data_collator
+import torch.nn as nn
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 from Maestro.attacker_helper.attacker_request_helper import virtual_model

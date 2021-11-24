@@ -136,7 +136,7 @@ def main(applications):
 
     @app.route("/file_evaluator", methods=['POST'])
     def file_evaluator():
-        print("Evaluate the students' attack method")
+        print("Evaluate the students' method.")
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         task = request.form["task"]
@@ -146,26 +146,28 @@ def main(applications):
             f.write(str(student_id)+'\t'+ now.strftime("%Y-%m-%d %H:%M:%S")+'\t'+ str(application) +'\t')
         # record_scores(application, student_id, record_path)
         try:
-            executor.submit(record_scores, application, student_id, record_path, task)
-        # except (RuntimeError, TypeError, NameError):
+            thread_temp = executor.submit(record_scores, student_id, application, record_path, task)
+            print(thread_temp.result()) # multithread debugging: print errors
         except BaseException as error:
             print('An exception occurred: {}'.format(error))
         print(student_id)
         return {"score": "server is working on it..."}
 
     def record_scores(student_id, application, record_path, task):
-        print("\n working in the records: ", task)
-
+        print("\nworking in the records: ", task, application)
         if task == "defense_project":
             evaluator = Evaluator(student_id, application, None, task)
             score = evaluator.defense_evaluator(task)
         else:
-            vm = virtual_model("http://127.0.0.1:5000", application_name="FGSM")
-            evaluator = Evaluator(student_id, application, vm, task)
+            vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
+            # print(app.applications["Adv_Training"])
+            evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications["Adv_Training"])
             if ((task == "attack_homework") | (task == "attack_project")):
                 score = evaluator.attack_evaluator()
             elif task == "defense_homework":
                 print("\n", task)
+                score = evaluator.defense_evaluator()
+            elif task == "defense_project":
                 score = evaluator.defense_evaluator(task)
             else:
                 print("loading evaulator error")
@@ -211,7 +213,7 @@ if __name__ == "__main__":
     # application_names = ["Data_Augmentation_CV"]
     # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "FGSM"]
 
-    application_names = ["FGSM"]
+    application_names = ["FGSM", "Adv_Training"]
     parser.add_argument(
         "--application",
         type=str,

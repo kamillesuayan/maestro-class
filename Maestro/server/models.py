@@ -102,5 +102,27 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["FGSM"] = pipeline2
+    if "Adv_Training" in applications:
+        print("Setting up the Adv_Training Attack pipeline....")
+        name = "Adv_Training_example_model"
+        dataset_name = "MNIST"
+        myscenario = Scenario()
+        myscenario.load_from_yaml("Attacker_Access/FGSM.yaml")
+        # checkpoint_path = "models_temp/"
+        # model_path = checkpoint_path + "lenet_mnist_model.pth"
+        model_path = ''
+        device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+        pipeline2 = AutoPipelineForVision.initialize(
+            name,
+            dataset_name,
+            model_path,
+            checkpoint_path,
+            compute_metrics_accuracy,
+            myscenario,
+            training_process=None,
+            device=device,
+            finetune=False,
+        )
+        application_list["Adv_Training"] = pipeline2
 
     return application_list

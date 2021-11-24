@@ -1,13 +1,9 @@
 from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
-from transformers.data.data_collator import default_data_collator
-import matplotlib.pyplot as plt
 
-
-class GeneticAttack:
+class ProjectAttack:
     def __init__(
         self,
         vm,
@@ -39,7 +35,7 @@ class GeneticAttack:
         population = self.init_population(original_image)
         print(len(population))
         examples = [(0, 0, np.squeeze(x)) for x in population[:10]]
-        visualize(examples, "population.png")
+        # visualize(examples, "population.png")
         for g in range(self.n_generation):
             success = False
             population, output, scores, best_index = self.eval_population(
@@ -113,79 +109,3 @@ class GeneticAttack:
     def init_population(self, original_image: List[List[int]]):
         return [self.perturb(original_image[0]) for _ in range(self.n_population)]
 
-
-def visualize(examples, filename):
-    cnt = 0
-    plt.figure(figsize=(8, 10))
-    for j in range(len(examples)):
-        cnt += 1
-        plt.subplot(1, len(examples), cnt)
-        plt.xticks([], [])
-        plt.yticks([], [])
-        orig, adv, ex = examples[j]
-        plt.title("{} -> {}".format(orig, adv))
-        plt.imshow(ex, cmap="gray")
-    plt.tight_layout()
-    plt.show()
-    plt.savefig(filename)
-
-
-def main():
-    # (1) prepare the data loaders and the model
-    server_url = "http://128.195.56.136:5000"  # used when the student needs to debug on the server
-    local_url = "http://127.0.0.1:5000"  # used when the student needs to debug locally
-
-    vm = virtual_model(local_url, application_name="FGSM")
-    dataset_label_filter = 0
-    target_label = 7
-    dev_data = vm.get_data(data_type="test")
-
-    targeted_dev_data = []
-    for instance in dev_data:
-        if instance["label"] == dataset_label_filter:
-            targeted_dev_data.append(instance)
-    print(len(targeted_dev_data))
-    targeted_dev_data = targeted_dev_data[:10]
-    universal_perturb_batch_size = 1
-    # tokenizer = model_wrapper.get_tokenizer()
-    iterator_dataloader = DataLoader(
-        targeted_dev_data,
-        batch_size=universal_perturb_batch_size,
-        shuffle=True,
-        collate_fn=default_data_collator,
-    )
-    print("started the process")
-    all_vals = []
-    n_success_attack = 0
-    adv_examples = []
-
-    GA = GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,)
-
-    print("start testing")
-    # Loop over all examples in test set
-    test_loader = iterator_dataloader
-    for batch in test_loader:
-        # Call FGSM Attack
-        labels = batch["labels"].cpu().detach().numpy()
-        batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-        print(labels.item(), labels.item())
-        visualize([(labels.item(), labels.item(), np.squeeze(batch))], "before.png")
-        perturbed_data, success = GA.attack(
-            batch, labels, vm, target_label=target_label,
-        )
-        visualize(
-            [(labels.item(), target_label, np.squeeze(perturbed_data))], "after.png"
-        )
-        n_success_attack += success
-        exit(0)
-    # Calculate final accuracy for this epsilon
-    final_acc = n_success_attack / float(len(test_loader))
-    print(
-        "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
-            target_label, n_success_attack, len(test_loader), final_acc
-        )
-    )
-
-
-if __name__ == "__main__":
-    main()

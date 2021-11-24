@@ -13,6 +13,7 @@ def build_model(
     pretrained_file: str = None,
 ):
     model = FGSM_example_model()
+    model = model.to(device)
     if pretrained_file != None:
         model.load_state_dict(torch.load(pretrained_file, map_location="cpu"))
     return model

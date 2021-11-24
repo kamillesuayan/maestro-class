@@ -12,7 +12,7 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.constraints import Epsilon
 # ------------------  LOCAL IMPORTS --------------------------------
 
-module = importlib.import_module("Input_Encoding_Sol")
+module = importlib.import_module("Loss_Function_Sol")
 url = "http://127.0.0.1:5000"
 application_name = "Input_Encoding"
 vm = virtual_model(url,application_name=application_name)

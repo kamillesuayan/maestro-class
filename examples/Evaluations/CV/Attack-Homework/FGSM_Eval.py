@@ -14,8 +14,8 @@ attacker = importlib.import_module("FGSM_Attack_sol")
 url = "http://127.0.0.1:5000"
 application_name = "FGSM"
 vm = virtual_model(url, application_name=application_name)
-vm.ask_result()
-"""dataset_name = "MNIST"
+
+dataset_name = "MNIST"
 datasets = get_dataset(dataset_name)
 print(datasets)
 test_data = datasets["test"]
@@ -36,4 +36,3 @@ epsilon = 0.2
 constraint = Epsilon(epsilon)
 E = FGSM_Evaluator(attacker, iterator_dataloader, vm, constraint=constraint)
 E.evaluate_attacker()
-"""

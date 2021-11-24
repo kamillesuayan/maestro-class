@@ -53,7 +53,7 @@ class virtual_model:
         return dev_data
 
     def _process_batch(self, url, batch, labels=[], gradient=False):
-        """ 
+        """
         batch: batch to process, has the shape of [batch_size, channel, height of image, width of image]
 
         """
@@ -114,6 +114,8 @@ class virtual_model:
 
    # ------------------ AUGMENTED DEFENSE FUNCTIONS ---------------------------
     def send_augmented_dataset(self, train_set, defender):
+        # print(defender)
+        # defender = defender()
         augmented_dataset = defender.defense(train_set)
         payload = {
             "Application_Name": self.application_name,

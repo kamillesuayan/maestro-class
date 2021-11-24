@@ -46,7 +46,7 @@ iterator_dataloader = DataLoader(
 # ------------------ DEFENSE TRAINING ---------------------------------
 print("Start Training")
 # CHANGE INSTEAD LET SERVER DO IT
-response = vm.send_augmented_dataset(train_dataset, module)
+response = vm.send_augmented_dataset(train_dataset, module, vm, 0.2)
 print("Augmented dataset received?", response["Done"])
 response = vm.send_train_signal()
 print("Model trained?", response["Done"])

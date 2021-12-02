@@ -8,6 +8,7 @@ import numpy as np
 import base64
 import zlib
 import datetime
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import os
 
@@ -161,7 +162,8 @@ def main(applications):
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         task = request.form["task"]
-        record_path = "../tmp/" + task + "/recording.txt"
+        record_path = Path("../tmp/" + task + "/recording.txt")
+        record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
             f.write(
@@ -174,8 +176,10 @@ def main(applications):
             )
         # record_scores(application, student_id, record_path)
         try:
-            thread_temp = executor.submit(record_scores, student_id, application, record_path, task)
-            print(thread_temp.result()) # multithread debugging: print errors
+            thread_temp = executor.submit(
+                record_scores, student_id, application, record_path, task
+            )
+            print(thread_temp.result())  # multithread debugging: print errors
         except BaseException as error:
             print("An exception occurred: {}".format(error))
         print(student_id)
@@ -187,10 +191,18 @@ def main(applications):
             evaluator = Evaluator(student_id, application, None, task)
             score = evaluator.defense_evaluator(task)
         else:
-            vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
+            vm = virtual_model(
+                "http://127.0.0.1:5000", application_name=application
+            )  # "FGSM"
             # print(app.applications["Adv_Training"])
-            evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications["Adv_Training"])
-            if ((task == "attack_homework") | (task == "attack_project")):
+            evaluator = Evaluator(
+                application,
+                student_id,
+                vm,
+                task,
+                app_pipeline=app.applications["Adv_Training"],
+            )
+            if (task == "attack_homework") | (task == "attack_project"):
                 score = evaluator.attack_evaluator()
             elif task == "defense_homework":
                 print("\n", task)
@@ -228,8 +240,8 @@ def main(applications):
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")
-    # app.run(debug=True)
-    app.run(host="128.195.151.199:5000")
+    app.run(debug=True)
+    # app.run(host="128.195.151.199:5000")
 
 
 if __name__ == "__main__":

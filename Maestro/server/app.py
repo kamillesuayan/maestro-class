@@ -159,6 +159,7 @@ def main(applications):
     def file_evaluator():
         print("Evaluate the students' method.")
         student_id = request.form["id"]
+        print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
         record_path = "../tmp/" + task + "/recording.txt"
@@ -187,7 +188,7 @@ def main(applications):
             evaluator = Evaluator(student_id, application, None, task)
             score = evaluator.defense_evaluator(task)
         else:
-            vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
+            vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"GeneticAttack"
             # print(app.applications["Adv_Training"])
             evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications[application])
             if ((task == "attack_homework") | (task == "attack_project")):
@@ -237,9 +238,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Data_Augmentation_CV"]
-    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "FGSM"]
+    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
 
-    application_names = ["FGSM"]
+    application_names = ["GeneticAttack"]
     parser.add_argument(
         "--application",
         type=str,

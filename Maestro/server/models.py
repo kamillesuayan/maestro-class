@@ -77,8 +77,8 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["Loss_Function_CV"] = pipeline2
-    # FGSM
-    if "FGSM" in applications:
+    # GeneticAttack
+    if "GeneticAttack" in applications:
         print("Setting up the FGSM Attack pipeline....")
         name = "FGSM_example_model"
         dataset_name = "MNIST"
@@ -98,7 +98,7 @@ def load_all_applications(applications: List[str]):
             device=device,
             finetune=True,
         )
-        application_list["FGSM"] = pipeline2
+        application_list["GeneticAttack"] = pipeline2
     if "Adv_Training" in applications:
         print("Setting up the Adv_Training Attack pipeline....")
         name = "Adv_Training_example_model"

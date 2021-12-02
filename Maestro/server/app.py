@@ -189,7 +189,7 @@ def main(applications):
         else:
             vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
             # print(app.applications["Adv_Training"])
-            evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications["Adv_Training"])
+            evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications[application])
             if ((task == "attack_homework") | (task == "attack_project")):
                 score = evaluator.attack_evaluator()
             elif task == "defense_homework":
@@ -229,7 +229,7 @@ def main(applications):
 
     print("Server Running...........")
     # app.run(debug=True)
-    app.run(host="128.195.151.199:5000")
+    app.run(host="0.0.0.0", port=443)
 
 
 if __name__ == "__main__":

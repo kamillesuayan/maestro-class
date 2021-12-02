@@ -193,7 +193,8 @@ def main(applications):
             evaluator = Evaluator(student_id, application, None, task)
             score = evaluator.defense_evaluator(task)
         else:
-            vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"GeneticAttack"
+            vm = virtual_model("http://128.195.151.199:443", application_name=application)#"GeneticAttack"
+            # vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"GeneticAttack"
             # print(app.applications["Adv_Training"])
             evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications[application])
             if ((task == "attack_homework") | (task == "attack_project")):
@@ -220,6 +221,7 @@ def main(applications):
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         output = []
+        print("This is the recording path", record_path)
         if ~os.path.exists(record_path):
             return {"score": "No result!"}
         with open(record_path, "r") as f:

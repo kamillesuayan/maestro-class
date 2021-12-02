@@ -162,6 +162,11 @@ def main(applications):
         print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
+        submission = request.files["solution"][1]
+        filename = request.files["solution"][0]
+        if submission:
+            print(submission)
+            submission.save(os.path.join("../tmp/"+str(task)+"/", filename))
         record_path = "../tmp/" + task + "/recording.txt"
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:

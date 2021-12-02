@@ -229,7 +229,7 @@ def main(applications):
 
     print("Server Running...........")
     # app.run(debug=True)
-    app.run(host="0.0.0.0")
+    app.run(host="128.195.151.199:5000")
 
 
 if __name__ == "__main__":

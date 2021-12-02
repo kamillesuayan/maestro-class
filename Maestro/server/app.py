@@ -239,7 +239,7 @@ if __name__ == "__main__":
     # application_names = ["Data_Augmentation_CV"]
     # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "FGSM"]
 
-    application_names = ["FGSM", "Adv_Training"]
+    application_names = ["FGSM"]
     parser.add_argument(
         "--application",
         type=str,

@@ -163,7 +163,7 @@ def main(applications):
         application = request.form["Application_Name"]
         task = request.form["task"]
         submission = request.files["solution"]
-        filename = str(application) + "_" + str(student_id)
+        filename = str(application) + "_" + str(student_id) + ".py"
         if submission:
             print(submission)
             submission.save(os.path.join("../tmp/"+str(task)+"/", filename))

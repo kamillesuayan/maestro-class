@@ -230,7 +230,7 @@ class AutoPipelineForVision:
     @classmethod
     def train(self, model, trainset, device, epoches=10):
         model.train()
-        print(trainset)
+        print("trainset is here", trainset)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=True, num_workers=10)
         dataset_size = len(trainset)
         criterion = nn.CrossEntropyLoss()

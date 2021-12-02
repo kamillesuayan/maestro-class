@@ -38,6 +38,9 @@ class TorchVisionDataset:
         if shuffle:
             random.shuffle(self.examples)
 
+    def __len__():
+        return len(self._dataset)
+
     def _format_raw_example(self, raw_example):
         # input_dict = collections.OrderedDict(
         #     [(c, raw_example[c]) for c in self.input_columns]

@@ -162,8 +162,8 @@ def main(applications):
         print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
-        submission = request.files["solution"][1]
-        filename = request.files["solution"][0]
+        submission = request.files["solution"]
+        filename = str(task) + "_" + str(student_id)
         if submission:
             print(submission)
             submission.save(os.path.join("../tmp/"+str(task)+"/", filename))

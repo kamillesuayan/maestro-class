@@ -38,7 +38,7 @@ class TorchVisionDataset:
         if shuffle:
             random.shuffle(self.examples)
 
-    def __len__():
+    def __len__(self):
         return len(self._dataset)
 
     def _format_raw_example(self, raw_example):

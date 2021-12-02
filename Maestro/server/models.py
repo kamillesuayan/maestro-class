@@ -113,7 +113,7 @@ def load_all_applications(applications: List[str]):
             name,
             dataset_name,
             model_path,
-            checkpoint_path,
+            '',
             compute_metrics_accuracy,
             myscenario,
             training_process=None,

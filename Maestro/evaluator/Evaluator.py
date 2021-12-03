@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import time
 from Maestro.data import get_dataset
 
-
 class Evaluator:
     def __init__(self, application, student_id, vm, task, app_pipeline=None, iterator_dataloader=None, constraint=None) -> None:
         self.app_pipeline = app_pipeline
@@ -195,15 +194,13 @@ class Evaluator:
         return score
 
     def defense_evaluator(self):
-        trainset=self.app_pipeline.training_data.data
-        model=self.app_pipeline.model
-        device=self.app_pipeline.device
-        testset=self.app_pipeline.validation_data.data
-        print("start adversarial training!")
-        # print(trainset.getitem())
-        print(len(trainset))
-        # print("xxxx")
+        trainset = self.app_pipeline.training_data.data
+        model = self.app_pipeline.model
+        device = self.app_pipeline.device
+        testset = self.app_pipeline.validation_data.data
 
+        if self.attacker is not None:
+            testset = self.attacker.attack(testset,self.defender)
         model = self.method.train(model, trainset, device)
         model.eval()
         testloader = torch.utils.data.DataLoader(

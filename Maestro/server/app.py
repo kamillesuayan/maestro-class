@@ -252,11 +252,7 @@ if __name__ == "__main__":
     # application_names = ["Data_Augmentation_CV"]
     # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
 
-<<<<<<< HEAD
     application_names = ["Adv_Training"]
-=======
-    application_names = ["GeneticAttack"]
->>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9
     parser.add_argument(
         "--application",
         type=str,

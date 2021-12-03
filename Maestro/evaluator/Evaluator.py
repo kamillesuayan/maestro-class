@@ -195,7 +195,6 @@ class Evaluator:
         return score
 
     def defense_evaluator(self):
-<<<<<<< HEAD
         trainset=self.app_pipeline.training_data.data
         model=self.app_pipeline.model
         device=self.app_pipeline.device
@@ -204,12 +203,6 @@ class Evaluator:
         # print(trainset.getitem())
         print(len(trainset))
         # print("xxxx")
-=======
-        trainset = self.app_pipeline.training_data.data
-        model = self.app_pipeline.model
-        device = self.app_pipeline.device
-        testset = self.app_pipeline.validation_data.data
->>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9
 
         model = self.method.train(model, trainset, device)
         model.eval()
@@ -251,7 +244,6 @@ class Evaluator:
         correct = 0
         total = 0
         with torch.no_grad():
-<<<<<<< HEAD
             for inputs, labels in testloader:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -263,25 +255,3 @@ class Evaluator:
             100*correct / total))
         score = 100*correct / total
         return score
-=======
-            for batch in iterator_dataloader:
-                inputs = torch.FloatTensor(batch["image"])
-                labels = batch["labels"]
-                output = model(inputs)
-                preds = torch.max(output, dim=1)[1].cpu().detach().numpy()
-                # print(preds)
-                success = preds == labels.cpu().detach().numpy()
-                # print(success)
-                acc.extend(success)
-
-                # # use predicted label as target label
-                # # with torch.enable_grad():
-                # adv_data = self.attack.perturb(data, pred, "mean", False)
-                # adv_output = model(adv_data, _eval=True)
-                # adv_pred = torch.max(adv_output, dim=1)[1]
-                # adv_acc = evaluate(adv_pred.cpu().numpy(), label.cpu().numpy(), "sum")
-                # total_adv_acc += adv_acc
-        print(f"accuracy: {sum(acc)/len(acc)}")
-        score = sum(acc) / len(acc)
-        return socre
->>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9

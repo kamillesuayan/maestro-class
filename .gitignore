@@ -1,7 +1,7 @@
 # data/
 models_temp/
 __pycache__/
-tmp/
+#tmp/
 runs/
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,7 +1,7 @@
 import torch
 import requests
 test = ["ask server to evaluate the code", "get the score"]
-test = test[1] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 def asking(url, device, student_id=123):
     data = {"Application_Name": "Adv_Training", "data_type": "test", "id": student_id, "task": "defense_homework"} # Application_Name: DataAugmentation/LossFunction

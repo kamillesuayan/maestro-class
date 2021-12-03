@@ -12,22 +12,11 @@ from Maestro.data import get_dataset
 
 
 class Evaluator:
-    def __init__(
-        self,
-        application,
-        student_id,
-        vm,
-        task,
-        app_pipeline=None,
-        iterator_dataloader=None,
-        constraint=None,
-    ) -> None:
+    def __init__(self, application, student_id, vm, task, app_pipeline=None, iterator_dataloader=None, constraint=None) -> None:
+        self.app_pipeline = app_pipeline
         if task == "defense_homework":
-            self.app_pipeline = app_pipeline
-            self.attacker = self.load_attacker(application, student_id, task, vm)
-            self.defender = self.load_defender(application, student_id, task, vm)
-            
-        elif (task == "attack_homework") | (task == "attack_project"):
+            self.method = self.load_defender(application, student_id,task, vm)
+        elif ((task == "attack_homework") | (task == "attack_project")):
             self.method = self.load_attacker(application, student_id, task, vm)
         elif task == "defense_project":
             self.method = self.load_pretrained_defender(application, student_id, vm)
@@ -100,19 +89,12 @@ class Evaluator:
             "../tmp/defense_project/junlin_group_project/lenet_defended_model.pth"
         )
         url = "http://127.0.0.1:5000"
-        spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
-            "./tmp/defense_project/junlin_group_project/"
-            + str(application)
-            + "_"
-            + str(student_id)
-            + ".py",
-        )
+        spec = importlib.util.spec_from_file_location(str(application)+"_"+str(student_id),"../tmp/defense_project/junlin_group_project/"+str(application)+"_"+str(student_id)+".py")
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         model = foo.LENET()
         model.load_state_dict(torch.load(model_path, map_location="cpu"))
-        defender = foo.Defender()  # change to the defense class name
+        defender = foo.Defense_Project(model, epsilon=0.2, alpha=0.1, min_val=0, max_val=1, max_iters=10, _type='linf') # change to the defense class name
         return defender
 
     # for the student debugging
@@ -242,25 +224,23 @@ class Evaluator:
         score = 100 * correct / total
         return score
 
-    def defense_evaluator_project(self, task):
-        dataset_name = "MNIST"
-        datasets = get_dataset(dataset_name)
+    def defense_evaluator_project(self):
+        # trainset=self.app_pipeline.training_data.data
+        device=self.app_pipeline.device
+        testset=self.app_pipeline.validation_data.data
+        model=self.method.model.to(device)
 
-        train_data = datasets["train"]
-        train_dataset = train_data.get_json_data()
-        print("train data", len(train_dataset), type(train_dataset))
+        print("start adversarial training!")
+        # print(trainset.getitem())
+        # print(len(trainset))
+        print("xxxx")
 
-        test_data = datasets["test"]
-        test_dataset = test_data.get_json_data()
-        print("test data", len(test_dataset))
-        targeted_dev_data = test_dataset[:1000]
-        iterator_dataloader = DataLoader(
-            targeted_dev_data, batch_size=32, collate_fn=default_data_collator,
-        )
-
-        acc = []
-        num = 0
-        adv_acc = 0.0
+        # model = self.method.train(model, trainset, device)
+        # model.eval()
+        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=10) # raw data
+        # add adversarial data
+        correct = 0
+        total = 0
         with torch.no_grad():
             for batch in iterator_dataloader:
                 inputs = torch.FloatTensor(batch["image"])

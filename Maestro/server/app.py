@@ -193,23 +193,23 @@ def main(applications):
 
     def record_scores(student_id, application, record_path, task):
         print("\nworking in the records: ", task, application)
-        if task == "defense_project":
-            evaluator = Evaluator(student_id, application, None, task)
-            score = evaluator.defense_evaluator(task)
-        else:
-            vm = virtual_model("http://128.195.151.199:443", application_name=application)#"GeneticAttack"
-            # vm = virtual_model("http://127.0.0.1:443", application_name=application)#"GeneticAttack"
+        # if task == "defense_project":
+        #     evaluator = Evaluator(application, student_id, None, task)
+        #     score = evaluator.defense_evaluator_project()
+        # else:
+        vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
             # print(app.applications["Adv_Training"])
-            evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications[application])
-            if ((task == "attack_homework") | (task == "attack_project")):
-                score = evaluator.attack_evaluator()
-            elif task == "defense_homework":
-                print("\n", task)
-                score = evaluator.defense_evaluator()
-            elif task == "defense_project":
-                score = evaluator.defense_evaluator(task)
-            else:
-                print("loading evaulator error")
+        evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications["Adv_Training"])
+        if ((task == "attack_homework") | (task == "attack_project")):
+            score = evaluator.attack_evaluator()
+        elif task == "defense_homework":
+            print("\n", task)
+            score = evaluator.defense_evaluator()
+        elif task == "defense_project":
+            score = evaluator.defense_evaluator_project()
+
+        else:
+            print("loading evaulator error")
 
         print("evaluator")
         print(score)
@@ -225,8 +225,8 @@ def main(applications):
         student_id = request.form["id"]
         application = request.form["Application_Name"]
         output = []
-        print("This is the recording path", record_path)
-        if ~os.path.exists(record_path):
+        print(record_path)
+        if not os.path.exists(record_path):
             return {"score": "No result!"}
         with open(record_path, "r") as f:
             data = f.readlines()
@@ -252,7 +252,11 @@ if __name__ == "__main__":
     # application_names = ["Data_Augmentation_CV"]
     # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
 
+<<<<<<< HEAD
+    application_names = ["Adv_Training"]
+=======
     application_names = ["GeneticAttack"]
+>>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9
     parser.add_argument(
         "--application",
         type=str,

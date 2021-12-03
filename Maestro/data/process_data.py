@@ -1,15 +1,10 @@
 import torch
-from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
+from Maestro.data.TorchVisionDataset import TorchVisionDataset
 import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
 import os
-
-# ------------------ LOCAL IMPORTS ---------------------------------
-from Maestro.data.HuggingFaceDataset import HuggingFaceDataset
-from Maestro.data.TorchVisionDataset import TorchVisionDataset
-# ------------------ LOCAL IMPORTS ---------------------------------
-
 
 def get_dataset(name: str):
     vocab = None
@@ -27,17 +22,21 @@ def get_dataset(name: str):
 
 
 def _read_mnist_dataset():
-    train_data = TorchVisionDataset(
-        name="mnist",
-        split="train",
-        transforms=transforms.Compose([transforms.ToTensor(),]),
-    )
-    test_data = TorchVisionDataset(
-        name="mnist",
-        split="test",
-        transforms=transforms.Compose([transforms.ToTensor(),]),
-    )
-    print(train_data)
+    train_data = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
+    test_data = datasets.MNIST(root='./data', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
+
+    # TorchVisionDataset(
+    #     name="mnist",
+    #     split="train",
+    #     transforms=transforms.Compose([transforms.ToTensor(),]),
+    # )
+    # test_data = TorchVisionDataset(
+    #     name="mnist",
+    #     split="test",
+    #     transforms=transforms.Compose([transforms.ToTensor(),]),
+    # )
+    print("train_data length: ", len(train_data))
+    # print("testestes")
 
     return {"train": train_data, "test": test_data}
 
@@ -98,3 +97,4 @@ def _read_malimg_dataset(train_size_ratio=0.7):
     # print(train_data, test_data)
     # print(malimg_datasets)
     return {"train": train_data, "test": test_data}
+

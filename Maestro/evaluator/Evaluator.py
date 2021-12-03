@@ -20,6 +20,11 @@ class Evaluator:
             self.method = self.load_attacker(application, student_id, task, vm)
         elif task == "defense_project":
             self.method = self.load_pretrained_defender(application, student_id, vm)
+        elif "war" in task:
+            if task == "war_attack":
+                self.method = self.load_attacker(application, student_id, task, vm)
+            elif task == "war_defend":
+                self.method = self.load_pretrained_defender(application, student_id, vm)
         else:
             print("loading evaulator error")
         self.iterator_dataloader = iterator_dataloader
@@ -28,29 +33,61 @@ class Evaluator:
 
     def load_attacker(self, application, student_id, task, vm):
         # print("load_attacker")
-        spec = importlib.util.spec_from_file_location(str(application)+"_"+str(student_id), "../tmp/"+str(task)+"/"+str(application)+"_"+str(student_id)+".py")
+        spec = importlib.util.spec_from_file_location(
+            str(application) + "_" + str(student_id),
+            "../tmp/"
+            + str(task)
+            + "/"
+            + str(application)
+            + "_"
+            + str(student_id)
+            + ".py",
+        )
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         if task == "attack_homework":
-            attacker = foo.GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,)
+            attacker = foo.GeneticAttack(
+                vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            )
         else:
-            attacker = foo.ProjectAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,)
+            attacker = foo.ProjectAttack(
+                vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            )
         return attacker
 
     def load_defender(self, application, student_id, task, vm):
-        spec = importlib.util.spec_from_file_location(str(application)+"_"+str(student_id), "../tmp/"+str(task)+"/"+str(application)+"_"+str(student_id)+".py")
+        spec = importlib.util.spec_from_file_location(
+            str(application) + "_" + str(student_id),
+            "../tmp/"
+            + str(task)
+            + "/"
+            + str(application)
+            + "_"
+            + str(student_id)
+            + ".py",
+        )
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         if application == "Adv_Training":
-            defender = foo.Adv_Training(self.app_pipeline.model, epsilon=0.2, alpha=0.1, min_val=0, max_val=1, max_iters=10, _type='linf')
+            defender = foo.Adv_Training(
+                self.app_pipeline.model,
+                epsilon=0.2,
+                alpha=0.1,
+                min_val=0,
+                max_val=1,
+                max_iters=10,
+                _type="linf",
+            )
         elif application == "DataAugmentation":
-            defender = foo.DataAugmentation() # change to the defense class name
+            defender = foo.DataAugmentation()  # change to the defense class name
         elif application == "LossFunction":
-            defender = foo.LossFunction() # change to the defense class name
+            defender = foo.LossFunction()  # change to the defense class name
         return defender
 
     def load_pretrained_defender(self, application, student_id, vm):
-        model_path = "../tmp/defense_project/junlin_group_project/lenet_defended_model.pth"
+        model_path = (
+            "../tmp/defense_project/junlin_group_project/lenet_defended_model.pth"
+        )
         url = "http://127.0.0.1:5000"
         spec = importlib.util.spec_from_file_location(str(application)+"_"+str(student_id),"../tmp/defense_project/junlin_group_project/"+str(application)+"_"+str(student_id)+".py")
         foo = importlib.util.module_from_spec(spec)
@@ -152,12 +189,13 @@ class Evaluator:
         if cost_time > 100:
             time_score = 0
         else:
-            time_score = 100/cost_time
+            time_score = 100 / cost_time
         # print(final_acc, time_score, distance)
         score = final_acc * 70 + time_score * 0.20 + distance * 0.1
         return score
 
     def defense_evaluator(self):
+<<<<<<< HEAD
         trainset=self.app_pipeline.training_data.data
         model=self.app_pipeline.model
         device=self.app_pipeline.device
@@ -166,10 +204,18 @@ class Evaluator:
         # print(trainset.getitem())
         print(len(trainset))
         # print("xxxx")
+=======
+        trainset = self.app_pipeline.training_data.data
+        model = self.app_pipeline.model
+        device = self.app_pipeline.device
+        testset = self.app_pipeline.validation_data.data
+>>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9
 
         model = self.method.train(model, trainset, device)
         model.eval()
-        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=10) # raw data
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=100, shuffle=True, num_workers=10
+        )  # raw data
         # add adversarial data
         correct = 0
         total = 0
@@ -181,9 +227,10 @@ class Evaluator:
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-        print('Accuracy of the network on the images: %.3f %%' % (
-            100*correct / total))
-        score = 100*correct / total
+        print(
+            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+        )
+        score = 100 * correct / total
         return score
 
     def defense_evaluator_project(self):
@@ -204,6 +251,7 @@ class Evaluator:
         correct = 0
         total = 0
         with torch.no_grad():
+<<<<<<< HEAD
             for inputs, labels in testloader:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -215,3 +263,25 @@ class Evaluator:
             100*correct / total))
         score = 100*correct / total
         return score
+=======
+            for batch in iterator_dataloader:
+                inputs = torch.FloatTensor(batch["image"])
+                labels = batch["labels"]
+                output = model(inputs)
+                preds = torch.max(output, dim=1)[1].cpu().detach().numpy()
+                # print(preds)
+                success = preds == labels.cpu().detach().numpy()
+                # print(success)
+                acc.extend(success)
+
+                # # use predicted label as target label
+                # # with torch.enable_grad():
+                # adv_data = self.attack.perturb(data, pred, "mean", False)
+                # adv_output = model(adv_data, _eval=True)
+                # adv_pred = torch.max(adv_output, dim=1)[1]
+                # adv_acc = evaluate(adv_pred.cpu().numpy(), label.cpu().numpy(), "sum")
+                # total_adv_acc += adv_acc
+        print(f"accuracy: {sum(acc)/len(acc)}")
+        score = sum(acc) / len(acc)
+        return socre
+>>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9

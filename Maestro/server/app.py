@@ -8,6 +8,7 @@ import numpy as np
 import base64
 import zlib
 import datetime
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import os
 
@@ -159,9 +160,16 @@ def main(applications):
     def file_evaluator():
         print("Evaluate the students' method.")
         student_id = request.form["id"]
+        print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
-        record_path = "../tmp/" + task + "/recording.txt"
+        submission = request.files["solution"]
+        filename = str(application) + "_" + str(student_id) + ".py"
+        if submission:
+            print(submission)
+            submission.save(os.path.join("../tmp/"+str(task)+"/", filename))
+        record_path = Path("../tmp/" + task + "/recording.txt")
+        record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
             f.write(
@@ -174,8 +182,10 @@ def main(applications):
             )
         # record_scores(application, student_id, record_path)
         try:
-            thread_temp = executor.submit(record_scores, student_id, application, record_path, task)
-            print(thread_temp.result()) # multithread debugging: print errors
+            thread_temp = executor.submit(
+                record_scores, student_id, application, record_path, task
+            )
+            print(thread_temp.result())  # multithread debugging: print errors
         except BaseException as error:
             print("An exception occurred: {}".format(error))
         print(student_id)
@@ -231,6 +241,7 @@ def main(applications):
 
     print("Server Running...........")
     # app.run(debug=True)
+    # app.run(host="0.0.0.0", port=443)
     app.run(host="0.0.0.0")
 
 
@@ -239,9 +250,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Data_Augmentation_CV"]
-    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "FGSM"]
+    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
 
+<<<<<<< HEAD
     application_names = ["Adv_Training"]
+=======
+    application_names = ["GeneticAttack"]
+>>>>>>> 998cc3e7a537bf9f1ddb82de24be36c091b93ff9
     parser.add_argument(
         "--application",
         type=str,

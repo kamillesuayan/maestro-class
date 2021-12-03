@@ -24,7 +24,9 @@ class Evaluator:
     ) -> None:
         if task == "defense_homework":
             self.app_pipeline = app_pipeline
-            self.method = self.load_defender(application, student_id, task, vm)
+            self.attacker = self.load_attacker(application, student_id, task, vm)
+            self.defender = self.load_defender(application, student_id, task, vm)
+            
         elif (task == "attack_homework") | (task == "attack_project"):
             self.method = self.load_attacker(application, student_id, task, vm)
         elif task == "defense_project":
@@ -216,6 +218,8 @@ class Evaluator:
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data
 
+        if self.attacker is not None:
+            testset = self.attacker.attack(testset,self.defender)
         model = self.method.train(model, trainset, device)
         model.eval()
         testloader = torch.utils.data.DataLoader(

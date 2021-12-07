@@ -2,8 +2,10 @@ from typing import List, Iterator, Dict, Tuple, Any, Type
 import numpy as np
 import torch
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
+from Maestro.models import Attacker
 
-class GeneticAttack:
+
+class GeneticAttack(Attacker):
     def __init__(
         self,
         vm,

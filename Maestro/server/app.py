@@ -101,7 +101,7 @@ def main(applications):
         print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
-        print(request.form["perturbation"])
+        print(f"perturb: {request.form['perturbation']}")
         if data_type == "train":
             data = app.applications[application].training_data.get_write_data()
         elif data_type == "validation":
@@ -114,6 +114,8 @@ def main(applications):
                 app.applications[application], data, request.form["perturbation"]
             )
         # json_data = get_json_data(data)
+        # this won't work right now, cause someone change code in processing_data.py
+        print(data)
         json_data = data.get_json_data()
         return {"data": json_data}  # {'image': [1*28*28], 'label': 7, 'uid': 0}
 
@@ -163,11 +165,14 @@ def main(applications):
         print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
-        submission = request.files["solution"]
-        filename = str(application) + "_" + str(student_id) + ".py"
+        try:
+            submission = request.files["solution"]
+        except:
+            submission = None
         if submission:
+            filename = str(application) + "_" + str(student_id) + ".py"
             print(submission)
-            submission.save(os.path.join("../tmp/"+str(task)+"/", filename))
+            submission.save(os.path.join("../tmp/" + str(task) + "/", filename))
         record_path = Path("../tmp/" + task + "/recording.txt")
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
@@ -197,10 +202,18 @@ def main(applications):
         #     evaluator = Evaluator(application, student_id, None, task)
         #     score = evaluator.defense_evaluator_project()
         # else:
-        vm = virtual_model("http://127.0.0.1:5000", application_name=application)#"FGSM"
-            # print(app.applications["Adv_Training"])
-        evaluator = Evaluator(application, student_id, vm, task, app_pipeline=app.applications["Adv_Training"])
-        if ((task == "attack_homework") | (task == "attack_project")):
+        vm = virtual_model(
+            "http://127.0.0.1:5000", application_name=application
+        )  # "FGSM"
+        # print(app.applications["Adv_Training"])
+        evaluator = Evaluator(
+            application,
+            student_id,
+            vm,
+            task,
+            app_pipeline=app.applications["Adv_Training"],
+        )
+        if (task == "attack_homework") | (task == "attack_project"):
             score = evaluator.attack_evaluator()
         elif task == "defense_homework":
             print("\n", task)
@@ -217,8 +230,8 @@ def main(applications):
             f.write(str(score) + "\n")
         return
 
-    @app.route("/evaluate_result", methods=["POST"])
-    def evaluate_result():
+    @app.route("/retrieve_result", methods=["POST"])
+    def retrieve_result():
         print("check the score of the defense method")
         task = request.form["task"]
         record_path = "../tmp/" + str(task) + "/recording.txt"
@@ -252,7 +265,7 @@ if __name__ == "__main__":
     # application_names = ["Data_Augmentation_CV"]
     # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
 
-    application_names = ["Adv_Training"]
+    application_names = ["Adv_Training", "GeneticAttack"]
     parser.add_argument(
         "--application",
         type=str,

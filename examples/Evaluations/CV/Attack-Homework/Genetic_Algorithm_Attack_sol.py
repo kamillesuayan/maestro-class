@@ -3,11 +3,12 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
+from Maestro.models import Attacker
 from transformers.data.data_collator import default_data_collator
 import matplotlib.pyplot as plt
 
 
-class GeneticAttack:
+class GeneticAttack(Attacker):
     def __init__(
         self,
         vm,

@@ -10,12 +10,22 @@ import matplotlib.pyplot as plt
 import time
 from Maestro.data import get_dataset
 
+
 class Evaluator:
-    def __init__(self, application, student_id, vm, task, app_pipeline=None, iterator_dataloader=None, constraint=None) -> None:
+    def __init__(
+        self,
+        application,
+        student_id,
+        vm,
+        task,
+        app_pipeline=None,
+        iterator_dataloader=None,
+        constraint=None,
+    ) -> None:
         self.app_pipeline = app_pipeline
         if task == "defense_homework":
-            self.method = self.load_defender(application, student_id,task, vm)
-        elif ((task == "attack_homework") | (task == "attack_project")):
+            self.method = self.load_defender(application, student_id, task, vm)
+        elif (task == "attack_homework") | (task == "attack_project"):
             self.method = self.load_attacker(application, student_id, task, vm)
         elif task == "defense_project":
             self.method = self.load_pretrained_defender(application, student_id, vm)
@@ -88,12 +98,27 @@ class Evaluator:
             "../tmp/defense_project/junlin_group_project/lenet_defended_model.pth"
         )
         url = "http://127.0.0.1:5000"
-        spec = importlib.util.spec_from_file_location(str(application)+"_"+str(student_id),"../tmp/defense_project/junlin_group_project/"+str(application)+"_"+str(student_id)+".py")
+        spec = importlib.util.spec_from_file_location(
+            str(application) + "_" + str(student_id),
+            "../tmp/defense_project/junlin_group_project/"
+            + str(application)
+            + "_"
+            + str(student_id)
+            + ".py",
+        )
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         model = foo.LENET()
         model.load_state_dict(torch.load(model_path, map_location="cpu"))
-        defender = foo.Defense_Project(model, epsilon=0.2, alpha=0.1, min_val=0, max_val=1, max_iters=10, _type='linf') # change to the defense class name
+        defender = foo.Defense_Project(
+            model,
+            epsilon=0.2,
+            alpha=0.1,
+            min_val=0,
+            max_val=1,
+            max_iters=10,
+            _type="linf",
+        )  # change to the defense class name
         return defender
 
     # for the student debugging
@@ -200,7 +225,7 @@ class Evaluator:
         testset = self.app_pipeline.validation_data.data
 
         if self.attacker is not None:
-            testset = self.attacker.attack(testset,self.defender)
+            testset = self.attacker.attack_dataset(testset, self.defender)
         model = self.method.train(model, trainset, device)
         model.eval()
         testloader = torch.utils.data.DataLoader(
@@ -225,9 +250,9 @@ class Evaluator:
 
     def defense_evaluator_project(self):
         # trainset=self.app_pipeline.training_data.data
-        device=self.app_pipeline.device
-        testset=self.app_pipeline.validation_data.data
-        model=self.method.model.to(device)
+        device = self.app_pipeline.device
+        testset = self.app_pipeline.validation_data.data
+        model = self.method.model.to(device)
 
         print("start adversarial training!")
         # print(trainset.getitem())
@@ -236,7 +261,9 @@ class Evaluator:
 
         # model = self.method.train(model, trainset, device)
         # model.eval()
-        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=10) # raw data
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=100, shuffle=True, num_workers=10
+        )  # raw data
         # add adversarial data
         correct = 0
         total = 0
@@ -248,7 +275,8 @@ class Evaluator:
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-        print('Accuracy of the network on the images: %.3f %%' % (
-            100*correct / total))
-        score = 100*correct / total
+        print(
+            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+        )
+        score = 100 * correct / total
         return score

@@ -203,15 +203,15 @@ def main(applications):
         #     score = evaluator.defense_evaluator_project()
         # else:
         vm = virtual_model(
-            "http://127.0.0.1:5000", application_name=application
+            "http://0.0.0.0:443", application_name=application
         )  # "FGSM"
-        # print(app.applications["Adv_Training"])
+        print("This should say genetic attack: ",application)
         evaluator = Evaluator(
             application,
             student_id,
             vm,
             task,
-            app_pipeline=app.applications["Adv_Training"],
+            app_pipeline=app.applications[application],
         )
         if (task == "attack_homework") | (task == "attack_project"):
             score = evaluator.attack_evaluator()
@@ -254,8 +254,8 @@ def main(applications):
 
     print("Server Running...........")
     # app.run(debug=True)
-    # app.run(host="0.0.0.0", port=443)
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=443)
+    #app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":
@@ -263,9 +263,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Data_Augmentation_CV"]
-    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
+    application_names = ["GeneticAttack"]
+    #application_names = ["Adv_Training", "GeneticAttack"]
 
-    application_names = ["Adv_Training", "GeneticAttack"]
     parser.add_argument(
         "--application",
         type=str,

@@ -267,8 +267,7 @@ def main(applications):
                 recording = i.split("\t")
                 if recording[0] == student_id:
                     output.append(recording)
-        print(output)
-        json_score = {"score": output[2].strip(), "output": output[1], "leaderboard": [{"name": "Score", "value": output[2].strip()}] }
+        json_score = {"score": output[-1][3].strip(), "output": output[-1][1], "leaderboard": [{"name": "Score", "value": output[-1][3].strip()}] }
         return json_score
 
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------

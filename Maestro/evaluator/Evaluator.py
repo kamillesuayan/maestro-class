@@ -158,7 +158,7 @@ class Evaluator:
         return self.constraint.violate(original_input, perturbed_input)
 
     def attack_evaluator(self):
-        start_time = time.clock()
+        start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
         dev_data = self.vm.get_data(data_type="test")
@@ -209,7 +209,7 @@ class Evaluator:
                 target_label, n_success_attack, len(test_loader), final_acc
             )
         )
-        cost_time = time.clock() - start_time
+        cost_time = time.perf_counter() - start_time
         if cost_time > 100:
             time_score = 0
         else:

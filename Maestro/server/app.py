@@ -212,8 +212,8 @@ def main(applications):
             app_pipeline=app.applications[application],
         )
         if (task == "attack_homework") | (task == "attack_project"):
-            print("we are here")
             score = evaluator.attack_evaluator()
+            print("we are here", score)
         elif task == "defense_homework":
             print("\n", task)
             score = evaluator.defense_evaluator()
@@ -224,7 +224,7 @@ def main(applications):
             print("loading evaulator error")
 
         print("evaluator")
-        print(score)
+        print(score, record_path)
         with open(record_path, "a+") as f:
             f.write(str(score) + "\n")
         return

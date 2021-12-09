@@ -214,7 +214,7 @@ class Evaluator:
             time_score = 0
         else:
             time_score = 100 / cost_time
-        # print(final_acc, time_score, distance)
+        #print(final_acc, time_score, distance)
         score = final_acc * 70 + time_score * 0.20 + distance * 0.1
         return score
 

@@ -193,7 +193,6 @@ def main(applications):
             print(thread_temp.result())  # multithread debugging: print errors
         except BaseException as error:
             print("An exception occurred: {}".format(error))
-        print(student_id)
         return {"score": "server is working on it..."}
 
     def record_scores(student_id, application, record_path, task):
@@ -205,7 +204,6 @@ def main(applications):
         vm = virtual_model(
             "http://0.0.0.0:443", application_name=application
         )  # "FGSM"
-        print("This should say genetic attack: ",application)
         evaluator = Evaluator(
             application,
             student_id,
@@ -214,6 +212,7 @@ def main(applications):
             app_pipeline=app.applications[application],
         )
         if (task == "attack_homework") | (task == "attack_project"):
+            print("we are here")
             score = evaluator.attack_evaluator()
         elif task == "defense_homework":
             print("\n", task)

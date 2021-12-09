@@ -19,8 +19,8 @@ def getScore(url, device, student_id=123):
     print(score)
 
 def main():
-    url = "http://127.0.0.1:5000"
-    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    url = "http://127.0.0.1:443"
+    device = torch.device("cuda:1" if (torch.cuda.is_available()) else "cpu")
     print("at test")
     student_id = 117036910009
 

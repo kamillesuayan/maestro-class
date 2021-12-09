@@ -249,6 +249,26 @@ def main(applications):
                     output.append(recording)
         return {"score": output}
 
+    @app.route("/evaluate_result", methods=["POST"])
+    def evaluate_result():
+        print("check the score of the defense method")
+        task = request.form["task"]
+        record_path = "../tmp/" + str(task) + "/recording.txt"
+        student_id = request.form["id"]
+        application = request.form["Application_Name"]
+        output = []
+        print(record_path)
+        if not os.path.exists(record_path):
+            return {"score": "No result!"}
+        with open(record_path, "r") as f:
+            data = f.readlines()
+            for i in data:
+                print(i)
+                recording = i.split("\t")
+                if recording[0] == student_id:
+                    output.append(recording)
+        return {"score": output}
+
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")

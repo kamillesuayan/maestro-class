@@ -24,7 +24,7 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 def main(applications):
     app = flask.Flask(__name__)
-    app.config["DEBUG"] = True
+    app.config["DEBUG"] = False
     app.applications = applications
 
     @app.route("/", methods=["GET"])

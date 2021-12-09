@@ -22,19 +22,19 @@ def get_dataset(name: str):
 
 
 def _read_mnist_dataset():
-    train_data = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
-    test_data = datasets.MNIST(root='./data', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
+    #train_data = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
+    #test_data = datasets.MNIST(root='./data', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(),]))
 
-    # TorchVisionDataset(
-    #     name="mnist",
-    #     split="train",
-    #     transforms=transforms.Compose([transforms.ToTensor(),]),
-    # )
-    # test_data = TorchVisionDataset(
-    #     name="mnist",
-    #     split="test",
-    #     transforms=transforms.Compose([transforms.ToTensor(),]),
-    # )
+    train_data = TorchVisionDataset(
+        name="mnist",
+        split="train",
+        transforms=transforms.Compose([transforms.ToTensor(),]),
+    )
+    test_data = TorchVisionDataset(
+        name="mnist",
+        split="test",
+        transforms=transforms.Compose([transforms.ToTensor(),]),
+    )
     print("train_data length: ", len(train_data))
     # print("testestes")
 

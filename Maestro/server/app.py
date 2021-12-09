@@ -128,7 +128,7 @@ def main(applications):
             torch.load(file_path, map_location="cpu")
         )
         print("success")
-        return "sccuess"
+        return "success"
 
     ##
     @app.route("/get_model_embedding", methods=["POST"])

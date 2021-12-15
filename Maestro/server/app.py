@@ -24,7 +24,7 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 def main(applications):
     app = flask.Flask(__name__)
-    app.config["DEBUG"] = True
+    app.config["DEBUG"] = False
     app.applications = applications
 
     @app.route("/", methods=["GET"])
@@ -128,7 +128,7 @@ def main(applications):
             torch.load(file_path, map_location="cpu")
         )
         print("success")
-        return "sccuess"
+        return "success"
 
     ##
     @app.route("/get_model_embedding", methods=["POST"])
@@ -193,7 +193,6 @@ def main(applications):
             print(thread_temp.result())  # multithread debugging: print errors
         except BaseException as error:
             print("An exception occurred: {}".format(error))
-        print(student_id)
         return {"score": "server is working on it..."}
 
     def record_scores(student_id, application, record_path, task):
@@ -203,18 +202,18 @@ def main(applications):
         #     score = evaluator.defense_evaluator_project()
         # else:
         vm = virtual_model(
-            "http://127.0.0.1:5000", application_name=application
+            "http://0.0.0.0:443", application_name=application
         )  # "FGSM"
-        # print(app.applications["Adv_Training"])
         evaluator = Evaluator(
             application,
             student_id,
             vm,
             task,
-            app_pipeline=app.applications["Adv_Training"],
+            app_pipeline=app.applications[application],
         )
         if (task == "attack_homework") | (task == "attack_project"):
             score = evaluator.attack_evaluator()
+            print("we are here", score)
         elif task == "defense_homework":
             print("\n", task)
             score = evaluator.defense_evaluator()
@@ -225,7 +224,7 @@ def main(applications):
             print("loading evaulator error")
 
         print("evaluator")
-        print(score)
+        print(score, record_path)
         with open(record_path, "a+") as f:
             f.write(str(score) + "\n")
         return
@@ -250,12 +249,33 @@ def main(applications):
                     output.append(recording)
         return {"score": output}
 
+    @app.route("/evaluate_result", methods=["POST"])
+    def evaluate_result():
+        print("check the score of the defense method")
+        task = request.form["task"]
+        record_path = "../tmp/" + str(task) + "/recording.txt"
+        student_id = request.form["id"]
+        application = request.form["Application_Name"]
+        output = []
+        print(record_path)
+        if not os.path.exists(record_path):
+            return {"score": "No result!"}
+        with open(record_path, "r") as f:
+            data = f.readlines()
+            for i in data:
+                print(i)
+                recording = i.split("\t")
+                if recording[0] == student_id:
+                    output.append(recording)
+        json_score = {"score": output[-1][3].strip(), "output": output[-1][1], "leaderboard": [{"name": "Score", "value": output[-1][3].strip()}] }
+        return json_score
+
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")
     # app.run(debug=True)
-    # app.run(host="0.0.0.0", port=443)
-    app.run(debug=False, host="0.0.0.0")
+    app.run(host="0.0.0.0", port=443)
+    #app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":
@@ -263,9 +283,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Data_Augmentation_CV"]
-    # application_names = ["Data_Augmentation_CV", "Loss_Function_CV" , "GeneticAttack"]
+    application_names = ["GeneticAttack"]
+    #application_names = ["Adv_Training", "GeneticAttack"]
 
-    application_names = ["Adv_Training", "GeneticAttack"]
     parser.add_argument(
         "--application",
         type=str,

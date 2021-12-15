@@ -1,7 +1,7 @@
 import torch
 import requests
 test = ["ask server to evaluate the code", "get the score"]
-test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+test = test[1] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 def asking(url, device, student_id=123):
     data = {"Application_Name": "GeneticAttack", "data_type": "test", "id": student_id, "task": "attack_homework"}
@@ -19,8 +19,8 @@ def getScore(url, device, student_id=123):
     print(score)
 
 def main():
-    url = "http://127.0.0.1:5000"
-    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    url = "http://127.0.0.1:443"
+    device = torch.device("cuda:1" if (torch.cuda.is_available()) else "cpu")
     print("at test")
     student_id = 117036910009
 

@@ -22,10 +22,11 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 
-def main(applications):
+def main(applications, port):
     app = flask.Flask(__name__)
     app.config["DEBUG"] = False
     app.applications = applications
+    app.port = port
 
     @app.route("/", methods=["GET"])
     def home():
@@ -177,7 +178,7 @@ def main(applications):
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
-            f.write(
+            f.write('\n' +
                 str(student_id)
                 + "\t"
                 + now.strftime("%Y-%m-%d %H:%M:%S")
@@ -190,20 +191,17 @@ def main(applications):
             thread_temp = executor.submit(
                 record_scores, student_id, application, record_path, task
             )
-            print(thread_temp.result())  # multithread debugging: print errors
+            # print(thread_temp.result())  # multithread debugging: print errors
         except BaseException as error:
             print("An exception occurred: {}".format(error))
-        return {"score": "server is working on it..."}
+        return {"feedback": "server is working on it..."}
 
     def record_scores(student_id, application, record_path, task):
         print("\nworking in the records: ", task, application)
-        # if task == "defense_project":
-        #     evaluator = Evaluator(application, student_id, None, task)
-        #     score = evaluator.defense_evaluator_project()
-        # else:
         vm = virtual_model(
-            "http://0.0.0.0:443", application_name=application
+            "http://0.0.0.0:"+str(app.port), application_name=application
         )  # "FGSM"
+
         evaluator = Evaluator(
             application,
             student_id,
@@ -211,6 +209,7 @@ def main(applications):
             task,
             app_pipeline=app.applications[application],
         )
+        print("22 no error so far!")
         if (task == "attack_homework") | (task == "attack_project"):
             score = evaluator.attack_evaluator()
             print("we are here", score)
@@ -219,10 +218,8 @@ def main(applications):
             score = evaluator.defense_evaluator()
         elif task == "defense_project":
             score = evaluator.defense_evaluator_project()
-
         else:
             print("loading evaulator error")
-
         print("evaluator")
         print(score, record_path)
         with open(record_path, "a+") as f:
@@ -273,17 +270,21 @@ def main(applications):
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")
-    # app.run(debug=True)
-    app.run(host="0.0.0.0", port=443)
-    #app.run(host="0.0.0.0")
+    app.run(debug=True)
+    app.run(host="127.0.0.1", port=port)
+    # app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":
     executor = ThreadPoolExecutor(20)
-
+    DEBUG = True
+    if DEBUG == True:
+        port = 5000
+    else:
+        port = 443
     parser = argparse.ArgumentParser("start the allennlp demo")
     # application_names = ["Data_Augmentation_CV"]
-    application_names = ["GeneticAttack"]
+    application_names = ["GeneticAttack", "Adv_Training"]
     #application_names = ["Adv_Training", "GeneticAttack"]
 
     parser.add_argument(
@@ -297,4 +298,4 @@ if __name__ == "__main__":
 
     applications = load_all_applications(args.application)
     print("All Applications Loaded.........")
-    main(applications)
+    main(applications, port)

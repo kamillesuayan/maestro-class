@@ -53,7 +53,7 @@ def project(x, original_x, epsilon, _type='linf'):
     return x
 
 
-class Defense_Project():
+class ProjectDefense():
     def __init__(self, model, epsilon=0.2, alpha=0.1, min_val=0, max_val=1, max_iters=10, _type='linf'):
         print("load the example")
         self.model = model

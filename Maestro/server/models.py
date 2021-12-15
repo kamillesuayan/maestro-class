@@ -86,7 +86,7 @@ def load_all_applications(applications: List[str]):
         myscenario.load_from_yaml("Attacker_Access/FGSM.yaml")
         checkpoint_path = "models_temp/"
         model_path = checkpoint_path + "lenet_mnist_model.pth"
-        device = torch.device("cuda:1" if (torch.cuda.is_available()) else "cpu")
+        device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
         pipeline2 = AutoPipelineForVision.initialize(
             name,
             dataset_name,
@@ -99,6 +99,8 @@ def load_all_applications(applications: List[str]):
             finetune=True,
         )
         application_list["GeneticAttack"] = pipeline2
+        application_list["ProjectAttack"] = pipeline2
+
     if "Adv_Training" in applications:
         print("Setting up the Adv_Training Attack pipeline....")
         name = "Adv_Training_example_model"
@@ -121,5 +123,7 @@ def load_all_applications(applications: List[str]):
             finetune=False,
         )
         application_list["Adv_Training"] = pipeline2
+        application_list["ProjectDefense"] = pipeline2
+
 
     return application_list

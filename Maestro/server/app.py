@@ -255,7 +255,7 @@ def main(applications):
     print("Server Running...........")
     # app.run(debug=True)
     # app.run(host="0.0.0.0", port=443)
-    app.run(host="0.0.0.0")
+    app.run(debug=False, host="0.0.0.0")
 
 
 if __name__ == "__main__":

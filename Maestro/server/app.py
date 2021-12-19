@@ -5,11 +5,13 @@ import dill as pickle
 import json
 import torch
 import numpy as np
+import time
 import base64
 import zlib
 import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from celery import Celery
 import os
 
 # ------------------ LOCAL IMPORTS ---------------------------------
@@ -21,13 +23,91 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 
+executor = ThreadPoolExecutor(20)
+application_config_file = "Server_Config/Genetic_Attack.json"
 
-def main(applications, port):
-    app = flask.Flask(__name__)
-    app.config["DEBUG"] = False
-    app.applications = applications
-    app.port = port
+applications = load_all_applications(application_config_file)
+print("All Applications Loaded.........")
 
+app = flask.Flask(__name__)
+app.config["DEBUG"] = False
+app.config.update(
+    CELERY_BROKER_URL='redis://127.0.0.1:6379/0',
+    CELERY_RESULT_BACKEND='redis://127.0.0.1:6379/0'
+)
+app.applications = applications
+################################# MAKE TASK QUEUE WITH CELERY ####################################################
+def make_celery(app):
+    celery = Celery(
+        app.name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
+    celery.conf.update(app.config)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
+celery = make_celery(app)
+@celery.task()
+def wait(a):
+    time.sleep(a)
+    print("finish sleeping")
+    return
+@celery.task()
+def append_to_queue(student_id, application, record_path, task):
+    # print("processing!")
+    # time.sleep(5)
+    # print("finsh!")
+    print("Appending to queue!")
+    try:
+        thread_temp = executor.submit(
+            record_scores, student_id, application, record_path, task
+        )
+        print(thread_temp.result())  # multithread debugging: print errors
+    except BaseException as error:
+        print("An exception occurred: {}".format(error))
+    return
+################################# MAKE TASK QUEUE WITH CELERY ####################################################
+
+def record_scores(student_id, application, record_path, task):
+    print("\nworking in the records: ", task, application)
+    # if task == "defense_project":
+    #     evaluator = Evaluator(application, student_id, None, task)
+    #     score = evaluator.defense_evaluator_project()
+    # else:
+    vm = virtual_model(
+        "http://0.0.0.0:443", application_name=application
+    )  # "FGSM"
+    evaluator = Evaluator(
+        application,
+        student_id,
+        vm,
+        task,
+        app_pipeline=app.applications[application],
+    )
+    print(f"the task is {task}")
+    if (task == "attack_homework") | (task == "attack_project"):
+        score = evaluator.attack_evaluator()
+    elif task == "defense_homework":
+        score = evaluator.defense_evaluator()
+    elif task == "defense_project":
+        score = evaluator.defense_evaluator_project()
+
+    else:
+        print("loading evaulator error")
+
+    print("evaluator")
+    print(score, record_path)
+    with open(record_path, "a+") as f:
+        f.write(str(score) + "\n")
+    return
+
+def main():
     @app.route("/", methods=["GET"])
     def home():
         return "<h1>The Home of Maestro Server</p>"
@@ -116,7 +196,7 @@ def main(applications, port):
             )
         # json_data = get_json_data(data)
         # this won't work right now, cause someone change code in processing_data.py
-        print(data)
+        # print(data)
         json_data = data.get_json_data()
         return {"data": json_data}  # {'image': [1*28*28], 'label': 7, 'uid': 0}
 
@@ -187,44 +267,21 @@ def main(applications, port):
                 + "\t"
             )
         # record_scores(application, student_id, record_path)
-        try:
+        # print(record_path,str(record_path),str(record_path.stem))
+        job = (student_id, application, record_path, task)
+        using_queue = False
+        if using_queue:
+            append_to_queue.delay(student_id, application, str(record_path), task)
+            # wait.delay(3)
+        else:
+            # try:
             thread_temp = executor.submit(
                 record_scores, student_id, application, record_path, task
             )
-            # print(thread_temp.result())  # multithread debugging: print errors
-        except BaseException as error:
-            print("An exception occurred: {}".format(error))
-        return {"feedback": "server is working on it..."}
-
-    def record_scores(student_id, application, record_path, task):
-        print("\nworking in the records: ", task, application)
-        vm = virtual_model(
-            "http://0.0.0.0:"+str(app.port), application_name=application
-        )  # "FGSM"
-
-        evaluator = Evaluator(
-            application,
-            student_id,
-            vm,
-            task,
-            app_pipeline=app.applications[application],
-        )
-        print("22 no error so far!")
-        if (task == "attack_homework") | (task == "attack_project"):
-            score = evaluator.attack_evaluator()
-            print("we are here", score)
-        elif task == "defense_homework":
-            print("\n", task)
-            score = evaluator.defense_evaluator()
-        elif task == "defense_project":
-            score = evaluator.defense_evaluator_project()
-        else:
-            print("loading evaulator error")
-        print("evaluator")
-        print(score, record_path)
-        with open(record_path, "a+") as f:
-            f.write(str(score) + "\n")
-        return
+            print(thread_temp.result())  # multithread debugging: print errors
+            # except BaseException as error:
+            #     print("An exception occurred: {}".format(error))
+        return {"score": "server is working on it..."}
 
     @app.route("/retrieve_result", methods=["POST"])
     def retrieve_result():
@@ -270,32 +327,11 @@ def main(applications, port):
     # ------------------ END ATTACK SERVER FUNCTIONS ---------------------------
 
     print("Server Running...........")
-    app.run(debug=True)
-    app.run(host="127.0.0.1", port=port)
-    # app.run(host="0.0.0.0")
+    # app.run(debug=True)
+    # app.run(host="0.0.0.0", port=443)
+    app.run(host="0.0.0.0")
+
 
 
 if __name__ == "__main__":
-    executor = ThreadPoolExecutor(20)
-    DEBUG = True
-    if DEBUG == True:
-        port = 5000
-    else:
-        port = 443
-    parser = argparse.ArgumentParser("start the allennlp demo")
-    # application_names = ["Data_Augmentation_CV"]
-    application_names = ["GeneticAttack", "Adv_Training"]
-    #application_names = ["Adv_Training", "GeneticAttack"]
-
-    parser.add_argument(
-        "--application",
-        type=str,
-        action="append",
-        default=application_names,
-        help="if specified, only load these models",
-    )
-    args = parser.parse_args()
-
-    applications = load_all_applications(args.application)
-    print("All Applications Loaded.........")
-    main(applications, port)
+    main()

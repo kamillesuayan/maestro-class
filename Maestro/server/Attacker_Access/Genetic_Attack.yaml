@@ -1,0 +1,23 @@
+Type:
+  Name: Attack
+Attack Method:
+  target: Untargeted_Classification
+  constraint: epsilon
+Attacker Access:
+    training_data_access:
+      read: False
+      write: False
+    dev_data_access:
+      read: False
+      write: False
+    test_data_access: 
+      read: True
+      write: True
+    model_access:
+      read: False
+      write: False
+    output_access:
+      gradient: False
+      output: True
+
+      

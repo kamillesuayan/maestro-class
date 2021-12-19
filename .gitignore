@@ -3,6 +3,7 @@ models_temp/
 __pycache__/
 #tmp/
 runs/
+redis-stable/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

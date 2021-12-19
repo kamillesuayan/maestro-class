@@ -9,6 +9,7 @@ from transformers.data.data_collator import default_data_collator
 import matplotlib.pyplot as plt
 import time
 from Maestro.data import get_dataset
+from Maestro.models import build_model
 
 
 class Evaluator:
@@ -221,8 +222,11 @@ class Evaluator:
 
     def defense_evaluator(self):
         trainset = self.app_pipeline.training_data.data
-        model = self.app_pipeline.model # change to the new model. Now it will continue to run.
+        # model = self.app_pipeline.model # change to the new model. Now it will continue to run.
         device = self.app_pipeline.device
+
+        model = build_model("defense_homework", num_labels=None, max_length=None, device=device)
+
         testset = self.app_pipeline.validation_data.data
         # if self.attacker is not None:
         #     testset = self.attacker.attack_dataset(testset, self.defender)

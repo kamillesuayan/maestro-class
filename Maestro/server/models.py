@@ -45,7 +45,7 @@ def load_all_applications(applications_config_path: str):
         dataset_name = app_config["dataset"]
         model_name = app_config["model"]["name"]
         checkpoint_path = app_config["model"]["checkpoint"]
-        print(model_name, checkpoint_path)
+        print(model_name, checkpoint_path,device)
         pipeline = AutoPipelineForVision.initialize(
             name,
             dataset_name,

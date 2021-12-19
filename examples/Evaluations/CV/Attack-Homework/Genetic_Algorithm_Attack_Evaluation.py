@@ -40,7 +40,10 @@ def main():
     student_id = 117036910009
 
     if test == "ask server to evaluate the code":
-        asking(url, device, student_id)
+        asking(url, device, 11)
+        asking(url, device, 22)
+        asking(url, device, 33)
+        asking(url, device, 44)
     elif test == "get the score":
         getScore(url, device, student_id)
 

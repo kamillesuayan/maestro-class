@@ -23,7 +23,7 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 
-executor = ThreadPoolExecutor(20)
+executor = ThreadPoolExecutor(1)
 application_config_file = "Server_Config/Genetic_Attack.json"
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
@@ -71,13 +71,15 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-    try:
-        thread_temp = executor.submit(
-            record_scores, student_id, application, record_path, task
-        )
-        print(thread_temp.result())  # multithread debugging: print errors
-    except BaseException as error:
-        print("An exception occurred: {}".format(error))
+    
+    # record_scores(student_id, application, record_path, task)
+    # try:
+    thread_temp = executor.submit(
+        record_scores, student_id, application, record_path, task
+    )
+    #     print(thread_temp.result())  # multithread debugging: print errors
+    # except BaseException as error:
+    #     print("An exception occurred: {}".format(error))
     return
 ################################# MAKE TASK QUEUE WITH CELERY ####################################################
 
@@ -156,11 +158,11 @@ def main():
 
     @app.route("/get_batch_output", methods=["POST"])
     def get_batch_output():
-        print("Received! get_batch_output")
+        # print("Received! get_batch_output")
         json_data = request.get_json()
         application = json_data["Application_Name"]
-        print("application name:", application)
-        print(app.applications)
+        # print("application name:", application)
+        # print(app.applications)
         batch_input = json_data["data"]
         labels = json_data["labels"]
 
@@ -276,9 +278,10 @@ def main():
             )
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
-        job = (student_id, application, record_path, task)
+        job = (student_id, application, str(record_path), task)
         if TASK_QUEUE:
-            append_to_queue.delay(student_id, application, str(record_path), task)
+            # append_to_queue.delay(student_id, application, str(record_path), task)
+            append_to_queue.apply(args=job)
             # wait.delay(3)
         else:
             # try:

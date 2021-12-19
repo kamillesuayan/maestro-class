@@ -9,7 +9,7 @@ test = test[
 
 def asking(url, device, student_id=123):
     data = {
-        "Application_Name": "GeneticAttack",
+        "Application_Name": "Genetic_Attack",
         "data_type": "test",
         "id": student_id,
         "task": "attack_homework",

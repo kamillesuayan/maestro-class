@@ -1,0 +1,15 @@
+{
+    "Application": [
+        {
+            "name": "Genetic_Attack",
+            "GPU": 0,
+            "attacker_access_yaml": "Attacker_Access/Genetic_Attack.yaml",
+            "defender_access_yaml": "",
+            "model": {
+                "name": "LeNet",
+                "checkpoint": "models_temp/lenet_mnist_model.pth"
+            },
+            "dataset": "MNIST"
+        }
+    ]
+}

@@ -23,6 +23,7 @@ def main():
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     print("at test")
     student_id = 117036910009
+    
 
 
     if test == "ask server to evaluate the code":

@@ -1,0 +1,15 @@
+{
+    "Application": [
+        {
+            "name": "Adv_Training",
+            "GPU": 0,
+            "attacker_access_yaml": "Attacker_Access/FGSM.yaml",
+            "defender_access_yaml": "",
+            "model": {
+                "name": "LeNet",
+                "checkpoint": ""
+            },
+            "dataset": "MNIST"
+        }
+    ]
+}

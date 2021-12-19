@@ -108,173 +108,173 @@ class DefenseAccess:
 # ---------------------- DEFENSE PIPELINE ---------------------------
 
 
-class AugmentedPipelineCV:
-    """
-    Pipeline contains everything.
-    """
+# class AugmentedPipelineCV:
+#     """
+#     Pipeline contains everything.
+#     """
 
-    def __init__(
-        self,
-        scenario: Scenario,
-        training_data,
-        validation_data,
-        test_data,
-        model: nn.Module,
-        training_process,
-        device: int,
-    ) -> None:
-        self.scenario = scenario
-        self.training_data = training_data
-        self.validation_data = validation_data
-        self.test_data = test_data
-        self.model = model
-        self.training_process = training_process
-        self.device = device
-        self.trainloader = None
+#     def __init__(
+#         self,
+#         scenario: Scenario,
+#         training_data,
+#         validation_data,
+#         test_data,
+#         model: nn.Module,
+#         training_process,
+#         device: int,
+#     ) -> None:
+#         self.scenario = scenario
+#         self.training_data = training_data
+#         self.validation_data = validation_data
+#         self.test_data = test_data
+#         self.model = model
+#         self.training_process = training_process
+#         self.device = device
+#         self.trainloader = None
 
-        # adding methods for getting the prediction and the outputs
-        # getting the data modifier
-        self.training_data = DataModifier(
-            self.training_data, self.scenario.defense_access.training_data_access_level
-        )
-        self.validation_data = DataModifier(
-            self.validation_data, self.scenario.defense_access.dev_data_access_level
-        )
-        self.test_data = DataModifier(
-            self.test_data, self.scenario.defense_access.test_data_access_level
-        )
+#         # adding methods for getting the prediction and the outputs
+#         # getting the data modifier
+#         self.training_data = DataModifier(
+#             self.training_data, self.scenario.defense_access.training_data_access_level
+#         )
+#         self.validation_data = DataModifier(
+#             self.validation_data, self.scenario.defense_access.dev_data_access_level
+#         )
+#         self.test_data = DataModifier(
+#             self.test_data, self.scenario.defense_access.test_data_access_level
+#         )
 
-    def get_batch_output(self, x, data_type="train"):
-        assert self.scenario.defense_access.output_access_level["output"] == True
-        device = self.device
-        x_tensor = torch.FloatTensor(x)
-        x_tensor = x_tensor.to(device)
-        # print(self.model)
-        output = self.model(x_tensor)
-        return output
+#     def get_batch_output(self, x, data_type="train"):
+#         assert self.scenario.defense_access.output_access_level["output"] == True
+#         device = self.device
+#         x_tensor = torch.FloatTensor(x)
+#         x_tensor = x_tensor.to(device)
+#         # print(self.model)
+#         output = self.model(x_tensor)
+#         return output
 
-    def get_batch_input_gradient(self, x, data_type="train"):
-        assert self.scenario.defense_access.output_access_level["gradient"] == True
-        device = self.device
-        x_tensor = torch.FloatTensor(x)
-        x_tensor = x_tensor.to(device)
-        x_tensor.requires_grad = True
-        output = self.model(x_tensor)
-        pred = output.max(1, keepdim=True)[1]
-        loss = F.nll_loss(output, pred[0])
-        self.model.zero_grad()
-        loss.backward()
-        x_grad = x_tensor.grad.data
-        print("pipeline, get_batch_input_gradient")
-        # print(x_grad)
-        return x_grad
+#     def get_batch_input_gradient(self, x, data_type="train"):
+#         assert self.scenario.defense_access.output_access_level["gradient"] == True
+#         device = self.device
+#         x_tensor = torch.FloatTensor(x)
+#         x_tensor = x_tensor.to(device)
+#         x_tensor.requires_grad = True
+#         output = self.model(x_tensor)
+#         pred = output.max(1, keepdim=True)[1]
+#         loss = F.nll_loss(output, pred[0])
+#         self.model.zero_grad()
+#         loss.backward()
+#         x_grad = x_tensor.grad.data
+#         print("pipeline, get_batch_input_gradient")
+#         # print(x_grad)
+#         return x_grad
 
-    def set_training_set(self, augmented_dataset):
-        assert (
-            self.scenario.defense_access.training_access_level["can_add_train_set"]
-            == True
-        )
-        self.trainloader = torch.utils.data.DataLoader(
-            augmented_dataset, batch_size=100, shuffle=True, num_workers=10
-        )
+#     def set_training_set(self, augmented_dataset):
+#         assert (
+#             self.scenario.defense_access.training_access_level["can_add_train_set"]
+#             == True
+#         )
+#         self.trainloader = torch.utils.data.DataLoader(
+#             augmented_dataset, batch_size=100, shuffle=True, num_workers=10
+#         )
 
-        return
+#         return
 
-    def train(self):
-        assert self.scenario.defense_access.training_access_level["can_train"] == True
-        self.model.train()
-        trainloader = self.trainloader
-        criterion = nn.CrossEntropyLoss()
-        epochs = 10
-        optimizer = optim.Adam(self.model.parameters())
-        for epoch in range(epochs):  # loop over the dataset multiple times
-            running_loss = 0.0
-            for i, (inputs, labels) in enumerate(trainloader, 0):
-                # get the inputs; data is a list of [inputs, labels]
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                # zero the parameter gradients
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
+#     def train(self):
+#         assert self.scenario.defense_access.training_access_level["can_train"] == True
+#         self.model.train()
+#         trainloader = self.trainloader
+#         criterion = nn.CrossEntropyLoss()
+#         epochs = 10
+#         optimizer = optim.Adam(self.model.parameters())
+#         for epoch in range(epochs):  # loop over the dataset multiple times
+#             running_loss = 0.0
+#             for i, (inputs, labels) in enumerate(trainloader, 0):
+#                 # get the inputs; data is a list of [inputs, labels]
+#                 inputs = inputs.to(device)
+#                 labels = labels.to(device)
+#                 # zero the parameter gradients
+#                 optimizer.zero_grad()
+#                 outputs = model(inputs)
+#                 loss = criterion(outputs, labels)
+#                 loss.backward()
+#                 optimizer.step()
 
-                # print statistics
-                running_loss += loss.item()
-            print(
-                "[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / dataset_size)
-            )
-            running_loss = 0.0
-        return
+#                 # print statistics
+#                 running_loss += loss.item()
+#             print(
+#                 "[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / dataset_size)
+#             )
+#             running_loss = 0.0
+#         return
 
-    def test(self, model, testset, device):
-        model.eval()
-        if testset == None:
-            testloader = self.trainloader
-        else:
-            testloader = torch.utils.data.DataLoader(
-                testset, batch_size=100, shuffle=True, num_workers=10
-            )
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for inputs, labels in testloader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                outputs = model(inputs)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        print(
-            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
-        )
-        return
+#     def test(self, model, testset, device):
+#         model.eval()
+#         if testset == None:
+#             testloader = self.trainloader
+#         else:
+#             testloader = torch.utils.data.DataLoader(
+#                 testset, batch_size=100, shuffle=True, num_workers=10
+#             )
+#         correct = 0
+#         total = 0
+#         with torch.no_grad():
+#             for inputs, labels in testloader:
+#                 inputs = inputs.to(device)
+#                 labels = labels.to(device)
+#                 outputs = model(inputs)
+#                 _, predicted = torch.max(outputs.data, 1)
+#                 total += labels.size(0)
+#                 correct += (predicted == labels).sum().item()
+#         print(
+#             "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+#         )
+#         return
 
 
-class LossFuncPipelineCV:
-    """
-    Pipeline contains everything.
-    """
+# class LossFuncPipelineCV:
+#     """
+#     Pipeline contains everything.
+#     """
 
-    def __init__(
-        self,
-        scenario: Scenario,
-        training_data,
-        validation_data,
-        test_data,
-        model: nn.Module,
-        training_process,
-        device: int,
-    ) -> None:
-        self.scenario = scenario
-        self.training_data = training_data
-        self.validation_data = validation_data
-        self.test_data = test_data
-        self.model = model
-        self.training_process = training_process
-        self.device = device
-        self.trainloader = None
+#     def __init__(
+#         self,
+#         scenario: Scenario,
+#         training_data,
+#         validation_data,
+#         test_data,
+#         model: nn.Module,
+#         training_process,
+#         device: int,
+#     ) -> None:
+#         self.scenario = scenario
+#         self.training_data = training_data
+#         self.validation_data = validation_data
+#         self.test_data = test_data
+#         self.model = model
+#         self.training_process = training_process
+#         self.device = device
+#         self.trainloader = None
 
-        # adding methods for getting the prediction and the outputs
-        # getting the data modifier
-        self.training_data = DataModifier(
-            self.training_data, self.scenario.defense_access.training_data_access_level
-        )
-        self.validation_data = DataModifier(
-            self.validation_data, self.scenario.defense_access.dev_data_access_level
-        )
-        self.test_data = DataModifier(
-            self.test_data, self.scenario.defense_access.test_data_access_level
-        )
+#         # adding methods for getting the prediction and the outputs
+#         # getting the data modifier
+#         self.training_data = DataModifier(
+#             self.training_data, self.scenario.defense_access.training_data_access_level
+#         )
+#         self.validation_data = DataModifier(
+#             self.validation_data, self.scenario.defense_access.dev_data_access_level
+#         )
+#         self.test_data = DataModifier(
+#             self.test_data, self.scenario.defense_access.test_data_access_level
+#         )
 
-    def set_loss_function(model):
-        self.model = model
-        return
+#     def set_loss_function(model):
+#         self.model = model
+#         return
 
-    def detection_test():
-        metrics = Loss_Evaluator(self.model, self.test_data)
-        return metrics
+#     def detection_test():
+#         metrics = Loss_Evaluator(self.model, self.test_data)
+#         return metrics
 
 
 # ---------------------- END DEFENSE PIPELINE ------------------------

@@ -40,7 +40,8 @@ def load_all_applications(applications_config_path: str):
         device = app_config["GPU"]
         device = torch.device(device if (torch.cuda.is_available()) else "cpu")
         myscenario = Scenario()
-        myscenario.load_from_yaml("Attacker_Access/Genetic_Attack.yaml")
+        attacker_access_yaml = app_config["attacker_access_yaml"]
+        myscenario.load_from_yaml(attacker_access_yaml)
         dataset_name = app_config["dataset"]
         model_name = app_config["model"]["name"]
         checkpoint_path = app_config["model"]["checkpoint"]

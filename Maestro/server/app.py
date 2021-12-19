@@ -25,12 +25,18 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 executor = ThreadPoolExecutor(20)
 application_config_file = "Server_Config/Genetic_Attack.json"
+server_config_file = "Server_Config/Server.json"
+with open(server_config_file,"r") as f:
+    server_configs = json.load(f)
+IP_ADDR = server_configs["ip"]
+PORT = server_configs["port"]
+TASK_QUEUE = server_configs["task_queue"]
 
 applications = load_all_applications(application_config_file)
 print("All Applications Loaded.........")
 
 app = flask.Flask(__name__)
-app.config["DEBUG"] = False
+app.config["DEBUG"] = True
 app.config.update(
     CELERY_BROKER_URL='redis://127.0.0.1:6379/0',
     CELERY_RESULT_BACKEND='redis://127.0.0.1:6379/0'
@@ -82,7 +88,7 @@ def record_scores(student_id, application, record_path, task):
     #     score = evaluator.defense_evaluator_project()
     # else:
     vm = virtual_model(
-        "http://0.0.0.0:5000", application_name=application
+        "http://"+IP_ADDR+":"+PORT, application_name=application
     )  # "FGSM"
     evaluator = Evaluator(
         application,
@@ -255,6 +261,7 @@ def main():
             filename = str(application) + "_" + str(student_id) + ".py"
             print(submission)
             submission.save(os.path.join("../tmp/" + str(task) + "/", filename))
+
         record_path = Path("../tmp/" + task + "/recording.txt")
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
@@ -270,8 +277,7 @@ def main():
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
         job = (student_id, application, record_path, task)
-        using_queue = False
-        if using_queue:
+        if TASK_QUEUE:
             append_to_queue.delay(student_id, application, str(record_path), task)
             # wait.delay(3)
         else:
@@ -279,7 +285,7 @@ def main():
             thread_temp = executor.submit(
                 record_scores, student_id, application, record_path, task
             )
-            print(thread_temp.result())  # multithread debugging: print errors
+            # print(thread_temp.result())  # multithread debugging: print errors
             # except BaseException as error:
             #     print("An exception occurred: {}".format(error))
         return {"score": "server is working on it..."}

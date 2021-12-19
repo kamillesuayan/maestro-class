@@ -1,3 +1,14 @@
 
 11	2021-12-19 14:36:52	Adv_Training	
 11	2021-12-19 14:38:41	Adv_Training	
+11	2021-12-19 14:52:34	Adv_Training	
+11	2021-12-19 14:53:07	Adv_Training	
+11	2021-12-19 14:53:48	Adv_Training	
+11	2021-12-19 14:55:54	Adv_Training	
+11	2021-12-19 14:57:53	Adv_Training	
+11	2021-12-19 14:59:03	Adv_Training	
+11	2021-12-19 15:14:04	Adv_Training	98.24
+
+11	2021-12-19 15:15:00	Adv_Training	98.29
+
+11	2021-12-19 15:15:55	Adv_Training	97.78

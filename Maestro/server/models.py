@@ -54,7 +54,7 @@ def load_all_applications(applications_config_path: str):
             myscenario,
             training_process=None,
             device=device,
-            finetune=True,
+            finetune=False,
         )
         application_list[name] = pipeline
 

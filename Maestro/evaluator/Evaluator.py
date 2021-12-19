@@ -221,7 +221,7 @@ class Evaluator:
 
     def defense_evaluator(self):
         trainset = self.app_pipeline.training_data.data
-        model = self.app_pipeline.model
+        model = self.app_pipeline.model # change to the new model. Now it will continue to run.
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data
         # if self.attacker is not None:

@@ -24,7 +24,9 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
+
+# application_config_file = "Server_Config/Genetic_Attack.json"
+application_config_file = "Server_Config/Adv_Training.json"
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -77,7 +79,7 @@ def append_to_queue(student_id, application, record_path, task):
     thread_temp = executor.submit(
         record_scores, student_id, application, record_path, task
     )
-    #     print(thread_temp.result())  # multithread debugging: print errors
+    # print(thread_temp.result())  # multithread debugging: print errors
     # except BaseException as error:
     #     print("An exception occurred: {}".format(error))
     return
@@ -293,14 +295,15 @@ def main():
             # print(thread_temp.result())  # multithread debugging: print errors
             # except BaseException as error:
             #     print("An exception occurred: {}".format(error))
-        return {"score": "server is working on it..."}
+        return {"feedback": "server is working on it..."}
 
     @app.route("/retrieve_result", methods=["POST"])
     def retrieve_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
         student_id = request.form["id"]
+        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+
         application = request.form["Application_Name"]
         output = []
         print(record_path)
@@ -319,8 +322,9 @@ def main():
     def evaluate_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
         student_id = request.form["id"]
+        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+
         application = request.form["Application_Name"]
         output = []
         print(record_path)

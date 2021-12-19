@@ -16,7 +16,7 @@ def asking(url, device, student_id=123):
     }
     final_url = "{0}/file_evaluator".format(url)
     response = requests.post(final_url, data=data)
-    feedback = response.json()["score"]
+    feedback = response.json()["feedback"]
     print(feedback)
 
 

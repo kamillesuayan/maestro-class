@@ -55,6 +55,7 @@ def make_celery(app):
 celery = make_celery(app)
 @celery.task()
 def wait(a):
+    # for testing purpose
     time.sleep(a)
     print("finish sleeping")
     return
@@ -81,7 +82,7 @@ def record_scores(student_id, application, record_path, task):
     #     score = evaluator.defense_evaluator_project()
     # else:
     vm = virtual_model(
-        "http://0.0.0.0:443", application_name=application
+        "http://0.0.0.0:5000", application_name=application
     )  # "FGSM"
     evaluator = Evaluator(
         application,

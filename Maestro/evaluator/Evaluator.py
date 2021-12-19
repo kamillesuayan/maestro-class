@@ -42,6 +42,7 @@ class Evaluator:
 
     def load_attacker(self, application, student_id, task, vm):
         # print("load_attacker")
+
         spec = importlib.util.spec_from_file_location(
             str(application) + "_" + str(student_id),
             "../tmp/"
@@ -110,7 +111,7 @@ class Evaluator:
         spec.loader.exec_module(foo)
         model = foo.LENET()
         model.load_state_dict(torch.load(model_path, map_location="cpu"))
-        defender = foo.Defense_Project(
+        defender = foo.ProjectDefense(
             model,
             epsilon=0.2,
             alpha=0.1,
@@ -223,9 +224,8 @@ class Evaluator:
         model = self.app_pipeline.model
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data
-
-        if self.attacker is not None:
-            testset = self.attacker.attack_dataset(testset, self.defender)
+        # if self.attacker is not None:
+        #     testset = self.attacker.attack_dataset(testset, self.defender)
         model = self.method.train(model, trainset, device)
         model.eval()
         testloader = torch.utils.data.DataLoader(

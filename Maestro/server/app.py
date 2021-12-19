@@ -258,7 +258,7 @@ def main():
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
-            f.write(
+            f.write('\n' +
                 str(student_id)
                 + "\t"
                 + now.strftime("%Y-%m-%d %H:%M:%S")

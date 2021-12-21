@@ -45,6 +45,9 @@ def load_all_applications(applications_config_path: str):
         dataset_name = app_config["dataset"]
         model_name = app_config["model"]["name"]
         checkpoint_path = app_config["model"]["checkpoint"]
+        whether_finetune = True
+        if checkpoint_path == "":
+            whether_finetune = False
         print(model_name, checkpoint_path,device)
         pipeline = AutoPipelineForVision.initialize(
             name,
@@ -54,7 +57,7 @@ def load_all_applications(applications_config_path: str):
             myscenario,
             training_process=None,
             device=device,
-            finetune=True,
+            finetune=whether_finetune,
         )
         application_list[name] = pipeline
 

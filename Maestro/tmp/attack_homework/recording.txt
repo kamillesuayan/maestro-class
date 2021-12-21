@@ -66,3 +66,79 @@
 33	2021-12-19 14:03:35	Genetic_Attack	
 44	2021-12-19 14:03:35	Genetic_Attack	62.21921895624071
 55.17092478425014
+
+11	2021-12-19 14:13:00	Genetic_Attack	
+11	2021-12-19 14:13:06	Genetic_Attack	
+11	2021-12-19 14:13:06	Genetic_Attack	
+11	2021-12-19 14:13:06	Genetic_Attack	
+11	2021-12-19 14:13:06	Genetic_Attack	
+11	2021-12-19 14:13:07	Genetic_Attack	
+11	2021-12-19 14:13:07	Genetic_Attack	
+22	2021-12-19 14:13:07	Genetic_Attack	
+33	2021-12-19 14:13:07	Genetic_Attack	
+44	2021-12-19 14:13:07	Genetic_Attack	
+11	2021-12-19 14:15:43	Genetic_Attack	
+11	2021-12-19 14:15:43	Genetic_Attack	
+11	2021-12-19 14:15:43	Genetic_Attack	
+11	2021-12-19 14:15:44	Genetic_Attack	
+11	2021-12-19 14:15:44	Genetic_Attack	
+11	2021-12-19 14:15:44	Genetic_Attack	
+11	2021-12-19 14:15:44	Genetic_Attack	
+22	2021-12-19 14:15:44	Genetic_Attack	
+33	2021-12-19 14:15:44	Genetic_Attack	
+44	2021-12-19 14:15:44	Genetic_Attack	55.663900323512145
+
+11	2021-12-19 14:18:08	Genetic_Attack	
+11	2021-12-19 14:18:14	Genetic_Attack	
+11	2021-12-19 14:18:14	Genetic_Attack	
+11	2021-12-19 14:18:14	Genetic_Attack	
+11	2021-12-19 14:18:15	Genetic_Attack	
+11	2021-12-19 14:18:15	Genetic_Attack	
+11	2021-12-19 14:18:16	Genetic_Attack	
+22	2021-12-19 14:18:16	Genetic_Attack	
+33	2021-12-19 14:18:17	Genetic_Attack	
+44	2021-12-19 14:18:17	Genetic_Attack	61.08114943602355
+54.71310938753323
+54.99689838148784
+
+11	2021-12-19 14:26:10	Genetic_Attack	
+11	2021-12-19 14:26:10	Genetic_Attack	
+11	2021-12-19 14:26:10	Genetic_Attack	
+11	2021-12-19 14:26:10	Genetic_Attack	
+11	2021-12-19 14:26:10	Genetic_Attack	
+11	2021-12-19 14:26:11	Genetic_Attack	
+11	2021-12-19 14:26:11	Genetic_Attack	
+22	2021-12-19 14:26:12	Genetic_Attack	
+33	2021-12-19 14:26:13	Genetic_Attack	
+44	2021-12-19 14:26:15	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:32:58	Genetic_Attack	
+22	2021-12-19 14:32:58	Genetic_Attack	
+33	2021-12-19 14:32:58	Genetic_Attack	
+44	2021-12-19 14:32:58	Genetic_Attack	
+11	2021-12-19 14:34:37	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:36:09	Genetic_Attack	
+22	2021-12-19 14:36:09	Genetic_Attack	
+33	2021-12-19 14:36:09	Genetic_Attack	
+44	2021-12-19 14:36:09	Genetic_Attack	
+11	2021-12-19 14:41:15	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+11	2021-12-19 14:41:21	Genetic_Attack	
+22	2021-12-19 14:41:21	Genetic_Attack	
+33	2021-12-19 14:41:21	Genetic_Attack	
+44	2021-12-19 14:41:21	Genetic_Attack	

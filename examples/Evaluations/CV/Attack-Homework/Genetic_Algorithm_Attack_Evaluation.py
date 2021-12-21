@@ -41,6 +41,12 @@ def main():
 
     if test == "ask server to evaluate the code":
         asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
         asking(url, device, 22)
         asking(url, device, 33)
         asking(url, device, 44)

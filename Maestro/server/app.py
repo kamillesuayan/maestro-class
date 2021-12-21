@@ -25,8 +25,8 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 executor = ThreadPoolExecutor(1)
 
-# application_config_file = "Server_Config/Genetic_Attack.json"
-application_config_file = "Server_Config/Adv_Training.json"
+application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Adv_Training.json"
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -345,7 +345,7 @@ def main():
     print("Server Running...........")
     # app.run(debug=True)
     # app.run(host="0.0.0.0", port=443)
-    app.run(host="0.0.0.0")
+    app.run(host=IP_ADDR, port=PORT)
 
 
 

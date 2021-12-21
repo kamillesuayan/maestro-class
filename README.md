@@ -61,7 +61,9 @@ python -m pip install -e .
 cd Maestro/server
 ```
 ```
-python app.py
+python app.py # run the maestro server
+./run-redis.sh # run the redis database
+celery -A app.celery worker # run the celery workers
 ```
 change or update `app.py` and `model.py` accordingly for what models to load and how to load models.
 

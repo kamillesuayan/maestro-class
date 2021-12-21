@@ -71,13 +71,13 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-    
+
     # record_scores(student_id, application, record_path, task)
     # try:
     thread_temp = executor.submit(
         record_scores, student_id, application, record_path, task
     )
-    #     print(thread_temp.result())  # multithread debugging: print errors
+    # print(thread_temp.result())  # multithread debugging: print errors
     # except BaseException as error:
     #     print("An exception occurred: {}".format(error))
     return
@@ -264,7 +264,9 @@ def main():
             print(submission)
             submission.save(os.path.join("../tmp/" + str(task) + "/", filename))
 
-        record_path = Path("../tmp/" + task + "/recording.txt")
+        # record_path = Path("../tmp/" + task + "/recording.txt")
+        record_path = Path("../tmp/" + task + "/recording_"+str(student_id)+".txt")
+
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
@@ -291,14 +293,15 @@ def main():
             # print(thread_temp.result())  # multithread debugging: print errors
             # except BaseException as error:
             #     print("An exception occurred: {}".format(error))
-        return {"score": "server is working on it..."}
+        return {"feedback": "server is working on it..."}
 
     @app.route("/retrieve_result", methods=["POST"])
     def retrieve_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        record_path = "../tmp/" + str(task) + "/recording.txt"
         student_id = request.form["id"]
+        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+
         application = request.form["Application_Name"]
         output = []
         print(record_path)
@@ -317,8 +320,9 @@ def main():
     def evaluate_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        record_path = "../tmp/" + str(task) + "/recording.txt"
         student_id = request.form["id"]
+        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+
         application = request.form["Application_Name"]
         output = []
         print(record_path)
@@ -339,7 +343,7 @@ def main():
     print("Server Running...........")
     # app.run(debug=True)
     # app.run(host="0.0.0.0", port=443)
-    app.run(host="0.0.0.0")
+    app.run(host=IP_ADDR, port=PORT)
 
 
 

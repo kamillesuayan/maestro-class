@@ -7,7 +7,9 @@
             "defender_access_yaml": "",
             "model": {
                 "name": "LeNet",
-                "checkpoint": ""
+                "checkpoint": "",
+                "train_method": ""
+
             },
             "dataset": "MNIST"
         }

@@ -93,6 +93,15 @@ python examples/Evaluations/CV/Attack-Homework/Ask_Result.py # change the line 4
 
 ```
 
+### To Run Task Queue
+```
+Go to the Maestr/server/ directory
+python app.py # run the server
+sh run-redis.sh # run redis server
+celery -A app.celery worker # intitialize the worker
+
+```
+
 ### Some Issues
 1. If some problems that are similar to `The current PyTorch install supports CUDA capabilities sm_37 sm_50 sm_60 sm_70 sm_75.` appear, check the [link](https://pytorch.org/get-started/locally/) to reinstall to suitable pytorch version.
 

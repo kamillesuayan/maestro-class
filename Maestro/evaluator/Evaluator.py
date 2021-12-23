@@ -10,12 +10,95 @@ import matplotlib.pyplot as plt
 import time
 from Maestro.data import get_dataset
 from Maestro.models import build_model
+from Maestro.pipeline import VisionPipeline
+
+def load_attacker(application, student_id, task_folder, task,vm):
+    print("load_attacker")
+
+    spec = importlib.util.spec_from_file_location(
+        str(application) + "_" + str(student_id),
+        "../tmp/"
+        + str(task_folder)
+        + "/"
+        + str(task)
+        + "_"
+        + str(student_id)
+        + ".py",
+    )
+    foo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(foo)
+    if task == "attack_homework":
+        attacker = foo.GeneticAttack(
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+        )
+    else:
+        attacker = foo.ProjectAttack(
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+        )
+    return attacker
+
+def load_defender(model_name,application, student_id, task_folder,task, device, spec_path = None):
+    if spec_path:
+        spec = importlib.util.spec_from_file_location(application + "_" + model_name, spec_path)
+    else:
+        spec = importlib.util.spec_from_file_location(
+            str(application) + "_" + str(student_id),
+            "../tmp/"
+            + str(task_folder)
+            + "/"
+            + str(task)
+            + "_"
+            + str(student_id)
+            + ".py",
+        )
+    foo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(foo)
+    model = build_model(model_name, num_labels=None, max_length=None, device=device)
+    defender = foo.Adv_Training(
+            model,
+            epsilon=0.2,
+            alpha=0.1,
+            min_val=0,
+            max_val=1,
+            max_iters=10,
+            _type="linf",
+        )
+    return defender
+
+def load_pretrained_defender(model_name, application, task_folder,task,student_id,  device):
+    model_path = (
+        "../tmp/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
+    )
+    url = "http://127.0.0.1:5000"
+    spec = importlib.util.spec_from_file_location(
+        str(application) + "_" + str(student_id),
+        "../tmp/"+ str(task_folder)+"/junlin_group_project/"
+        + str(task)
+        + "_"
+        + str(student_id)
+        + ".py",
+    )
+    foo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(foo)
+    model = foo.MODEL()
+    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    defender = foo.ProjectDefense(
+        model,
+        epsilon=0.2,
+        alpha=0.1,
+        min_val=0,
+        max_val=1,
+        max_iters=10,
+        _type="linf",
+    )  # change to the defense class name
+    return defender
 
 
 class Evaluator:
     def __init__(
         self,
         application,
+        model_name,
         student_id,
         vm,
         task,
@@ -25,103 +108,21 @@ class Evaluator:
     ) -> None:
         self.app_pipeline = app_pipeline
         if task == "defense_homework":
-            self.method = self.load_defender(application, student_id, task, vm)
+            self.method = load_defender(model_name, application, student_id, task,task, self.app_pipeline.device)
         elif (task == "attack_homework") | (task == "attack_project"):
-            self.method = self.load_attacker(application, student_id, task, vm)
+            self.method = load_attacker(application, student_id, task,task, vm)
         elif task == "defense_project":
-            self.method = self.load_pretrained_defender(application, student_id, vm)
+            self.method = load_pretrained_defender(model_name,application, task, task,student_id, self.app_pipeline.device)
         elif "war" in task:
             if task == "war_attack":
-                self.method = self.load_attacker(application, student_id, task, vm)
+                self.method = load_attacker(application, student_id,"war_phase", task, vm)
             elif task == "war_defend":
-                self.method = self.load_pretrained_defender(application, student_id, vm)
+                self.method = load_pretrained_defender(model_name,application, "war_phase", task,student_id, self.app_pipeline.device)
         else:
             print("loading evaulator error")
         self.iterator_dataloader = iterator_dataloader
         self.vm = vm
         self.constraint = constraint
-
-    def load_attacker(self, application, student_id, task, vm):
-        # print("load_attacker")
-
-        spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
-            "../tmp/"
-            + str(task)
-            + "/"
-            + str(application)
-            + "_"
-            + str(student_id)
-            + ".py",
-        )
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
-        if task == "attack_homework":
-            attacker = foo.GeneticAttack(
-                vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
-            )
-        else:
-            attacker = foo.ProjectAttack(
-                vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
-            )
-        return attacker
-
-    def load_defender(self, application, student_id, task, vm):
-        spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
-            "../tmp/"
-            + str(task)
-            + "/"
-            + str(application)
-            + "_"
-            + str(student_id)
-            + ".py",
-        )
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
-        if application == "Adv_Training":
-            defender = foo.Adv_Training(
-                self.app_pipeline.model,
-                epsilon=0.2,
-                alpha=0.1,
-                min_val=0,
-                max_val=1,
-                max_iters=10,
-                _type="linf",
-            )
-        elif application == "DataAugmentation":
-            defender = foo.DataAugmentation()  # change to the defense class name
-        elif application == "LossFunction":
-            defender = foo.LossFunction()  # change to the defense class name
-        return defender
-
-    def load_pretrained_defender(self, application, student_id, vm):
-        model_path = (
-            "../tmp/defense_project/junlin_group_project/lenet_defended_model.pth"
-        )
-        url = "http://127.0.0.1:5000"
-        spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
-            "../tmp/defense_project/junlin_group_project/"
-            + str(application)
-            + "_"
-            + str(student_id)
-            + ".py",
-        )
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
-        model = foo.LENET()
-        model.load_state_dict(torch.load(model_path, map_location="cpu"))
-        defender = foo.ProjectDefense(
-            model,
-            epsilon=0.2,
-            alpha=0.1,
-            min_val=0,
-            max_val=1,
-            max_iters=10,
-            _type="linf",
-        )  # change to the defense class name
-        return defender
 
     # for the student debugging
     def evaluate_attacker(self):
@@ -252,19 +253,29 @@ class Evaluator:
         score = 100 * correct / total
         return score
 
-    def defense_evaluator_project(self):
+    def defense_evaluator_project(self,applications,attacker_path_list):
         # trainset=self.app_pipeline.training_data.data
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data
         model = self.method.model.to(device)
-
+        new_pipeline = VisionPipeline(
+                    None,
+                    None,
+                    None,
+                    self.app_pipeline.validation_data.data,
+                    self.method.model,
+                    None,
+                    self.app_pipeline.device,
+                    None,
+                )
+        applications["temp_war_defense_eval"] = new_pipeline
+        vm = virtual_model("http://"+IP_ADDR+":"+PORT, application_name="temp_war_defense_eval") 
+        for i in range(len(attacker_path_list)):
+            load_attacker("temp_war_defense_eval",)
         print("start adversarial training!")
         # print(trainset.getitem())
         # print(len(trainset))
-        print("xxxx")
 
-        # model = self.method.train(model, trainset, device)
-        # model.eval()
         testloader = torch.utils.data.DataLoader(
             testset, batch_size=100, shuffle=True, num_workers=10
         )  # raw data

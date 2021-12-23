@@ -4,3 +4,32 @@
 11	2021-12-21 10:57:33	Genetic_Attack	72.70189756963256
 
 11	2021-12-21 11:08:01	Genetic_Attack	72.6906175270083
+
+11	2021-12-22 16:59:55	Genetic_Attack	
+11	2021-12-22 17:00:58	Genetic_Attack	
+11	2021-12-22 17:05:22	Genetic_Attack	
+11	2021-12-22 17:05:42	Genetic_Attack	
+11	2021-12-22 17:10:51	Genetic_Attack	
+11	2021-12-22 17:11:45	Genetic_Attack	
+11	2021-12-22 17:14:08	Genetic_Attack	
+11	2021-12-22 17:16:08	Genetic_Attack	
+11	2021-12-22 17:17:30	Genetic_Attack	
+11	2021-12-22 17:17:49	Genetic_Attack	
+11	2021-12-22 17:18:52	Genetic_Attack	
+11	2021-12-22 17:19:39	Genetic_Attack	
+11	2021-12-22 17:20:03	Genetic_Attack	
+11	2021-12-22 17:20:30	Genetic_Attack	
+11	2021-12-22 17:20:54	Genetic_Attack	
+11	2021-12-22 17:23:01	Genetic_Attack	
+11	2021-12-22 17:23:30	Genetic_Attack	
+11	2021-12-22 17:24:14	Genetic_Attack	55.31564356962693
+
+11	2021-12-22 17:28:29	Genetic_Attack	48.24630433176218
+
+11	2021-12-22 17:30:21	Genetic_Attack	
+11	2021-12-22 17:36:42	Genetic_Attack	
+11	2021-12-22 17:40:51	Genetic_Attack	55.40385035929269
+
+11	2021-12-22 17:44:24	Genetic_Attack	
+11	2021-12-22 17:45:56	Genetic_Attack	
+11	2021-12-22 17:46:41	Genetic_Attack	

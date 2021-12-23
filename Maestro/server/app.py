@@ -24,7 +24,7 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Adv_Training.json"
+application_config_file = "Server_Config/Genetic_Attack.json"
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -32,7 +32,7 @@ IP_ADDR = server_configs["ip"]
 PORT = server_configs["port"]
 TASK_QUEUE = server_configs["task_queue"]
 
-applications = load_all_applications(application_config_file)
+applications,application_configs,attacker_path_list = load_all_applications(application_config_file)
 print("All Applications Loaded.........")
 
 app = flask.Flask(__name__)
@@ -72,7 +72,7 @@ def append_to_queue(student_id, application, record_path, task):
     # print("finsh!")
     print("Appending to queue!")
 
-    # record_scores(student_id, application, record_path, task)
+    record_scores(student_id, application, record_path, task)
     # try:
     thread_temp = executor.submit(
         record_scores, student_id, application, record_path, task
@@ -82,7 +82,7 @@ def append_to_queue(student_id, application, record_path, task):
     #     print("An exception occurred: {}".format(error))
     return
 ################################# MAKE TASK QUEUE WITH CELERY ####################################################
-
+@celery.task()
 def record_scores(student_id, application, record_path, task):
     print("\nworking in the records: ", task, application)
     # if task == "defense_project":
@@ -92,8 +92,15 @@ def record_scores(student_id, application, record_path, task):
     vm = virtual_model(
         "http://"+IP_ADDR+":"+PORT, application_name=application
     )  # "FGSM"
+
+    application_idx = 0
+    for i in range(len(application_configs["Application"])):
+        if application_configs["Application"][i]["name"] == application:
+            application_idx = i
+    model_name = application_configs["Application"][application_idx]["model"]["name"]
     evaluator = Evaluator(
         application,
+        model_name,
         student_id,
         vm,
         task,
@@ -106,6 +113,11 @@ def record_scores(student_id, application, record_path, task):
         score = evaluator.defense_evaluator()
     elif task == "defense_project":
         score = evaluator.defense_evaluator_project()
+    elif task == "war_attack":
+        score = evaluator.attack_evaluator()
+    elif task == "war_defend":
+        score = evaluator.defense_evaluator_project(app.applications,attacker_path_list)
+
 
     else:
         print("loading evaulator error")
@@ -282,9 +294,9 @@ def main():
         # print(record_path,str(record_path),str(record_path.stem))
         job = (student_id, application, str(record_path), task)
         if TASK_QUEUE:
-            # append_to_queue.delay(student_id, application, str(record_path), task)
-            append_to_queue.apply(args=job)
-            # wait.delay(3)
+            append_to_queue.delay(student_id, application, str(record_path), task)
+            # append_to_queue.apply(args=job)
+            # wait.apply(3)
         else:
             # try:
             thread_temp = executor.submit(

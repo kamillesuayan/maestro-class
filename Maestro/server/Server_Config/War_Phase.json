@@ -1,0 +1,32 @@
+{
+    "Application": [
+        {
+            "name": "war_phase_defended_model_1",
+            "GPU": 0,
+            "attacker_access_yaml": "Attacker_Access/Genetic_Attack.yaml",
+            "defender_access_yaml": "Defender_Access/Adv_Training.yaml",
+            "model": {
+                "name": "LeNet",
+                "checkpoint": "../tmp/war_phase/defense_list/lenet_defended_model.pth",
+                "train_method": ""
+            },
+            "dataset": "MNIST"
+        },
+        {
+            "name": "war_phase_defended_model_2",
+            "GPU": 0,
+            "attacker_access_yaml": "Attacker_Access/Genetic_Attack.yaml",
+            "defender_access_yaml": "Defender_Access/Adv_Training.yaml",
+            "model": {
+                "name": "LeNet",
+                "checkpoint": "../tmp/war_phase/defense_list/war_phase_defense_22.pth",
+                "train_method": "../tmp/war_phase/defense_list/war_phase_defense_22.py"
+            },
+            "dataset": "MNIST"
+        }
+    ],
+    "Attacker_Methods": [
+        "../tmp/war_phase/attack_list/attack_homework_11.py",
+        "../tmp/war_phase/attack_list/attack_homework_22.py"
+    ]
+}

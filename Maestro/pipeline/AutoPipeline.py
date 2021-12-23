@@ -34,24 +34,31 @@ class AutoPipelineForVision:
         dataset_name,
         model_name,
         checkpoint_path,
+        training_methods_path,
         scenario,
         training_process=None,
         device=0,
         finetune=True,
     ):
+        self.model_name = model_name
+        self.device = device
+        self.pipeline_name = pipeline_name
         datasets = get_dataset(dataset_name)
         model = build_model(model_name, num_labels=2, max_length=128, device=device)
-        self.device = device
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
-        if finetune:
+        if not finetune:
+            model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+        else:
             model = AutoPipelineForVision.fine_tune_on_task(
                 AutoPipelineForVision,
                 model,
                 train_dataset,
                 test_dataset,
                 checkpoint_path,
+                training_methods_path
             )
+
         return VisionPipeline(
             scenario,
             train_dataset,
@@ -69,13 +76,19 @@ class AutoPipelineForVision:
         train_dataset,
         validation_dataset,
         checkpoint_path,
+        training_methods_path
     ):
         if not checkpoint_path or not os.path.exists(os.path.join(os.getcwd(), checkpoint_path)):
-            print("start training")
-            model = self.train(model, train_dataset, self.device)
-            torch.save(model.state_dict(), checkpoint_path)
-        else:
-            model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+            if training_methods_path:
+                from Maestro.evaluator import load_defender
+                model = load_defender(self.model_name, self.pipeline_name, 0, "", self.device, training_methods_path)
+                model.train(model.model, train_dataset, self.device)
+                model = model.model
+                torch.save(model.state_dict(), checkpoint_path)
+            else:
+                print("start training")
+                model = self.train(model, train_dataset, self.device)
+                torch.save(model.state_dict(), checkpoint_path)
         model.to(self.device)
         return model
 

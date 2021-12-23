@@ -12,16 +12,17 @@ def build_model(
     device: int = 0,
     pretrained_file: str = None,
 ):
-    model = FGSM_example_model()
-    model = model.to(device)
+    if model_name == "LeNet":
+        model = LeNet()
+        model = model.to(device)
     if pretrained_file != None:
         model.load_state_dict(torch.load(pretrained_file, map_location="cpu"))
     return model
 
 
-class FGSM_example_model(nn.Module):
+class LeNet(nn.Module):
     def __init__(self) -> None:
-        super(FGSM_example_model, self).__init__()
+        super(LeNet, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()

@@ -69,10 +69,9 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
     model_path = (
         "../tmp/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
     )
-    url = "http://127.0.0.1:5000"
     spec = importlib.util.spec_from_file_location(
         str(application) + "_" + str(student_id),
-        "../tmp/"+ str(task_folder)+"/junlin_group_project/"
+        "../tmp/"+ str(task_folder)+ str(student_id) +"_group_project/"
         + str(task)
         + "_"
         + str(student_id)
@@ -269,9 +268,10 @@ class Evaluator:
                     None,
                 )
         applications["temp_war_defense_eval"] = new_pipeline
-        vm = virtual_model("http://"+IP_ADDR+":"+PORT, application_name="temp_war_defense_eval") 
+        vm = virtual_model("http://"+IP_ADDR+":"+PORT, application_name="temp_war_defense_eval")
+        attackers = []
         for i in range(len(attacker_path_list)):
-            load_attacker("temp_war_defense_eval",)
+            attackers.append(load_attacker("temp_war_defense_eval", student_id, task_folder, task,vm))
         print("start adversarial training!")
         # print(trainset.getitem())
         # print(len(trainset))

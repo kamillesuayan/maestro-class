@@ -68,7 +68,7 @@ def load_all_applications(applications_config_path: str):
         for i in range(n):
             method_path = application_configs["Attacker_Methods"][i]
             attacker_path_list.append(method_path)
-            
+
     # application_list["GeneticAttack"] = pipeline2
     # if "Adv_Training" in applications:
     #     print("Setting up the Adv_Training Attack pipeline....")

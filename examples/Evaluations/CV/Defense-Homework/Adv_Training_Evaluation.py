@@ -4,15 +4,14 @@ test = ["ask server to evaluate the code", "get the score"]
 test = test[1] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 def asking(url, device, student_id=123):
-    data = {"Application_Name": "ProjectDefense", "data_type": "test", "id": student_id, "task": "defense_project"} # Application_Name: DataAugmentation/LossFunction
+    data = {"Application_Name": "Adv_Training", "data_type": "test", "id": student_id, "task": "defense_homework"} # Application_Name: DataAugmentation/LossFunction
     final_url = "{0}/file_evaluator".format(url)
     response = requests.post(final_url, data=data)
     feedback = response.json()["feedback"]
     print(feedback)
 
-
 def getScore(url, device, student_id=123):
-    data = {"Application_Name": "ProjectDefense", "data_type": "test", "id": student_id, "task": "defense_project"}
+    data = {"Application_Name": "Adv_Training", "data_type": "test", "id": student_id, "task": "defense_homework"}
     final_url = "{0}/evaluate_result".format(url)
     response = requests.post(final_url, data=data)
     score = response.json()
@@ -32,14 +31,10 @@ def main():
 
 
     if test == "ask server to evaluate the code":
-        asking(url, device, student_id)
-        # asking(url, device, student_id)
-        # asking(url, device, student_id)
-        # asking(url, device, student_id)
-
-
+        asking(url, device, 11)
+        # asking(url, device, 22)
     elif test == "get the score":
-        getScore(url, device, student_id)
+        getScore(url, device, 11)
 
 
 

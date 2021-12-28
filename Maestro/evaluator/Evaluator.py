@@ -16,7 +16,7 @@ def load_attacker(application, student_id, task_folder, task,vm):
     print("load_attacker")
 
     spec = importlib.util.spec_from_file_location(
-        str(application) + "_" + str(student_id),
+        str(task) + "_" + str(student_id),
         "../tmp/"
         + str(task_folder)
         + "/"
@@ -42,7 +42,7 @@ def load_defender(model_name,application, student_id, task_folder,task, device, 
         spec = importlib.util.spec_from_file_location(application + "_" + model_name, spec_path)
     else:
         spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
+            str(task) + "_" + str(student_id),
             "../tmp/"
             + str(task_folder)
             + "/"
@@ -70,8 +70,8 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
         "../tmp/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
     )
     spec = importlib.util.spec_from_file_location(
-        str(application) + "_" + str(student_id),
-        "../tmp/"+ str(task_folder)+ str(student_id) +"_group_project/"
+        str(task) + "_" + str(student_id),
+        "../tmp/"+ str(task_folder)+ '/' +str(student_id) +"_group_project/"
         + str(task)
         + "_"
         + str(student_id)
@@ -79,7 +79,7 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
     )
     foo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(foo)
-    model = foo.MODEL()
+    model = foo.LENET()
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     defender = foo.ProjectDefense(
         model,
@@ -124,37 +124,37 @@ class Evaluator:
         self.constraint = constraint
 
     # for the student debugging
-    def evaluate_attacker(self):
-        all_vals = []
-        new_batches = []
-        constraint_violations = 0
-        for batch in self.iterator_dataloader:
-            print("start_batch")
-            # print(batch)
-            flipped = [0]
-            # get gradient w.r.t. trigger embeddings for current batch
-            labels = batch["labels"].cpu().detach().numpy()
-            perturbed = self.method.attack(
-                batch["image"].cpu().detach().numpy(),
-                labels,
-                self.vm,
-                self.constraint.epsilon,
-            )
-            logits = self.vm.get_batch_output(perturbed, labels)
-            logits = np.array(logits)
-            print(logits)
-            preds = np.argmax(logits, axis=1)
-            print(preds, labels)
-            success = preds != labels
-            print(success)
-            constraint_violation = self._constraint(
-                batch["image"].cpu().detach().numpy(), perturbed
-            )
-            constraint_violations += constraint_violation
-            all_vals.append(success)
-        a = np.array(all_vals).mean()
-        print(f"label flip rate: {a}")
-        print(f"Constraint Violation Cases: {constraint_violations}")
+    # def evaluate_attacker(self):
+    #     all_vals = []
+    #     new_batches = []
+    #     constraint_violations = 0
+    #     for batch in self.iterator_dataloader:
+    #         print("start_batch")
+    #         # print(batch)
+    #         flipped = [0]
+    #         # get gradient w.r.t. trigger embeddings for current batch
+    #         labels = batch["labels"].cpu().detach().numpy()
+    #         perturbed = self.method.attack(
+    #             batch["image"].cpu().detach().numpy(),
+    #             labels,
+    #             self.vm,
+    #             self.constraint.epsilon,
+    #         )
+    #         logits = self.vm.get_batch_output(perturbed, labels)
+    #         logits = np.array(logits)
+    #         print(logits)
+    #         preds = np.argmax(logits, axis=1)
+    #         print(preds, labels)
+    #         success = preds != labels
+    #         print(success)
+    #         constraint_violation = self._constraint(
+    #             batch["image"].cpu().detach().numpy(), perturbed
+    #         )
+    #         constraint_violations += constraint_violation
+    #         all_vals.append(success)
+    #     a = np.array(all_vals).mean()
+    #     print(f"label flip rate: {a}")
+    #     print(f"Constraint Violation Cases: {constraint_violations}")
 
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
@@ -220,12 +220,10 @@ class Evaluator:
         score = final_acc * 70 + time_score * 0.20 + distance * 0.1
         return score
 
-    def defense_evaluator(self):
+    def defense_evaluator(self, model_name):
         trainset = self.app_pipeline.training_data.data
-        # model = self.app_pipeline.model # change to the new model. Now it will continue to run.
         device = self.app_pipeline.device
-
-        model = build_model("defense_homework", num_labels=None, max_length=None, device=device)
+        model = build_model(model_name, num_labels=None, max_length=None, device=device)
 
         testset = self.app_pipeline.validation_data.data
         # if self.attacker is not None:
@@ -252,7 +250,36 @@ class Evaluator:
         score = 100 * correct / total
         return score
 
-    def defense_evaluator_project(self,applications,attacker_path_list):
+    def defense_evaluator_project(self):
+        device = self.app_pipeline.device
+        model = self.method.model.to(device)
+
+        testset = self.app_pipeline.validation_data.data
+        # if self.attacker is not None:
+        #     testset = self.attacker.attack_dataset(testset, self.defender)
+        # model = self.method.train(model, trainset, device)
+        model.eval()
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=100, shuffle=True, num_workers=10
+        )  # raw data
+        # add adversarial data
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in testloader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        print(
+            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+        )
+        score = 100 * correct / total
+        return score
+
+    def defense_evaluator_war(self,applications=None, attacker_path_list=None):
         # trainset=self.app_pipeline.training_data.data
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data

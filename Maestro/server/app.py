@@ -24,8 +24,8 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 # executor = ThreadPoolExecutor(1)
 # application_config_file = "Server_Config/Genetic_Attack.json"
-application_config_file = "Server_Config/Attack_Project.json"
-# application_config_file = "Server_Config/Adv_Training.json"
+# application_config_file = "Server_Config/Attack_Project.json"
+application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
 server_config_file = "Server_Config/Server.json"
@@ -86,13 +86,14 @@ def append_to_queue(student_id, application, record_path, task):
 ################################# MAKE TASK QUEUE WITH CELERY ####################################################
 @celery.task()
 def record_scores(student_id, application, record_path, task):
+    global applications
     print("\nworking in the records: ", task, application)
     # if task == "defense_project":
     #     evaluator = Evaluator(application, student_id, None, task)
     #     score = evaluator.defense_evaluator_project()
     # else:
     vm = virtual_model(
-        "http://"+IP_ADDR+":"+PORT, application_name=application
+        "http://"+ IP_ADDR + ":" + PORT, application_name=application
     )  # "FGSM"
 
     application_idx = 0
@@ -116,7 +117,11 @@ def record_scores(student_id, application, record_path, task):
             all_scores.append(score)
         scores = sum(all_scores)/5.0
     elif task == "defense_homework":
-        score = evaluator.defense_evaluator(model_name)
+        # add_to_app("temp_war_defense_eval", evaluator.defense_evaluator_attacker_loader(applications))
+        # applications["temp_war_defense_eval"] = evaluator.defense_evaluator_attacker_loader(applications)
+        # print("\ntest\n", applications["temp_war_defense_eval"])
+        # print("xjcc")
+        score = evaluator.defense_evaluator(IP_ADDR, PORT, model_name, app.applications, attacker_path_list)
     elif task == "defense_project":
         score = evaluator.defense_evaluator_project()
     elif task == "war_attack":
@@ -133,6 +138,9 @@ def record_scores(student_id, application, record_path, task):
     with open(record_path, "a+") as f:
         f.write(str(score) + "\n")
     return
+def add_to_app(name, pipeline):
+    global applications
+    applications[name] = pipeline
 
 def main():
     @app.route("/", methods=["GET"])
@@ -183,8 +191,10 @@ def main():
         # print(app.applications)
         batch_input = json_data["data"]
         labels = json_data["labels"]
-
-        outputs = app.applications[application].get_batch_output(
+        # print("flag\n:")
+        # print(app.applications["temp_war_defense_eval"])
+        print(applications.keys())
+        outputs = applications[application].get_batch_output(
             batch_input, labels
         )  # .detach().cpu().numpy()
         returned = list_to_json([x.cpu().detach().numpy().tolist() for x in outputs])

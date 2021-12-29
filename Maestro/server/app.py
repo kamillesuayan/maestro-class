@@ -290,6 +290,11 @@ def main():
                 + str(application)
                 + "\t"
             )
+
+        uid = int(os.environ.get('SUDO_UID'))
+        gid = int(os.environ.get('SUDO_GID'))
+        os.chown(record_path, uid, gid)
+        # record_scores(application, student_id, record_path)
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
         job = (student_id, application, str(record_path), task)

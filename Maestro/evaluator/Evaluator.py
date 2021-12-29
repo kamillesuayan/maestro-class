@@ -20,7 +20,7 @@ def load_attacker(application, student_id, task_folder, task,vm):
         "../tmp/"
         + str(task_folder)
         + "/"
-        + str(task)
+        + str(application)
         + "_"
         + str(student_id)
         + ".py",

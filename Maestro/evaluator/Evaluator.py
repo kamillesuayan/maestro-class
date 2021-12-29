@@ -159,7 +159,7 @@ class Evaluator:
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
 
-    def attack_evaluator(self):
+    def attack_evaluator(self, t_threshold = 600, dis_threshold = 80):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -179,11 +179,7 @@ class Evaluator:
             shuffle=True,
             collate_fn=default_data_collator,
         )
-        print("started the process")
-        all_vals = []
         n_success_attack = 0
-        adv_examples = []
-
         print("start testing")
         # Loop over all examples in test set
         test_loader = iterator_dataloader
@@ -212,12 +208,20 @@ class Evaluator:
             )
         )
         cost_time = time.perf_counter() - start_time
-        if cost_time > 100:
+
+        if cost_time > t_threshold:
             time_score = 0
         else:
-            time_score = 100 / cost_time
+            time_score = 1 - cost_time/t_threshold
         #print(final_acc, time_score, distance)
-        score = final_acc * 70 + time_score * 0.20 + distance * 0.1
+        if distance > dis_threshold:
+            dis_score = 0
+        else:
+            dis_score = 1 - distance / dis_threshold
+        print(cost_time, distance)
+        print("score: ", final_acc, time_score, dis_score)
+
+        score = final_acc * 70 + time_score * 20 + dis_score * 10
         return score
 
     def defense_evaluator(self, model_name):

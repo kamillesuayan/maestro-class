@@ -1,0 +1,16 @@
+{
+    "Application": [
+        {
+            "name": "Project_Defense",
+            "GPU": 0,
+            "attacker_access_yaml": "Attacker_Access/FGSM.yaml",
+            "defender_access_yaml": "",
+            "model": {
+                "name": "LeNet",
+                "checkpoint": "models_temp/lenet_mnist_model.pth",
+                "train_method": ""
+            },
+            "dataset": "MNIST"
+        }
+    ]
+}

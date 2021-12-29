@@ -31,7 +31,7 @@ class AutoPipelineForVision:
     def initialize(
         self,
         pipeline_name,
-        dataset_name,
+        dataset_configs,
         model_name,
         checkpoint_path,
         training_methods_path,
@@ -43,13 +43,18 @@ class AutoPipelineForVision:
         self.model_name = model_name
         self.device = device
         self.pipeline_name = pipeline_name
-        datasets = get_dataset(dataset_name)
+        datasets = get_dataset(dataset_configs)
         model = build_model(model_name, num_labels=2, max_length=128, device=device)
         train_dataset = datasets["train"]
         test_dataset = datasets["test"]
         if not finetune:
-            model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+            # training path not exist, then we either load the pretrained checkpoint or not do anything
+            if checkpoint_path!="":
+                model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+            else:
+                model.to(self.device)
         else:
+            # training path exist, then we train it and then save it to checkpoint_path
             model = AutoPipelineForVision.fine_tune_on_task(
                 AutoPipelineForVision,
                 model,
@@ -79,16 +84,15 @@ class AutoPipelineForVision:
         training_methods_path
     ):
         if not checkpoint_path or not os.path.exists(os.path.join(os.getcwd(), checkpoint_path)):
-            if training_methods_path:
-                from Maestro.evaluator import load_defender
-                model = load_defender(self.model_name, self.pipeline_name, 0, "", self.device, training_methods_path)
-                model.train(model.model, train_dataset, self.device)
-                model = model.model
-                torch.save(model.state_dict(), checkpoint_path)
-            else:
-                print("start training")
-                model = self.train(model, train_dataset, self.device)
-                torch.save(model.state_dict(), checkpoint_path)
+            from Maestro.evaluator import load_defender
+            model = load_defender(self.model_name, self.pipeline_name, 0, "", self.device, training_methods_path)
+            model.train(model.model, train_dataset, self.device)
+            model = model.model
+            torch.save(model.state_dict(), checkpoint_path)
+            # else:
+            #     print("start training")
+            #     model = self.train(model, train_dataset, self.device)
+            #     torch.save(model.state_dict(), checkpoint_path)
         model.to(self.device)
         return model
 

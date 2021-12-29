@@ -3,5 +3,4 @@
     "port": "443",
     "task_queue": true,
     "comment": "443 for deploy and 5000 for debugging"
-
 }

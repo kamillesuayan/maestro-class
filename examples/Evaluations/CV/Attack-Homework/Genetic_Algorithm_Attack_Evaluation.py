@@ -3,7 +3,7 @@ import requests
 
 test = ["ask server to evaluate the code", "get the score"]
 test = test[
-    0
+    1
 ]  # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 
@@ -57,7 +57,7 @@ def main():
         # asking(url, device, 33)
         # asking(url, device, 44)
     elif test == "get the score":
-        getScore(url, device, student_id)
+        getScore(url, device, 11)
 
 
 if __name__ == "__main__":

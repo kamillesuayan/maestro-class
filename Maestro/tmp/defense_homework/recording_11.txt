@@ -14,3 +14,41 @@
 11	2021-12-19 15:15:55	Adv_Training	97.78
 
 11	2021-12-19 15:28:36	Adv_Training	98.48
+
+<<<<<<< HEAD
+11	2021-12-27 21:28:23	Adv_Training	
+11	2021-12-27 21:36:55	Adv_Training	
+11	2021-12-27 21:47:18	Adv_Training	
+11	2021-12-27 22:04:01	Adv_Training	
+11	2021-12-27 22:32:05	Adv_Training	
+11	2021-12-27 22:33:00	Adv_Training	
+11	2021-12-27 22:35:19	Adv_Training	
+11	2021-12-27 22:43:23	Adv_Training	
+11	2021-12-27 23:08:09	Adv_Training	
+11	2021-12-27 23:28:02	Adv_Training	
+11	2021-12-27 23:29:52	Adv_Training	98.37
+=======
+11	2021-12-26 13:43:48	Adv_Training	
+11	2021-12-26 13:44:46	Adv_Training	
+11	2021-12-26 13:46:06	Adv_Training	
+11	2021-12-26 13:53:54	Adv_Training	
+11	2021-12-26 13:59:54	Adv_Training	
+11	2021-12-26 14:05:22	Adv_Training	
+11	2021-12-26 14:07:15	Adv_Training	
+11	2021-12-26 14:07:40	Adv_Training	
+11	2021-12-26 14:08:01	Adv_Training	
+11	2021-12-26 14:10:33	Adv_Training	
+11	2021-12-26 14:10:38	Adv_Training	
+11	2021-12-26 14:10:58	Adv_Training	
+11	2021-12-26 14:12:12	Adv_Training	
+11	2021-12-26 14:12:19	Adv_Training	
+11	2021-12-26 14:12:42	Adv_Training	
+11	2021-12-28 12:18:04	Adv_Training	
+11	2021-12-28 12:18:23	Adv_Training	
+11	2021-12-28 12:21:15	Adv_Training	
+11	2021-12-28 12:21:58	Adv_Training	
+11	2021-12-28 12:22:19	Adv_Training	
+11	2021-12-28 12:22:29	Adv_Training	
+11	2021-12-28 12:22:32	Adv_Training	98.19
+98.24
+>>>>>>> 1f905998a16b555cafb3fc80a55c31bf2694f291

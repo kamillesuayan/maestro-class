@@ -10,3 +10,4 @@ PyYAML==5.4.1
 textattack==0.2.11
 celery
 redis
+redis-server

@@ -1,7 +1,7 @@
 {
     "Application": [
         {
-            "name": "Genetic_Attack",
+            "name": "Project_Attack",
             "GPU": 0,
             "attacker_access_yaml": "Attacker_Access/Genetic_Attack.yaml",
             "defender_access_yaml": "",

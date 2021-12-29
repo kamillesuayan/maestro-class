@@ -16,7 +16,7 @@ def load_attacker(application, student_id, task_folder, task,vm):
     print("load_attacker")
 
     spec = importlib.util.spec_from_file_location(
-        str(application) + "_" + str(student_id),
+        str(task) + "_" + str(student_id),
         "../tmp/"
         + str(task_folder)
         + "/"
@@ -29,11 +29,11 @@ def load_attacker(application, student_id, task_folder, task,vm):
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
     else:
         attacker = foo.ProjectAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
     return attacker
 
@@ -42,7 +42,7 @@ def load_defender(model_name,application, student_id, task_folder,task, device, 
         spec = importlib.util.spec_from_file_location(application + "_" + model_name, spec_path)
     else:
         spec = importlib.util.spec_from_file_location(
-            str(application) + "_" + str(student_id),
+            str(task) + "_" + str(student_id),
             "../tmp/"
             + str(task_folder)
             + "/"
@@ -70,8 +70,8 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
         "../tmp/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
     )
     spec = importlib.util.spec_from_file_location(
-        str(application) + "_" + str(student_id),
-        "../tmp/"+ str(task_folder)+ str(student_id) +"_group_project/"
+        str(task) + "_" + str(student_id),
+        "../tmp/"+ str(task_folder)+ '/' +str(student_id) +"_group_project/"
         + str(task)
         + "_"
         + str(student_id)
@@ -79,7 +79,7 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
     )
     foo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(foo)
-    model = foo.MODEL()
+    model = foo.LENET()
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     defender = foo.ProjectDefense(
         model,
@@ -106,6 +106,7 @@ class Evaluator:
         constraint=None,
     ) -> None:
         self.app_pipeline = app_pipeline
+        self.model_name = model_name
         if task == "defense_homework":
             self.method = load_defender(model_name, application, student_id, task,task, self.app_pipeline.device)
         elif (task == "attack_homework") | (task == "attack_project"):
@@ -124,42 +125,42 @@ class Evaluator:
         self.constraint = constraint
 
     # for the student debugging
-    def evaluate_attacker(self):
-        all_vals = []
-        new_batches = []
-        constraint_violations = 0
-        for batch in self.iterator_dataloader:
-            print("start_batch")
-            # print(batch)
-            flipped = [0]
-            # get gradient w.r.t. trigger embeddings for current batch
-            labels = batch["labels"].cpu().detach().numpy()
-            perturbed = self.method.attack(
-                batch["image"].cpu().detach().numpy(),
-                labels,
-                self.vm,
-                self.constraint.epsilon,
-            )
-            logits = self.vm.get_batch_output(perturbed, labels)
-            logits = np.array(logits)
-            print(logits)
-            preds = np.argmax(logits, axis=1)
-            print(preds, labels)
-            success = preds != labels
-            print(success)
-            constraint_violation = self._constraint(
-                batch["image"].cpu().detach().numpy(), perturbed
-            )
-            constraint_violations += constraint_violation
-            all_vals.append(success)
-        a = np.array(all_vals).mean()
-        print(f"label flip rate: {a}")
-        print(f"Constraint Violation Cases: {constraint_violations}")
+    # def evaluate_attacker(self):
+    #     all_vals = []
+    #     new_batches = []
+    #     constraint_violations = 0
+    #     for batch in self.iterator_dataloader:
+    #         print("start_batch")
+    #         # print(batch)
+    #         flipped = [0]
+    #         # get gradient w.r.t. trigger embeddings for current batch
+    #         labels = batch["labels"].cpu().detach().numpy()
+    #         perturbed = self.method.attack(
+    #             batch["image"].cpu().detach().numpy(),
+    #             labels,
+    #             self.vm,
+    #             self.constraint.epsilon,
+    #         )
+    #         logits = self.vm.get_batch_output(perturbed, labels)
+    #         logits = np.array(logits)
+    #         print(logits)
+    #         preds = np.argmax(logits, axis=1)
+    #         print(preds, labels)
+    #         success = preds != labels
+    #         print(success)
+    #         constraint_violation = self._constraint(
+    #             batch["image"].cpu().detach().numpy(), perturbed
+    #         )
+    #         constraint_violations += constraint_violation
+    #         all_vals.append(success)
+    #     a = np.array(all_vals).mean()
+    #     print(f"label flip rate: {a}")
+    #     print(f"Constraint Violation Cases: {constraint_violations}")
 
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
 
-    def attack_evaluator(self):
+    def attack_evaluator(self, t_threshold = 600, dis_threshold = 80):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -167,10 +168,10 @@ class Evaluator:
         print("attack_evaluator")
         targeted_dev_data = []
         for instance in dev_data:
-            if instance["label"] == dataset_label_filter:
+            if instance["label"] != target_label:
                 targeted_dev_data.append(instance)
         print(len(targeted_dev_data))
-        targeted_dev_data = targeted_dev_data[:10]
+        targeted_dev_data = targeted_dev_data
         universal_perturb_batch_size = 1
         # tokenizer = model_wrapper.get_tokenizer()
         iterator_dataloader = DataLoader(
@@ -179,31 +180,37 @@ class Evaluator:
             shuffle=True,
             collate_fn=default_data_collator,
         )
-        print("started the process")
-        all_vals = []
         n_success_attack = 0
-        adv_examples = []
-
         print("start testing")
         # Loop over all examples in test set
         test_loader = iterator_dataloader
         distance = 0
+        og_images = []
+        perturbed_images = []
         for batch in test_loader:
             # Call FGSM Attack
             labels = batch["labels"].cpu().detach().numpy()
             batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-            print(labels.item(), labels.item())
+            og_images.append((labels[0],labels[0],np.squeeze(batch)))
+            # print(labels.item(), labels.item())
 
-            perturbed_data, success = self.method.attack(
+            perturbed_data, perturbed_label, success = self.method.attack(
                 batch, labels, self.vm, target_label=target_label,
             )
+            perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
             # print(batch.shape)
-            print(perturbed_data[0].shape)
+            # print(perturbed_data[0].shape)
             delta_data = batch - perturbed_data[0]
             distance += np.linalg.norm(delta_data)
 
             n_success_attack += success
             # exit(0)
+
+        # visualization 
+        from Maestro.utils import visualize
+        visualize(og_images, "before_GA.png")
+        visualize(perturbed_images, "after_GA.png")
+
         # Calculate final accuracy for this epsilon
         final_acc = n_success_attack / float(len(test_loader))
         print(
@@ -212,20 +219,27 @@ class Evaluator:
             )
         )
         cost_time = time.perf_counter() - start_time
-        if cost_time > 100:
+
+        if cost_time > t_threshold:
             time_score = 0
         else:
-            time_score = 100 / cost_time
+            time_score = 1 - cost_time/t_threshold
         #print(final_acc, time_score, distance)
-        score = final_acc * 70 + time_score * 0.20 + distance * 0.1
+        if distance > dis_threshold:
+            dis_score = 0
+        else:
+            dis_score = 1 - distance / dis_threshold
+        print(cost_time, distance)
+        print("score: ", final_acc, time_score, dis_score)
+
+        score = final_acc * 70 + time_score * 20 + dis_score * 10
         return score
 
-    def defense_evaluator(self):
+    def defense_evaluator(self, model_name):
         trainset = self.app_pipeline.training_data.data
-        # model = self.app_pipeline.model # change to the new model. Now it will continue to run.
         device = self.app_pipeline.device
 
-        model = build_model("defense_homework", num_labels=None, max_length=None, device=device)
+        model = build_model(self.model_name, num_labels=None, max_length=None, device=device)
 
         testset = self.app_pipeline.validation_data.data
         # if self.attacker is not None:
@@ -252,7 +266,36 @@ class Evaluator:
         score = 100 * correct / total
         return score
 
-    def defense_evaluator_project(self,applications,attacker_path_list):
+    def defense_evaluator_project(self):
+        device = self.app_pipeline.device
+        model = self.method.model.to(device)
+
+        testset = self.app_pipeline.validation_data.data
+        # if self.attacker is not None:
+        #     testset = self.attacker.attack_dataset(testset, self.defender)
+        # model = self.method.train(model, trainset, device)
+        model.eval()
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=100, shuffle=True, num_workers=10
+        )  # raw data
+        # add adversarial data
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in testloader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        print(
+            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+        )
+        score = 100 * correct / total
+        return score
+
+    def defense_evaluator_war(self,applications=None, attacker_path_list=None):
         # trainset=self.app_pipeline.training_data.data
         device = self.app_pipeline.device
         testset = self.app_pipeline.validation_data.data

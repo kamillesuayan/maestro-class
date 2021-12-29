@@ -110,7 +110,11 @@ def record_scores(student_id, application, record_path, task):
     )
     print(f"the task is {task}")
     if (task == "attack_homework") | (task == "attack_project"):
-        score = evaluator.attack_evaluator()
+        all_scores = []
+        for i in range(5):
+            score = evaluator.attack_evaluator()
+            all_scores.append(score)
+        scores = sum(all_scores)/5.0
     elif task == "defense_homework":
         score = evaluator.defense_evaluator(model_name)
     elif task == "defense_project":

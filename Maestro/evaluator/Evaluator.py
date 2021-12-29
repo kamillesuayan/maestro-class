@@ -181,35 +181,39 @@ class Evaluator:
             collate_fn=default_data_collator,
         )
         print("started the process")
-        all_vals = []
-        n_success_attack = 0
-        adv_examples = []
-
         print("start testing")
         # Loop over all examples in test set
+        n_success_attack = 0
         test_loader = iterator_dataloader
         distance = 0
-        og_images = []
-        perturbed_images = []
-        for batch in test_loader:
-            # Call FGSM Attack
-            labels = batch["labels"].cpu().detach().numpy()
-            batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-            og_images.append((labels[0],labels[0],np.squeeze(batch)))
-            # print(labels.item(), labels.item())
+        for i in range(10):
+            og_images = []
+            perturbed_images = []
+            for batch in test_loader:
+                # Call FGSM Attack
+                labels = batch["labels"].cpu().detach().numpy()
+                batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
+                og_images.append((labels[0],labels[0],np.squeeze(batch)))
+                # print(labels.item(), labels.item())
 
-            perturbed_data, perturbed_label, success = self.method.attack(
-                batch, labels, self.vm, target_label=target_label,
-            )
-            perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
-            # print(batch.shape)
-            # print(perturbed_data[0].shape)
-            delta_data = batch - perturbed_data[0]
-            distance += np.linalg.norm(delta_data)
+                perturbed_data, perturbed_label, success = self.method.attack(
+                    batch, labels, self.vm, target_label=target_label,
+                )
+                perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
+                # print(batch.shape)
+                # print(perturbed_data[0].shape)
+                delta_data = batch - perturbed_data[0]
+                distance += np.linalg.norm(delta_data)
 
-            n_success_attack += success
-            # exit(0)
-
+                n_success_attack += success
+        print("success rate")
+        print(n_success_attack/10,n_success_attack/(len(test_loader)*10))
+        print("# queries")
+        print(self.vm.batch_output_count, self.vm.batch_gradient_count)
+        print("time")
+        print(time.perf_counter() - start_time,(time.perf_counter() - start_time)/10)
+        print("distance")
+        print(distance/10)
         # visualization 
         from Maestro.utils import visualize
         visualize(og_images, "before_GA.png")

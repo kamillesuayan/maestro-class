@@ -22,18 +22,12 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
-<<<<<<< HEAD
-executor = ThreadPoolExecutor(20)
-application_config_file = "Server_Config/Genetic_Attack.json"
-# application_config_file = "Server_Config/Adv_Training.json"
-=======
 # executor = ThreadPoolExecutor(1)
-# application_config_file = "Server_Config/Genetic_Attack.json"
-application_config_file = "Server_Config/Attack_Project.json"
+application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
->>>>>>> 1f905998a16b555cafb3fc80a55c31bf2694f291
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)

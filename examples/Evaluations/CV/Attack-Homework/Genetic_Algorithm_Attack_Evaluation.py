@@ -3,7 +3,7 @@ import requests
 
 test = ["ask server to evaluate the code", "get the score"]
 test = test[
-    1
+    0
 ]  # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 

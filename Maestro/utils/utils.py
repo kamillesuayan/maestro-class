@@ -89,7 +89,7 @@ def get_embedding(model):
 
 def visualize(examples, filename):
     cnt = 0
-    plt.figure(figsize=(10, 12))
+    plt.figure(figsize=(25, 25))
     row = 5
     for j in range(len(examples)):
         cnt += 1

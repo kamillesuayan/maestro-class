@@ -42,17 +42,17 @@ def load_all_applications(applications_config_path: str):
         myscenario = Scenario()
         attacker_access_yaml = app_config["attacker_access_yaml"]
         myscenario.load_from_yaml(attacker_access_yaml)
-        dataset_name = app_config["dataset"]
+        dataset_configs = app_config["dataset"]
         model_name = app_config["model"]["name"]
         checkpoint_path = app_config["model"]["checkpoint"]
         training_methods_path = app_config["model"]["train_method"]
         whether_finetune = True
         if training_methods_path == "":
             whether_finetune = False
-        print(model_name, checkpoint_path,device)
+        print(model_name, checkpoint_path,device,whether_finetune)
         pipeline = AutoPipelineForVision.initialize(
             name,
-            dataset_name,
+            dataset_configs,
             model_name,
             checkpoint_path,
             training_methods_path,

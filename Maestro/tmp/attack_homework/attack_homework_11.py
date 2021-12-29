@@ -14,8 +14,9 @@ class GeneticAttack:
         image_size: List[int],
         n_population=100,
         n_generation=100,
-        mutate_rate=0.05,
+        mutate_rate=0.2,
         temperature=0.3,
+        use_mask=True,
     ):
         self.vm = vm
         self.image_size = image_size
@@ -23,6 +24,7 @@ class GeneticAttack:
         self.n_generation = n_generation
         self.mutate_rate = mutate_rate
         self.temperature = temperature
+        self.use_mask= use_mask
 
     def attack(
         self,
@@ -35,23 +37,23 @@ class GeneticAttack:
         currently this attack has 2 versions, 1 with no mask pre-defined, 1 with mask pre-defined.
         """
         self.original_image = original_image
-        self.mask = np.random.binomial(1, 0.2, size=self.image_size).astype("bool")
+        self.mask = np.random.binomial(1, self.mutate_rate, size=self.image_size).astype("bool")
         population = self.init_population(original_image)
         print(len(population))
-        examples = [(0, 0, np.squeeze(x)) for x in population[:10]]
+        examples = [(labels[0], labels[0], np.squeeze(x)) for x in population[:10]]
         visualize(examples, "population.png")
+        success = False
         for g in range(self.n_generation):
-            success = False
             population, output, scores, best_index = self.eval_population(
                 population, target_label
             )
             print(f"Generation: {g} best score: {scores[best_index]}")
             if np.argmax(output[best_index, :]) == target_label:
                 print(f"Attack Success!")
+                visualize([(labels[0],np.argmax(output[best_index, :]),np.squeeze(population[best_index]))], "after_GA1.png")
                 success = True
                 break
-
-        return [population[best_index]], success
+        return [population[best_index]], np.argmax(output[best_index, :]),success
 
     def fitness(self, image: List[List[int]], target: int):
         output = self.vm.get_batch_output(image)
@@ -84,14 +86,13 @@ class GeneticAttack:
         # ------------END TODO-------------
         return population, output, scores, best_index
 
-    def perturb(self, image, mask=True):
+    def perturb(self, image):
         """
         perturb a single image with some constraints and a mask
         """
-        if not mask:
+        if not self.use_mask:
             # --------------TODO--------------
-            mask = np.random.binomial(1, 0.1, size=self.image_size).astype("bool")
-            perturbed = np.clip(image + np.random.randn(*mask.shape) * 0.1, 0, 1)
+            perturbed = np.clip(image + np.random.randn(*self.mask.shape) * 0.1, 0, 1)
             # ------------END TODO-------------
         else:
             # --------------TODO--------------

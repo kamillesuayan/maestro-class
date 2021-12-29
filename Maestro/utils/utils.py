@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 import torch
 import json
+import matplotlib.pyplot as plt
 
 
 def get_json_data(examples):
@@ -85,3 +86,19 @@ def get_embedding(model):
             embedding = module
             break
     return embedding
+
+def visualize(examples, filename):
+    cnt = 0
+    plt.figure(figsize=(10, 12))
+    row = 5
+    for j in range(len(examples)):
+        cnt += 1
+        plt.subplot(row, len(examples)//row+1, cnt)
+        plt.xticks([], [])
+        plt.yticks([], [])
+        orig, adv, ex = examples[j]
+        plt.title("{} -> {}".format(orig, adv))
+        plt.imshow(ex, cmap="gray")
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(filename)

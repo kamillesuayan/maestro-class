@@ -22,9 +22,9 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
-
-executor = ThreadPoolExecutor(1)
+executor = ThreadPoolExecutor(20)
 application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Adv_Training.json"
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -71,12 +71,11 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-
     record_scores(student_id, application, record_path, task)
     # try:
-    thread_temp = executor.submit(
-        record_scores, student_id, application, record_path, task
-    )
+    # thread_temp = executor.submit(
+    #     record_scores, student_id, application, record_path, task
+    # )
     # print(thread_temp.result())  # multithread debugging: print errors
     # except BaseException as error:
     #     print("An exception occurred: {}".format(error))
@@ -290,6 +289,9 @@ def main():
                 + str(application)
                 + "\t"
             )
+        # uid = int(os.environ.get('SUDO_UID'))
+        # gid = int(os.environ.get('SUDO_GID'))
+        # os.chown(record_path, uid, gid)
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
         job = (student_id, application, str(record_path), task)

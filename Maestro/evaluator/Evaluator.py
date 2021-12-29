@@ -226,6 +226,7 @@ class Evaluator:
         )
         print("start testing")
         # Loop over all examples in test set
+        n_success_attack = 0
         test_loader = iterator_dataloader
 
         distance, og_images, perturbed_images, n_success_attack = self.attack_one_batch(test_loader, self.method.attack, target_label, self.vm)

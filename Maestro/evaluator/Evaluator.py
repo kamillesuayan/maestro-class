@@ -29,11 +29,11 @@ def load_attacker(application, student_id, task_folder, task,vm):
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
     else:
         attacker = foo.ProjectAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.05,
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
     return attacker
 
@@ -106,6 +106,7 @@ class Evaluator:
         constraint=None,
     ) -> None:
         self.app_pipeline = app_pipeline
+        self.model_name = model_name
         if task == "defense_homework":
             self.method = load_defender(model_name, application, student_id, task,task, self.app_pipeline.device)
         elif (task == "attack_homework") | (task == "attack_project"):
@@ -167,10 +168,10 @@ class Evaluator:
         print("attack_evaluator")
         targeted_dev_data = []
         for instance in dev_data:
-            if instance["label"] == dataset_label_filter:
+            if instance["label"] != target_label:
                 targeted_dev_data.append(instance)
         print(len(targeted_dev_data))
-        targeted_dev_data = targeted_dev_data[:10]
+        targeted_dev_data = targeted_dev_data
         universal_perturb_batch_size = 1
         # tokenizer = model_wrapper.get_tokenizer()
         iterator_dataloader = DataLoader(
@@ -184,22 +185,32 @@ class Evaluator:
         # Loop over all examples in test set
         test_loader = iterator_dataloader
         distance = 0
+        og_images = []
+        perturbed_images = []
         for batch in test_loader:
             # Call FGSM Attack
             labels = batch["labels"].cpu().detach().numpy()
             batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-            print(labels.item(), labels.item())
+            og_images.append((labels[0],labels[0],np.squeeze(batch)))
+            # print(labels.item(), labels.item())
 
-            perturbed_data, success = self.method.attack(
+            perturbed_data, perturbed_label, success = self.method.attack(
                 batch, labels, self.vm, target_label=target_label,
             )
+            perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
             # print(batch.shape)
-            print(perturbed_data[0].shape)
+            # print(perturbed_data[0].shape)
             delta_data = batch - perturbed_data[0]
             distance += np.linalg.norm(delta_data)
 
             n_success_attack += success
             # exit(0)
+
+        # visualization 
+        from Maestro.utils import visualize
+        visualize(og_images, "before_GA.png")
+        visualize(perturbed_images, "after_GA.png")
+
         # Calculate final accuracy for this epsilon
         final_acc = n_success_attack / float(len(test_loader))
         print(
@@ -227,7 +238,8 @@ class Evaluator:
     def defense_evaluator(self, model_name):
         trainset = self.app_pipeline.training_data.data
         device = self.app_pipeline.device
-        model = build_model(model_name, num_labels=None, max_length=None, device=device)
+
+        model = build_model(self.model_name, num_labels=None, max_length=None, device=device)
 
         testset = self.app_pipeline.validation_data.data
         # if self.attacker is not None:

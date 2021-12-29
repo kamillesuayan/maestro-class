@@ -49,6 +49,7 @@ A service for educational purposes in the domain of adversarial attacks/defense.
 
 ## How to use
 ### Server Side
+**Create a virtual enviroment with either conda or vm. Set the python version to 3.7**
 **Install Maestro:**
 ```
 pip install -r requirements.txt
@@ -62,10 +63,15 @@ cd Maestro/server
 ```
 ```
 python app.py # run the maestro server
+```
+
+If you need to run task queue, open 2 more terminals and run:
+```
 ./run-redis.sh # run the redis database
 celery -A app.celery worker # run the celery workers
 celery -A app.celery worker -P solo
 ```
+
 change or update `app.py` and `model.py` accordingly for what models to load and how to load models.
 
 ### Attacker Side
@@ -90,7 +96,7 @@ python FGSM_Eval.py
 ```
 python ./Maestro/server/app.py # run the server
 # upload the file to ./Maestro/tmp/attack_homework/GeneticAttack_117036910009.py
-python examples/Evaluations/CV/Attack-Homework/Ask_Result.py # change the line 4: test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+python examples/Evaluations/CV/Attack-Homework/Genetic_Algorithm_Attack_Evaluation.py # change the line 4: test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 ```
 

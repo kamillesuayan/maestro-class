@@ -21,12 +21,11 @@ class TorchVisionDataset:
     """
 
     def __init__(
-        self, name, split="train", transforms=None, shuffle=False,
+        self, name,data, split="train", shuffle=False,
     ):
         self._name = name
-        self._dataset = datasets.MNIST(
-            "../tmp", train=False, download=True, transform=transforms,
-        )
+        self._split = split
+        self._dataset = data
 
         # Input/output column order, like (('premise', 'hypothesis'), 'label')
 

@@ -3,19 +3,18 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
-from Maestro.models import Attacker
 from transformers.data.data_collator import default_data_collator
 import matplotlib.pyplot as plt
 
 
-class GeneticAttack(Attacker):
+class GeneticAttack:
     def __init__(
         self,
         vm,
         image_size: List[int],
         n_population=100,
         n_generation=100,
-        mutate_rate=0.05,
+        mutate_rate=0.2,
         temperature=0.3,
     ):
         self.vm = vm
@@ -36,7 +35,7 @@ class GeneticAttack(Attacker):
         currently this attack has 2 versions, 1 with no mask pre-defined, 1 with mask pre-defined.
         """
         self.original_image = original_image
-        self.mask = np.random.binomial(1, 0.2, size=self.image_size).astype("bool")
+        self.mask = np.random.binomial(1, self.mutate_rate, size=self.image_size).astype("bool")
         population = self.init_population(original_image)
         print(len(population))
         examples = [(0, 0, np.squeeze(x)) for x in population[:10]]
@@ -91,8 +90,7 @@ class GeneticAttack(Attacker):
         """
         if not mask:
             # --------------TODO--------------
-            mask = np.random.binomial(1, 0.1, size=self.image_size).astype("bool")
-            perturbed = np.clip(image + np.random.randn(*mask.shape) * 0.1, 0, 1)
+            perturbed = np.clip(image + np.random.randn(*self.mask.shape) * 0.1, 0, 1)
             # ------------END TODO-------------
         else:
             # --------------TODO--------------
@@ -129,6 +127,7 @@ def visualize(examples, filename):
     plt.tight_layout()
     plt.show()
     plt.savefig(filename)
+
 
 
 # def main():

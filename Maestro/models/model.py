@@ -15,8 +15,8 @@ def build_model(
     if model_name == "LeNet":
         model = LeNet()
         model = model.to(device)
-    if pretrained_file != None:
-        model.load_state_dict(torch.load(pretrained_file, map_location="cpu"))
+        if pretrained_file != None:
+            model.load_state_dict(torch.load(pretrained_file, map_location=device))
     return model
 
 

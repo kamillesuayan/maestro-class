@@ -22,12 +22,18 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
+<<<<<<< HEAD
+executor = ThreadPoolExecutor(20)
+application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Adv_Training.json"
+=======
 # executor = ThreadPoolExecutor(1)
 # application_config_file = "Server_Config/Genetic_Attack.json"
 application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
+>>>>>>> 1f905998a16b555cafb3fc80a55c31bf2694f291
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -74,7 +80,6 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-
     record_scores(student_id, application, record_path, task)
     # try:
     # thread_temp = executor.submit(
@@ -297,6 +302,9 @@ def main():
                 + str(application)
                 + "\t"
             )
+        # uid = int(os.environ.get('SUDO_UID'))
+        # gid = int(os.environ.get('SUDO_GID'))
+        # os.chown(record_path, uid, gid)
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
         job = (student_id, application, str(record_path), task)

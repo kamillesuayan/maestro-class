@@ -69,6 +69,7 @@ If you need to run task queue, open 2 more terminals and run:
 ```
 ./run-redis.sh # run the redis database
 celery -A app.celery worker # run the celery workers
+celery -A app.celery worker -P solo
 ```
 
 change or update `app.py` and `model.py` accordingly for what models to load and how to load models.

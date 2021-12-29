@@ -10,7 +10,7 @@ import base64
 import zlib
 import datetime
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 from celery import Celery
 import os
 
@@ -22,9 +22,18 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
+<<<<<<< HEAD
 executor = ThreadPoolExecutor(20)
 application_config_file = "Server_Config/Genetic_Attack.json"
 # application_config_file = "Server_Config/Adv_Training.json"
+=======
+# executor = ThreadPoolExecutor(1)
+# application_config_file = "Server_Config/Genetic_Attack.json"
+application_config_file = "Server_Config/Attack_Project.json"
+# application_config_file = "Server_Config/Adv_Training.json"
+# application_config_file = "Server_Config/Defense_Project.json"
+
+>>>>>>> 1f905998a16b555cafb3fc80a55c31bf2694f291
 server_config_file = "Server_Config/Server.json"
 with open(server_config_file,"r") as f:
     server_configs = json.load(f)
@@ -109,13 +118,13 @@ def record_scores(student_id, application, record_path, task):
     if (task == "attack_homework") | (task == "attack_project"):
         score = evaluator.attack_evaluator()
     elif task == "defense_homework":
-        score = evaluator.defense_evaluator()
+        score = evaluator.defense_evaluator(model_name)
     elif task == "defense_project":
         score = evaluator.defense_evaluator_project()
     elif task == "war_attack":
         score = evaluator.attack_evaluator()
     elif task == "war_defend":
-        score = evaluator.defense_evaluator_project(app.applications,attacker_path_list)
+        score = evaluator.defense_evaluator_war(app.applications,attacker_path_list)
 
 
     else:
@@ -301,9 +310,10 @@ def main():
             # wait.apply(3)
         else:
             # try:
-            thread_temp = executor.submit(
-                record_scores, student_id, application, record_path, task
-            )
+            record_scores(student_id, application, record_path, task)
+
+            # thread_temp = executor.submit(
+            #     record_scores, student_id, application, record_path, task)
             # print(thread_temp.result())  # multithread debugging: print errors
             # except BaseException as error:
             #     print("An exception occurred: {}".format(error))

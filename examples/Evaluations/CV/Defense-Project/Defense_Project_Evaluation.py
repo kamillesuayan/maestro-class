@@ -1,10 +1,10 @@
 import torch
 import requests
 test = ["ask server to evaluate the code", "get the score"]
-test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+test = test[1] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 def asking(url, device, student_id=123):
-    data = {"Application_Name": "Project_Attack", "data_type": "test", "id": student_id, "task": "attack_project"}
+    data = {"Application_Name": "Project_Defense", "data_type": "test", "id": student_id, "task": "defense_project"} # Application_Name: DataAugmentation/LossFunction
     final_url = "{0}/file_evaluator".format(url)
     response = requests.post(final_url, data=data)
     feedback = response.json()["feedback"]
@@ -12,7 +12,7 @@ def asking(url, device, student_id=123):
 
 
 def getScore(url, device, student_id=123):
-    data = {"Application_Name": "Project_Attack", "data_type": "test", "id": student_id, "task": "attack_project"}
+    data = {"Application_Name": "Project_Defense", "data_type": "test", "id": student_id, "task": "defense_project"}
     final_url = "{0}/evaluate_result".format(url)
     response = requests.post(final_url, data=data)
     score = response.json()
@@ -31,9 +31,13 @@ def main():
     student_id = 117036910009
 
 
-
     if test == "ask server to evaluate the code":
         asking(url, device, student_id)
+        # asking(url, device, student_id)
+        # asking(url, device, student_id)
+        # asking(url, device, student_id)
+
+
     elif test == "get the score":
         getScore(url, device, student_id)
 

@@ -17,5 +17,8 @@
                 "student_test_number":100,
                 "server_test_number":100}
         }
+    ],
+    "Attacker_Methods": [
+        "../tmp/defense_homework/attack_list/attack_1.py"
     ]
 }

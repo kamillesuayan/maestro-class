@@ -12,10 +12,10 @@ from Maestro.data import get_dataset
 from Maestro.models import build_model
 from Maestro.pipeline import VisionPipeline
 
-def load_attacker(application, student_id, task_folder, task,vm):
-    print("load_attacker")
-
-    spec = importlib.util.spec_from_file_location(
+def load_attacker(application, student_id, task_folder, task, vm, attacker_path_list=None):
+    print("load_attacker", attacker_path_list, task)
+    if (task == "attack_homework")|(task == "attack_project"):
+        spec = importlib.util.spec_from_file_location(
         str(task) + "_" + str(student_id),
         "../tmp/"
         + str(task_folder)
@@ -24,15 +24,31 @@ def load_attacker(application, student_id, task_folder, task,vm):
         + "_"
         + str(student_id)
         + ".py",
-    )
+        )
+    elif (task == "defense_homework")|(task == "defense_project"):
+        attackers = []
+        for attacker_path in attacker_path_list:
+            spec = importlib.util.spec_from_file_location(str(task) + "_" + str(student_id), attacker_path)
+            foo = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(foo)
+            attacker = foo.GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,)
+            attackers.append(attacker)
+        return attackers
+    else:
+        print("load error")
+
     foo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
             vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
-    else:
+    elif task == "attack_project":
         attacker = foo.ProjectAttack(
+            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
+        )
+    else:
+        attacker = foo.GeneticAttack(
             vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
         )
     return attacker
@@ -106,10 +122,11 @@ class Evaluator:
     ) -> None:
         self.app_pipeline = app_pipeline
         self.model_name = model_name
+        self.student_id = student_id
         if task == "defense_homework":
             self.method = load_defender(model_name, application, student_id, task,task, self.app_pipeline.device)
         elif (task == "attack_homework") | (task == "attack_project"):
-            self.method = load_attacker(application, student_id, task,task, vm)
+            self.method = load_attacker(application, student_id, task, task, vm)
         elif task == "defense_project":
             self.method = load_pretrained_defender(model_name,application, task, task,student_id, self.app_pipeline.device)
         elif "war" in task:
@@ -122,6 +139,7 @@ class Evaluator:
         self.iterator_dataloader = iterator_dataloader
         self.vm = vm
         self.constraint = constraint
+        self.task = task
 
     # for the student debugging
     # def evaluate_attacker(self):
@@ -181,7 +199,33 @@ class Evaluator:
         print("score: ", final_acc, query_score, dis_score,score)
         metrics = self._metrics_dict(score, final_acc, cost_time, distance,number_queries)
         return metrics
-    def attack_evaluator(self):
+    def attack_one_batch(self, test_loader, attack_method, target_label, vm):
+        # print(vm.application_name)
+        distance = 0
+        n_success_attack = 0
+
+        og_images = []
+        perturbed_images = []
+        for batch in test_loader:
+            # Call FGSM Attack
+            labels = batch["labels"].cpu().detach().numpy()
+            batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
+            og_images.append((labels[0],labels[0],np.squeeze(batch)))
+            # print(labels.item(), labels.item())
+            perturbed_data, perturbed_label, success = attack_method(
+                batch, labels, vm, target_label=target_label,
+            )
+
+            perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
+            # print(batch.shape)
+            # print(perturbed_data[0].shape)
+            delta_data = batch - perturbed_data[0]
+            distance += np.linalg.norm(delta_data)
+
+            n_success_attack += success
+        return distance, og_images, perturbed_images, n_success_attack
+
+    def attack_evaluator(self, t_threshold = 600, dis_threshold = 80):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -201,7 +245,6 @@ class Evaluator:
             shuffle=True,
             collate_fn=default_data_collator,
         )
-        print("started the process")
         print("start testing")
         # Loop over all examples in test set
         total_distance = 0
@@ -214,24 +257,14 @@ class Evaluator:
         #     self.vm.batch_gradient_count = 0
         n_success_attack = 0
         test_loader = iterator_dataloader
-        distance = 0
-        og_images = []
-        perturbed_images = []
-        for batch in test_loader:
-            # Call FGSM Attack
-            labels = batch["labels"].cpu().detach().numpy()
-            batch = batch["image"].cpu().detach().numpy()[0]  # [channel, n, n]
-            og_images.append((labels[0],labels[0],np.squeeze(batch)))
-            # print(labels.item(), labels.item())
 
-            perturbed_data, perturbed_label, success = self.method.attack(
-                batch, labels, self.vm, target_label=target_label,
-            )
-            perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
-            # print(batch.shape)
-            # print(perturbed_data[0].shape)
-            delta_data = batch - perturbed_data[0]
-            distance += np.linalg.norm(delta_data)
+        distance, og_images, perturbed_images, n_success_attack = self.attack_one_batch(test_loader, self.method.attack, target_label, self.vm)
+            # exit(0)
+
+        # visualization
+        from Maestro.utils import visualize
+        visualize(og_images, "before_GA.png")
+        visualize(perturbed_images, "after_GA.png")
 
             n_success_attack += success
         # Calculate final accuracy for this epsilon
@@ -265,25 +298,85 @@ class Evaluator:
 
         return metrics
 
-    def defense_evaluator(self, model_name):
+
+    # def defense_evaluator_attacker_loader(self, applications=None):
+    #     new_pipeline = VisionPipeline(
+    #                 self.app_pipeline.scenario,
+    #                 None,
+    #                 None,
+    #                 self.app_pipeline.validation_data.data,
+    #                 self.method.model,
+    #                 None,
+    #                 self.app_pipeline.device,
+    #                 None,
+    #             )
+
+    #     # applications["temp_war_defense_eval"] = new_pipeline
+    #     return new_pipeline
+
+    def defense_evaluator(self, IP_ADDR, PORT, model_name, applications=None, attacker_path_list=None):
+
+        print(model_name, applications, attacker_path_list)
         trainset = self.app_pipeline.training_data.data
+        testset = self.app_pipeline.validation_data.data
+        dev_data = self.vm.get_data(data_type="test")
+        targeted_dev_data = []
+        target_label = 7
+        for instance in dev_data:
+            if instance["label"] != target_label:
+                targeted_dev_data.append(instance)
+        print(len(targeted_dev_data))
+        test_loader = DataLoader(
+            targeted_dev_data,
+            batch_size=1,
+            shuffle=True,
+            collate_fn=default_data_collator,
+        )
+
+
+        # vm = virtual_model("http://"+IP_ADDR+":"+PORT, application_name="temp_war_defense_eval")
+        attackers = load_attacker(None, self.student_id, self.task , self.task , self.vm, attacker_path_list)
+        # print(attackers)
+        for attacker in attackers:
+            # print(attacker)
+            distance, og_images, perturbed_images, n_success_attack = self.attack_one_batch(test_loader, attacker.attack, target_label, self.vm)
+
+        adv_images = []
+        gt_labels = []
+        for i in perturbed_images:
+            adv_images.append(i[2])
+            gt_labels.append(i[0])
+        # perturbed_images = np.array(perturbed_images)
+        adv_images = torch.tensor(np.array(adv_images)).unsqueeze(0).type(torch.FloatTensor)
+        gt_labels = torch.tensor(gt_labels)
+        print(adv_images.shape, gt_labels.shape)
+        adv_dataset = torch.utils.data.TensorDataset(adv_images, gt_labels)
+
+        # print(perturbed_images.shape)
+        # print(testset.shape)
+
+
+        print("start adversarial training!")
+
+
+
         device = self.app_pipeline.device
 
         model = build_model(self.model_name, num_labels=None, max_length=None, device=device)
-
-        testset = self.app_pipeline.validation_data.data
-        # if self.attacker is not None:
-        #     testset = self.attacker.attack_dataset(testset, self.defender)
         model = self.method.train(model, trainset, device)
         model.eval()
-        testloader = torch.utils.data.DataLoader(
-            testset, batch_size=100, shuffle=True, num_workers=10
+
+        # adv data results
+
+        adv_testloader = torch.utils.data.DataLoader(
+            adv_dataset, batch_size=1, shuffle=True, num_workers=10
         )  # raw data
         # add adversarial data
         correct = 0
         total = 0
         with torch.no_grad():
-            for inputs, labels in testloader:
+            for inputs, labels in adv_testloader:
+                print(inputs.shape, labels.shape)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 outputs = model(inputs)
@@ -293,7 +386,32 @@ class Evaluator:
         print(
             "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
         )
-        score = 100 * correct / total
+        adv_score = 100 * correct / total
+
+        # return score
+
+        # raw data result
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=100, shuffle=True, num_workers=10
+        )  # raw data
+        # add adversarial data
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in testloader:
+                print(inputs.shape, labels.shape)
+
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        print(
+            "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
+        )
+        raw_score = 100 * correct / total
+        score = (adv_score+raw_score)/2
         return {"score":score}
 
     def defense_evaluator_project(self):
@@ -344,7 +462,7 @@ class Evaluator:
         vm = virtual_model("http://"+IP_ADDR+":"+PORT, application_name="temp_war_defense_eval")
         attackers = []
         for i in range(len(attacker_path_list)):
-            attackers.append(load_attacker("temp_war_defense_eval", student_id, task_folder, task,vm))
+            attackers.append(load_attacker("temp_war_defense_eval", self.student_id, task, task,vm))
         print("start adversarial training!")
         # print(trainset.getitem())
         # print(len(trainset))

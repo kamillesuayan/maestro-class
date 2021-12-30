@@ -50,19 +50,51 @@ A service for educational purposes in the domain of adversarial attacks/defense.
 ## How to use
 ### Server Side
 **Create a virtual enviroment with either conda or vm. Set the python version to 3.7**
+
+If you are using Mac OS, to install Python 3.7.5 use:
+```
+$ brew install pyenv
+```
+Then add the following lines in your `.bash_profile` (or alternative file).
+```
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+```
+Reload the shell with `exec "$SHELL"`. Then, install the desired python version:
+```
+$ pyenv install 3.7.5
+$ pyenv global 3.7.5
+```
+If the above command fails, use a patch:
+```
+$ CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include" LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib" pyenv install --patch 3.7.5 < <(curl -sSL https://github.com/python/cpython/commit/8ea6353.patch\?full_index\=1)
+$ pyenv global 3.7.5
+```
+Make sure the right version is installed with `python3 --version`.
+
 **Install Maestro:**
+Make sure you have the virtual environment set (at the root folder). You can use any virtual environment, for instance [venv](https://docs.python.org/3/tutorial/venv.html) or [anaconda](https://docs.anaconda.com/anaconda/install/index.html). Example:
 ```
-pip install -r requirements.txt
+$ python3 -m venv env
+$ source env/bin/activate
+``` 
+Once the virtual environment is set, install the requirements:
 ```
+$ (env) pip3 install -r requirements.txt
+```
+Finally, install Maestro:
+```
+$ (env) python3 -m pip install -e .
+```
+
 **Run a local server:**
+Get into the server folder and run the Flask application:
 ```
-python -m pip install -e .
-```
-```
-cd Maestro/server
-```
-```
-python app.py # run the maestro server
+$ (env) cd Maestro/server
+$ (env) python3 app.py
 ```
 
 If you need to run task queue, open 2 more terminals and run:
@@ -72,7 +104,7 @@ celery -A app.celery worker # run the celery workers
 celery -A app.celery worker -P solo
 ```
 
-change or update `app.py` and `model.py` accordingly for what models to load and how to load models.
+Change or update `app.py` and `model.py` accordingly for what models to load and how to load models.
 
 ### Attacker Side
 Text:

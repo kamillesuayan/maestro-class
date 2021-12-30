@@ -14,11 +14,15 @@ class virtual_model:
     def __init__(self, request_url, application_name) -> None:
         self.request_url = request_url
         self.application_name = application_name
+        self.batch_output_count = 0
+        self.batch_gradient_count = 0
 
     def get_batch_output(self, perturbed_tokens, labels=[]):
+        self.batch_output_count += 1
         return self._process_batch(self.request_url, perturbed_tokens, gradient=False,)
 
     def get_batch_input_gradient(self, perturbed_tokens, labels):
+        self.batch_gradient_count += 1
         return self._process_batch(
             self.request_url, perturbed_tokens, labels, gradient=True,
         )

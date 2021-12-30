@@ -3,13 +3,13 @@ import requests
 
 test = ["ask server to evaluate the code", "get the score"]
 test = test[
-    1
+    0
 ]  # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 
 def asking(url, device, student_id=123):
     data = {
-        "Application_Name": "Genetic_Attack",
+        "Application_Name": "GeneticAttack",
         "data_type": "test",
         "id": student_id,
         "task": "attack_homework",
@@ -34,7 +34,7 @@ def getScore(url, device, student_id=123):
 
 
 def main():
-    LOCAL = True
+    LOCAL = False
     if LOCAL == True:
         port = 5000
     else:
@@ -47,15 +47,15 @@ def main():
 
     if test == "ask server to evaluate the code":
         asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 22)
-        # asking(url, device, 33)
-        # asking(url, device, 44)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
+        asking(url, device, 11)
     elif test == "get the score":
         getScore(url, device, 11)
 

@@ -96,7 +96,7 @@ def _read_mnist_dataset(dataset_configs, dataset_name):
     # train_server_subset_dataset = torch.utils.data.TensorDataset(train_server_subset)
     print(f"train_server_data length: {len(train_server_data)}, train_student_data length: {len(train_student_data)}, test_server_data length: {len(test_server_data)}, test_student_data length: {len(test_student_data)}")
 
-    return {"train": train_server_data, "test": test_server_data}
+    return {"train": train_server_data, "test": test_student_data} #test_server_data,test_student_data
 
 
 def _read_sst_dataset():

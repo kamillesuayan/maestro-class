@@ -20,7 +20,7 @@ def load_attacker(application, student_id, task_folder, task,vm):
         "../tmp/"
         + str(task_folder)
         + "/"
-        + str(application)
+        + str(task)
         + "_"
         + str(student_id)
         + ".py",
@@ -92,7 +92,6 @@ def load_pretrained_defender(model_name, application, task_folder,task,student_i
     )  # change to the defense class name
     return defender
 
-
 class Evaluator:
     def __init__(
         self,
@@ -159,8 +158,30 @@ class Evaluator:
 
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
+    def _metrics_dict(self,score, final_acc, cost_time, distance,number_queries):
+        return {"score":score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
+    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,dis_threshold = 600):
+        cost_time = time.perf_counter() - start_time
+        if cost_time > t_threshold:
+            time_score = 0
+        else:
+            time_score = 1 - cost_time/t_threshold
+        
+        if number_queries > q_threshold:
+            query_score = 0
+        else:
+            query_score = 1 - number_queries/q_threshold
 
-    def attack_evaluator(self, t_threshold = 600, dis_threshold = 80):
+        if distance > dis_threshold:
+            dis_score = 0
+        else:
+            dis_score = 1 - distance / dis_threshold
+        print(cost_time, distance,number_queries)
+        score = final_acc * 70 + query_score * 20 + dis_score * 10
+        print("score: ", final_acc, query_score, dis_score,score)
+        metrics = self._metrics_dict(score, final_acc, cost_time, distance,number_queries)
+        return metrics
+    def attack_evaluator(self):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -180,9 +201,18 @@ class Evaluator:
             shuffle=True,
             collate_fn=default_data_collator,
         )
-        n_success_attack = 0
+        print("started the process")
         print("start testing")
         # Loop over all examples in test set
+        total_distance = 0
+        total_n_success_attack = 0
+        total_batch_output_count = 0
+        total_batch_gradient_count = 0
+        scores = []
+        # for i in range(10):
+        #     self.vm.batch_output_count = 0
+        #     self.vm.batch_gradient_count = 0
+        n_success_attack = 0
         test_loader = iterator_dataloader
         distance = 0
         og_images = []
@@ -204,36 +234,36 @@ class Evaluator:
             distance += np.linalg.norm(delta_data)
 
             n_success_attack += success
-            # exit(0)
+        # Calculate final accuracy for this epsilon
+        final_acc = n_success_attack / float(len(test_loader))
+        number_queries = self.vm.batch_output_count + self.vm.batch_gradient_count
+        total_batch_output_count += self.vm.batch_output_count
+        total_batch_gradient_count += self.vm.batch_gradient_count
+        print(
+            "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
+                target_label, n_success_attack, len(test_loader), final_acc))
+        metrics = self._get_scores(start_time,final_acc,number_queries,distance)
+        scores.append(metrics)
+        total_distance += distance
+        total_n_success_attack += n_success_attack
+
+        # print("success rate")
+        # print(total_n_success_attack/10,total_n_success_attack/(len(test_loader)*10.0))
+        # print("# queries")
+        # print(total_batch_output_count, total_batch_gradient_count)
+        # print("time")
+        # print(time.perf_counter() - start_time,(time.perf_counter() - start_time)/10)
+        # print("distance")
+        # print(total_distance/10)
 
         # visualization 
         from Maestro.utils import visualize
         visualize(og_images, "before_GA.png")
         visualize(perturbed_images, "after_GA.png")
 
-        # Calculate final accuracy for this epsilon
-        final_acc = n_success_attack / float(len(test_loader))
-        print(
-            "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
-                target_label, n_success_attack, len(test_loader), final_acc
-            )
-        )
-        cost_time = time.perf_counter() - start_time
+        
 
-        if cost_time > t_threshold:
-            time_score = 0
-        else:
-            time_score = 1 - cost_time/t_threshold
-        #print(final_acc, time_score, distance)
-        if distance > dis_threshold:
-            dis_score = 0
-        else:
-            dis_score = 1 - distance / dis_threshold
-        print(cost_time, distance)
-        print("score: ", final_acc, time_score, dis_score)
-
-        score = final_acc * 70 + time_score * 20 + dis_score * 10
-        return score
+        return metrics
 
     def defense_evaluator(self, model_name):
         trainset = self.app_pipeline.training_data.data
@@ -264,7 +294,7 @@ class Evaluator:
             "Accuracy of the network on the images: %.3f %%" % (100 * correct / total)
         )
         score = 100 * correct / total
-        return score
+        return {"score":score}
 
     def defense_evaluator_project(self):
         device = self.app_pipeline.device

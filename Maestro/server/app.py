@@ -10,7 +10,7 @@ import base64
 import zlib
 import datetime
 from pathlib import Path
-# from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from celery import Celery
 import os
 
@@ -22,10 +22,10 @@ from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
-# executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
+# executor = ThreadPoolExecutor(20)
+# application_config_file = "Server_Config/Genetic_Attack.json"
 # application_config_file = "Server_Config/Attack_Project.json"
-# application_config_file = "Server_Config/Adv_Training.json"
+application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
 server_config_file = "Server_Config/Server.json"
@@ -74,15 +74,16 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-    record_scores(student_id, application, record_path, task)
+    score = record_scores(student_id, application, record_path, task)
     # try:
-    # thread_temp = executor.submit(
-    #     record_scores, student_id, application, record_path, task
-    # )
-    # print(thread_temp.result())  # multithread debugging: print errors
+    #     thread_temp = executor.submit(
+    #         record_scores, student_id, application, record_path, task
+    #     )
+    #     print(thread_temp.result())  # multithread debugging: print errors
     # except BaseException as error:
     #     print("An exception occurred: {}".format(error))
-    return
+    return score
+    # return thread_temp.result()
 ################################# MAKE TASK QUEUE WITH CELERY ####################################################
 @celery.task()
 def record_scores(student_id, application, record_path, task):
@@ -110,13 +111,12 @@ def record_scores(student_id, application, record_path, task):
     )
     print(f"the task is {task}")
     if (task == "attack_homework") | (task == "attack_project"):
-        all_scores = []
-        for i in range(5):
-            score = evaluator.attack_evaluator()
-            all_scores.append(score)
-        scores = sum(all_scores)/5.0
+        all_metrics = []
+        for i in range(1):
+            metrics = evaluator.attack_evaluator()
+            all_metrics.append(metrics)
     elif task == "defense_homework":
-        score = evaluator.defense_evaluator(model_name)
+        metrics = evaluator.defense_evaluator(model_name)
     elif task == "defense_project":
         score = evaluator.defense_evaluator_project()
     elif task == "war_attack":
@@ -129,10 +129,11 @@ def record_scores(student_id, application, record_path, task):
         print("loading evaulator error")
 
     print("evaluator")
+    score = metrics["score"]
     print(score, record_path)
     with open(record_path, "a+") as f:
         f.write(str(score) + "\n")
-    return
+    return metrics
 
 def main():
     @app.route("/", methods=["GET"])

@@ -14,51 +14,89 @@ class GeneticAttack:
         image_size: List[int],
         n_population=100,
         n_generation=100,
-        mutate_rate=0.2,
+        mask_rate=0.2,
         temperature=0.3,
+        use_mask=True,
     ):
+        """
+        args:
+            vm: virtual model is wrapper used to get outputs/gradients of a model. 
+            image_size: [1,28,28]
+            n_population: number of population in each iteration
+            n_generation: maximum of generation constrained. The attack automatically stops when this maximum is reached
+            mutate_rate: if use_mask is set to true, this is used to set the rate of masking when perturbed
+            temperature: this sets the temperature when computing the probabilities for next generation
+            use_mask: when this is true, only a subset of the image will be perturbed.
+
+        """
         self.vm = vm
         self.image_size = image_size
         self.n_population = n_population
         self.n_generation = n_generation
-        self.mutate_rate = mutate_rate
+        self.mask_rate = mask_rate
         self.temperature = temperature
+        self.use_mask= use_mask
 
     def attack(
         self,
-        original_image: List[List[int]],
+        original_image:  np.ndarray,
         labels: List[int],
-        vm: virtual_model,
         target_label: int,
     ):
         """
         currently this attack has 2 versions, 1 with no mask pre-defined, 1 with mask pre-defined.
+        args:
+            original_image: a numpy ndarray images, [1,28,28]
+            labels: label of the image, a list of size 1
+            target_label: target label we want the image to be classified, int
+        return:
+            the perturbed image
+            label of that perturbed iamge
+            success: whether the attack succeds
         """
         self.original_image = original_image
-        self.mask = np.random.binomial(1, self.mutate_rate, size=self.image_size).astype("bool")
+        self.mask = np.random.binomial(1, self.mask_rate, size=self.image_size).astype("bool")
         population = self.init_population(original_image)
         print(len(population))
-        examples = [(0, 0, np.squeeze(x)) for x in population[:10]]
+        examples = [(labels[0], labels[0], np.squeeze(x)) for x in population[:10]]
         visualize(examples, "population.png")
+        success = False
         for g in range(self.n_generation):
-            success = False
             population, output, scores, best_index = self.eval_population(
                 population, target_label
             )
             print(f"Generation: {g} best score: {scores[best_index]}")
             if np.argmax(output[best_index, :]) == target_label:
                 print(f"Attack Success!")
+                visualize([(labels[0],np.argmax(output[best_index, :]),np.squeeze(population[best_index]))], "after_GA1.png")
                 success = True
                 break
+        return [population[best_index]], np.argmax(output[best_index, :]),success
 
-        return [population[best_index]], success
-
-    def fitness(self, image: List[List[int]], target: int):
+    def fitness(self, image: np.ndarray, target: int):
+        """
+        evaluate how fit the current image is 
+        return:
+            output: output of the model
+            scores: the "fitness" of the image, measured as logits of the target label
+        """
         output = self.vm.get_batch_output(image)
         scores = output[:, target]
         return output, scores
 
     def eval_population(self, population, target_label):
+        """
+        evaluate the population, pick the parents, and then crossover to get the next 
+        population
+        args:
+            population: current population, a list of images
+            target_label: target label we want the imageto be classiied, int
+        return:
+            population: population of all the images
+            output: output of the model
+            scores: the "fitness" of the image, measured as logits of the target label
+            best_indx: index of the best image in the population
+        """
         # --------------TODO--------------
         output, scores = self.fitness(population, target_label)
         logits = np.exp(scores / self.temperature)
@@ -84,11 +122,15 @@ class GeneticAttack:
         # ------------END TODO-------------
         return population, output, scores, best_index
 
-    def perturb(self, image, mask=True):
+    def perturb(self, image):
         """
         perturb a single image with some constraints and a mask
+        args: 
+            image: the image to be perturbed
+        return:
+            perturbed: perturbed image
         """
-        if not mask:
+        if not self.use_mask:
             # --------------TODO--------------
             perturbed = np.clip(image + np.random.randn(*self.mask.shape) * 0.1, 0, 1)
             # ------------END TODO-------------
@@ -102,6 +144,14 @@ class GeneticAttack:
         return perturbed
 
     def crossover(self, x1, x2):
+        """
+        crossover two images to get a new one. We use a uniform distribution with p=0.5
+        args: 
+            x1: image #1
+            x2: image #2
+        return:
+            x_new: newly crossovered image
+        """  
         x_new = x1.copy()
         for i in range(len(x1)):
             for j in range(len(x1[i])):
@@ -109,7 +159,14 @@ class GeneticAttack:
                     x_new[0][i][j] = x2[0][i][j]
         return x_new
 
-    def init_population(self, original_image: List[List[int]]):
+    def init_population(self, original_image: np.ndarray):
+        """
+        Initialize the population to n_population of images. Make sure to perturbe each image.
+        args: 
+            original_image: image to be attacked
+        return:
+            a list of perturbed images initialized from orignal_image
+        """  
         return [self.perturb(original_image[0]) for _ in range(self.n_population)]
 
 

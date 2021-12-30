@@ -23,9 +23,9 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 
 # ------------------ LOCAL IMPORTS ---------------------------------
 # executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Genetic_Attack.json"
 # application_config_file = "Server_Config/Attack_Project.json"
-# application_config_file = "Server_Config/Adv_Training.json"
+application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
 server_config_file = "Server_Config/Server.json"
@@ -111,7 +111,7 @@ def record_scores(student_id, application, record_path, task):
     print(f"the task is {task}")
     if (task == "attack_homework") | (task == "attack_project"):
         all_scores = []
-        for i in range(5):
+        for i in range(1):
             score = evaluator.attack_evaluator()
             all_scores.append(score)
         scores = sum(all_scores)/5.0

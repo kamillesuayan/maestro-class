@@ -28,7 +28,7 @@ class GeneticAttack:
 
     def attack(
         self,
-        original_image: List[List[int]],
+        original_image: np.ndarray,
         labels: List[int],
         vm: virtual_model,
         target_label: int,

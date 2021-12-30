@@ -43,10 +43,10 @@ class AutoPipelineForVision:
         self.model_name = model_name
         self.device = device
         self.pipeline_name = pipeline_name
-        datasets = get_dataset(dataset_configs)
+        self.datasets = get_dataset(dataset_configs)
         model = build_model(model_name, num_labels=2, max_length=128, device=device)
-        train_dataset = datasets["train"]
-        test_dataset = datasets["test"]
+        train_dataset = self.datasets["train"]
+        test_dataset = self.datasets["test"]
         if not finetune:
             # training path not exist, then we either load the pretrained checkpoint or not do anything
             if checkpoint_path!="":

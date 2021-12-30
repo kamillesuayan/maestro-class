@@ -63,7 +63,7 @@ def _read_mnist_dataset(dataset_configs, dataset_name):
             data = train_student_subset,
             split="train",
         )
-    
+
     # 2.1 Test Data for Server
     test_server_path = os.path.join(path, "test_server_split.pt")
     if os.path.exists(test_server_path):
@@ -93,10 +93,12 @@ def _read_mnist_dataset(dataset_configs, dataset_name):
             data = test_student_subset,
             split="test",
         )
+
+
     # train_server_subset_dataset = torch.utils.data.TensorDataset(train_server_subset)
     print(f"train_server_data length: {len(train_server_data)}, train_student_data length: {len(train_student_data)}, test_server_data length: {len(test_server_data)}, test_student_data length: {len(test_student_data)}")
 
-    return {"train": train_server_data, "test": test_student_data}
+    return {"train": train_server_data, "test": test_student_data} #test_server_data,test_student_data
 
 
 def _read_sst_dataset():

@@ -9,7 +9,7 @@ test = test[
 
 def asking(url, device, student_id=123):
     data = {
-        "Application_Name": "Genetic_Attack",
+        "Application_Name": "GeneticAttack",
         "data_type": "test",
         "id": student_id,
         "task": "attack_homework",
@@ -53,9 +53,9 @@ def main():
         # asking(url, device, 11)
         # asking(url, device, 11)
         # asking(url, device, 11)
-        # asking(url, device, 22)
-        # asking(url, device, 33)
-        # asking(url, device, 44)
+        # asking(url, device, 11)
+        # asking(url, device, 11)
+        # asking(url, device, 11)
     elif test == "get the score":
         getScore(url, device, 11)
 

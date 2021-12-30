@@ -32,6 +32,7 @@ def load_all_applications(applications_config_path: str):
     application_list = {}
     # GeneticAttack
     print("Setting up the FGSM Attack pipeline....")
+
     with open(applications_config_path,"r") as f:
         application_configs = json.load(f)
     for app_config in application_configs["Application"]:

@@ -1,7 +1,7 @@
 # data/
 models_temp/
 __pycache__/
-#tmp/
+tmp/
 runs/
 redis-stable/
 # Byte-compiled / optimized / DLL files

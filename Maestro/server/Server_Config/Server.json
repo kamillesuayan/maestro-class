@@ -1,6 +1,6 @@
 {
     "ip": "0.0.0.0",
     "port": "5000",
-    "task_queue": true,
+    "task_queue": false,
     "comment": "443 for deploy and 5000 for debugging"
 }

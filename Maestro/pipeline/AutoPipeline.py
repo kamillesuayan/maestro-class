@@ -63,7 +63,7 @@ class AutoPipelineForVision:
                 checkpoint_path,
                 training_methods_path
             )
-
+        model.eval()
         return VisionPipeline(
             scenario,
             train_dataset,

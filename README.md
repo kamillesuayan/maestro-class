@@ -1,7 +1,6 @@
 # Maestro
 
-A service for educational purposes in the domain of adversarial attacks/defense.
-
+A service for educational purposes in the domain of adversarial attacks / defense.
 
 ## Structure overview
 
@@ -10,72 +9,39 @@ A service for educational purposes in the domain of adversarial attacks/defense.
 	-   Contains wrapper for huggingface datasets.
 	-   Wrapper for Torchvision datasets
 -   `Maestro/evaluator/`
-
-	-   Evaluator class to evaluate different applications
+	-   Evaluator class to evaluate different applications.
 	-   Compute attack rate/constraint violations etc.
 -   `Maestro/constraint/`
 	-   Contains class for different constraints.
 -   `Maestro/attacker_helper/`
-	-   Contains helper file for the attacker to query the server
+	-   Contains helper file for the attacker to query the server.
 -   `Maestro/examples/`
 
-    - Examples for loading custom models and datasets (good for getting around NLP libraries)
-	-   Examples for several scenarios (outdated, pre REST API examples)
-	-   Server Examples (example code using REST API)
-	-   Attacker File (contains starting files for the attacker)
-	-   Evaluation (contains evaluations for the attacker file as well as sample complete attacker files)
-
+    - Examples for loading custom models and datasets (good for getting around NLP libraries).
+	-   Examples for several scenarios (outdated, pre REST API examples).
+	-   Server Examples (example code using REST API).
+	-   Attacker File (contains starting files for the attacker).
+	-   Evaluation (contains evaluations for the attacker file as well as sample complete attacker files).
 
 -   `Maestro/models/`
-
-	-   Handles model loading (from HugginFace)
-
-	-   A couple customized models such as LSTM
-
+	-   Handles model loading (from HugginFace).
+	-   A couple customized models such as LSTM.
 
 -   `Maestro/pipeline/`
-
-	-   Contains AutoPipeline,Pipeline, and Model_Wrapper. Crucial logics from the backend of the server.
-
+	-   Contains AutoPipeline, Pipeline, and Model_Wrapper. Crucial logics from the backend of the server.
 
 -   `Maestro/server/`
-
-	-   Handles the flask api server
-
-	-   Complete the methods that handle POST requests
+	-   Handles the flask api server.
+	-   Complete the methods that handle POST requests.
 
 -   `Maestro/utils/`
-	- Utility functions such as move_to_device
+	- Utility functions such as move_to_device.
 
 ## How to use
 ### Server Side
-**Create a virtual enviroment with either conda or vm. Set the python version to 3.7**
+**Create a virtual enviroment with either conda or vm. Set the python version to 3.9.7**. Make sure the right version is installed with `python3 --version`.
 
-If you are using Mac OS, to install Python 3.7.5 use:
-```
-$ brew install pyenv
-```
-Then add the following lines in your `.bash_profile` (or alternative file).
-```
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-```
-Reload the shell with `exec "$SHELL"`. Then, install the desired python version:
-```
-$ pyenv install 3.7.5
-$ pyenv global 3.7.5
-```
-If the above command fails, use a patch:
-```
-$ CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include" LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib" pyenv install --patch 3.7.5 < <(curl -sSL https://github.com/python/cpython/commit/8ea6353.patch\?full_index\=1)
-$ pyenv global 3.7.5
-```
-Make sure the right version is installed with `python3 --version`.
-
-**Install Maestro:**
+#### Install Maestro
 Make sure you have the virtual environment set (at the root folder). You can use any virtual environment, for instance [venv](https://docs.python.org/3/tutorial/venv.html) or [anaconda](https://docs.anaconda.com/anaconda/install/index.html). Example:
 ```
 $ python3 -m venv env
@@ -90,22 +56,28 @@ Finally, install Maestro:
 $ (env) python3 -m pip install -e .
 ```
 
-**Run a local server:**
+#### Run a local server
+##### Running the app
 Get into the server folder and run the Flask application:
 ```
 $ (env) cd Maestro/server
 $ (env) python3 app.py
 ```
-
-If you need to run task queue, open 2 more terminals and run:
+If you happen to have problems with `tkinter` on Mac OS, for instance, an error of the kind: `ModuleNotFoundError: No module named '_tkinter'`, install the module with `brew`:
 ```
-./run-redis.sh # run the redis database
-celery -A app.celery worker # run the celery workers
-celery -A app.celery worker -P solo
+$ (env) brew install python-tk
 ```
 
-Change or update `app.py` and `model.py` accordingly for what models to load and how to load models.
+##### Customize the app
+Depending on the assignment you need to do, you will need to change or update `app.py` and `model.py` accordingly for what models to load and how to load models. That is easy! Here are the steps:
 
+- The first lines after local imports in `app.py` we have the paths for 4 the configuration files (2 for assignments and 2 for projects). Just uncomment the one you need and comments the others:
+```
+application_config_file = "Server_Config/Genetic_Attack.json"    # (Assignment 1)
+# application_config_file = "Server_Config/Attack_Project.json"  # (Project 1)
+# application_config_file = "Server_Config/Adv_Training.json"    # (Assignment 2)
+# application_config_file = "Server_Config/Defense_Project.json" # (Project 2)
+```
 
 ### Evalutor tutorial
 ```

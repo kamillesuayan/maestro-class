@@ -29,7 +29,7 @@ class Scenario:
 
     def load_from_yaml(self, yaml_file) -> None:
         with open(yaml_file) as f:
-            data = yaml.load(f)
+            data = yaml.safe_load(f)
             if data["Type"]["Name"] == "Attack":
                 self.target = data["Attack Method"]["target"]
                 self.constraint = data["Attack Method"]["constraint"]

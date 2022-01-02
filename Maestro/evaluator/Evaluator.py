@@ -12,17 +12,18 @@ from Maestro.data import get_dataset
 from Maestro.models import build_model
 from Maestro.pipeline import VisionPipeline
 
-def load_attacker(application, student_id, task_folder, task, vm, attacker_path_list=None):
-    print("load_attacker", attacker_path_list, task)
+def load_attacker(application, student_id, student_name, task_folder, task, vm, attacker_path_list=None):
+    print("load_attacker", attacker_path_list, task, application)
     if (task == "attack_homework")|(task == "attack_project"):
+        print("playground\n")
         spec = importlib.util.spec_from_file_location(
-        str(task) + "_" + str(student_id),
-        "../tmp/"
-        + str(task_folder)
-        + "/"
+        str(task_folder) + "_" + str(student_id),
+        "../../playground/"
         + str(task)
-        + "_"
-        + str(student_id)
+        + "/"
+        + str(task_folder)
+        + "-"
+        + str(student_id) + "-" + str(student_name)
         + ".py",
         )
     elif (task == "defense_homework")|(task == "defense_project"):
@@ -53,16 +54,16 @@ def load_attacker(application, student_id, task_folder, task, vm, attacker_path_
         )
     return attacker
 
-def load_defender(model_name,application, student_id, task_folder,task, device, spec_path = None):
+def load_defender(model_name,application, student_id, student_name, task_folder,task, device, spec_path = None):
     if spec_path:
         spec = importlib.util.spec_from_file_location(application + "_" + model_name, spec_path)
     else:
         spec = importlib.util.spec_from_file_location(
-            str(task) + "_" + str(student_id),
-            "../tmp/"
+            str(application) + "_" + str(student_id),
+            "../playground/"
             + str(task_folder)
             + "/"
-            + str(task)
+            + str(application)
             + "_"
             + str(student_id)
             + ".py",
@@ -81,13 +82,13 @@ def load_defender(model_name,application, student_id, task_folder,task, device, 
         )
     return defender
 
-def load_pretrained_defender(model_name, application, task_folder,task,student_id,  device):
+def load_pretrained_defender(model_name, application, task_folder,task,student_id, student_name,  device):
     model_path = (
-        "../tmp/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
+        "../playground/"+ str(task_folder)+"/" + str(student_id) +"_group_project/lenet_defended_model.pth"
     )
     spec = importlib.util.spec_from_file_location(
         str(task) + "_" + str(student_id),
-        "../tmp/"+ str(task_folder)+ '/' +str(student_id) +"_group_project/"
+        "../playground/"+ str(task_folder)+ '/' +str(student_id) +"_group_project/"
         + str(task)
         + "_"
         + str(student_id)
@@ -114,6 +115,7 @@ class Evaluator:
         application,
         model_name,
         student_id,
+        student_name,
         vm,
         task,
         app_pipeline=None,
@@ -124,16 +126,16 @@ class Evaluator:
         self.model_name = model_name
         self.student_id = student_id
         if task == "defense_homework":
-            self.method = load_defender(model_name, application, student_id, task,task, self.app_pipeline.device)
+            self.method = load_defender(model_name, application, student_id, student_name,task,task, self.app_pipeline.device)
         elif (task == "attack_homework") | (task == "attack_project"):
-            self.method = load_attacker(application, student_id, task, task, vm)
+            self.method = load_attacker(application, student_id, student_name, task, task, vm)
         elif task == "defense_project":
-            self.method = load_pretrained_defender(model_name,application, task, task,student_id, self.app_pipeline.device)
+            self.method = load_pretrained_defender(model_name, application, task, task,student_id, student_name, self.app_pipeline.device)
         elif "war" in task:
             if task == "war_attack":
-                self.method = load_attacker(application, student_id,"war_phase", task, vm)
+                self.method = load_attacker(application, student_id, student_name, "war_phase", task, vm)
             elif task == "war_defend":
-                self.method = load_pretrained_defender(model_name,application, "war_phase", task,student_id, self.app_pipeline.device)
+                self.method = load_pretrained_defender(model_name,application, "war_phase", task,student_id, student_name, self.app_pipeline.device)
         else:
             print("loading evaulator error")
         self.iterator_dataloader = iterator_dataloader
@@ -184,7 +186,7 @@ class Evaluator:
             time_score = 0
         else:
             time_score = 1 - cost_time/t_threshold
-        
+
         if number_queries > q_threshold:
             query_score = 0
         else:
@@ -199,6 +201,7 @@ class Evaluator:
         print("score: ", final_acc, query_score, dis_score,score)
         metrics = self._metrics_dict(score, final_acc, cost_time, distance,number_queries)
         return metrics
+
     def attack_one_batch(self, test_loader, attack_method, target_label, vm):
         # print(vm.application_name)
         distance = 0
@@ -213,7 +216,7 @@ class Evaluator:
             og_images.append((labels[0],labels[0],np.squeeze(batch)))
             # print(labels.item(), labels.item())
             perturbed_data, perturbed_label, success = attack_method(
-                batch, labels, vm, target_label=target_label,
+                batch, labels, target_label=target_label,
             )
 
             perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
@@ -289,7 +292,7 @@ class Evaluator:
         # print(total_distance/10)
 
 
-        
+
 
         return metrics
 

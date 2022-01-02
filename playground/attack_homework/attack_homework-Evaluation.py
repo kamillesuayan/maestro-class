@@ -7,11 +7,12 @@ test = test[
 ]  # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
 
-def asking(url, device, student_id=123):
+def asking(url, device, student_id=123, student_name="Alice"):
     data = {
         "Application_Name": "GeneticAttack",
         "data_type": "test",
         "id": student_id,
+        "student_name": student_name,
         "task": "attack_homework",
     }
     final_url = "{0}/file_evaluator".format(url)
@@ -22,7 +23,7 @@ def asking(url, device, student_id=123):
 
 def getScore(url, device, student_id=123):
     data = {
-        "Application_Name": "Genetic_Attack",
+        "Application_Name": "GeneticAttack",
         "data_type": "test",
         "id": student_id,
         "task": "attack_homework",
@@ -43,21 +44,13 @@ def main():
     url = "http://127.0.0.1:" + str(port)
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     print("at test")
-    student_id = 117036910009
+    student_id = 11
+    student_name = "Alice"
 
     if test == "ask server to evaluate the code":
-        asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
-        # asking(url, device, 11)
+        asking(url, device, student_id, student_name)
     elif test == "get the score":
-        getScore(url, device, 11)
+        getScore(url, device, student_id)
 
 
 if __name__ == "__main__":

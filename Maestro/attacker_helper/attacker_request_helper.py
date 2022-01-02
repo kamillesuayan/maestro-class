@@ -67,7 +67,6 @@ class virtual_model:
         # print(batch)
         batch = self.convert_np_matrix_to_list(batch)
         labels = self.convert_np_matrix_to_list(labels)
-        # print(batch)
         payload = {
             "Application_Name": self.application_name,
             "data": batch,
@@ -77,8 +76,6 @@ class virtual_model:
         if gradient:
             final_url = url + "/get_batch_input_gradient"
         response = requests.post(final_url, json=payload)
-        # print(response, final_url)
-        # print("\n\n\n")
         outputs = json.loads(response.json()["outputs"])
         return np.array(outputs)
 

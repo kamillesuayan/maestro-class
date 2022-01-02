@@ -23,7 +23,7 @@ class GeneticAttack:
     ):
         """
         args:
-            vm: virtual model is wrapper used to get outputs/gradients of a model. 
+            vm: virtual model is wrapper used to get outputs/gradients of a model.
             image_size: [1,28,28]
             n_population: number of population in each iteration
             n_generation: maximum of generation constrained. The attack automatically stops when this maximum is reached
@@ -80,7 +80,7 @@ class GeneticAttack:
 
     def fitness(self, image: np.ndarray, target: int):
         """
-        evaluate how fit the current image is 
+        evaluate how fit the current image is
         return:
             output: output of the model
             scores: the "fitness" of the image, measured as logits of the target label
@@ -91,7 +91,7 @@ class GeneticAttack:
 
     def fitness2(self, image: np.ndarray, target: int):
         """
-        evaluate how fit the current image is 
+        evaluate how fit the current image is
         return:
             output: output of the model
             scores: the "fitness" of the image, measured as logits of the target label
@@ -103,7 +103,7 @@ class GeneticAttack:
 
     def eval_population(self, population, target_label):
         """
-        evaluate the population, pick the parents, and then crossover to get the next 
+        evaluate the population, pick the parents, and then crossover to get the next
         population
         args:
             population: current population, a list of images
@@ -125,24 +125,25 @@ class GeneticAttack:
 
         if np.argmax(output[best_index, :]) == target_label:
             return population, output, scores, best_index
-            
+
         # --------------TODO--------------
         # the elite gene that's defeintely in the next population without perturbation
         elite = []
         # strong and fit genes passed down to next generation, they have a chance to mutate
         survived = []
 
-        # offsprings of strong genes 
+        # offsprings of strong genes
         childs = []
 
-        population =np.array(elite + survived +childs)
+        # population =np.array(elite + survived +childs)
+        population = population
         # ------------END TODO-------------
         return population, output, scores, best_index
 
     def perturb(self, image):
         """
         perturb a single image with some constraints and a mask
-        args: 
+        args:
             image: the image to be perturbed
         return:
             perturbed: perturbed image
@@ -159,12 +160,12 @@ class GeneticAttack:
     def crossover(self, x1, x2):
         """
         crossover two images to get a new one. We use a uniform distribution with p=0.5
-        args: 
+        args:
             x1: image #1
             x2: image #2
         return:
             x_new: newly crossovered image
-        """  
+        """
         x_new = x1.copy()
         for i in range(len(x1)):
             for j in range(len(x1[i])):
@@ -175,11 +176,11 @@ class GeneticAttack:
     def init_population(self, original_image: np.ndarray):
         """
         Initialize the population to n_population of images. Make sure to perturbe each image.
-        args: 
+        args:
             original_image: image to be attacked
         return:
             a list of perturbed images initialized from orignal_image
-        """  
+        """
         return np.array([self.perturb(original_image[0]) for _ in range(self.n_population)])
 
 

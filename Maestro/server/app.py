@@ -24,8 +24,8 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 # executor = ThreadPoolExecutor(1)
-# application_config_file = "Server_Config/Genetic_Attack.json"
-application_config_file = "Server_Config/Attack_Project.json"
+application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 

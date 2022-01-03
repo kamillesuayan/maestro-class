@@ -69,20 +69,22 @@ application_config_file = "Server_Config/Genetic_Attack.json"    # (Assignment 1
 # application_config_file = "Server_Config/Adv_Training.json"    # (Assignment 2)
 # application_config_file = "Server_Config/Defense_Project.json" # (Project 2)
 ```
+**If you cannot run `app.py` check that you are passing the right configuration file!**
 
-### Evalutor tutorial
-```
-python ./Maestro/server/app.py # run the server
-# upload the file to ./Maestro/tmp/attack_homework/GeneticAttack_117036910009.py
-python examples/Evaluations/CV/Attack-Homework/Genetic_Algorithm_Attack_Evaluation.py # change the line 4: test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
+### Code your assignment
+The naming convention for submission files is: `<task>-<id>-<name>.py`. An example would be `attack_project-110-Team Fire.py` or `attack_homework-11-Alice.py`. 
+- Go to the `playground` folder. There you will find a folder for each assignment/project with the template and evaluator file.
+- Fill in the TODO sections in the corresponding template file and follow the conventions in naming the file.
+- Change the last lines in the evaluation file to match your name and UCI ID.
 
+### Evaluator tutorial
+To evaluate your coded solution, open a new terminal tab while running the `app.py` and do:
+- Activate the virtual environment as always.
+- In the evaluation script (for attack it is `attack_homework-Evaluation.py`) make sure the 4th line is set to `test[0]`.
+- Run the evaluation script of the corresponding assignment. Example for attack homework:
 ```
+$ cd playground/attack_homework
+$ (env) python3 python3 attack_homework-Evaluation.py
+```
+After that, a request will be sent to the server, you will be able to see the output in the other terminal tab, where `app.py` is running.
 
-### To Run Task Queue
-```
-Go to the Maestr/server/ directory
-python app.py # run the server
-sh run-redis.sh # run redis server
-celery -A app.celery worker # intitialize the worker
-
-```

@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 import torch
 import json
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 

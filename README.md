@@ -87,4 +87,5 @@ $ cd playground/attack_homework
 $ (env) python3 python3 attack_homework-Evaluation.py
 ```
 After that, a request will be sent to the server, you will be able to see the output in the other terminal tab, where `app.py` is running.
+- You can see the saved outputs (plots) in the `Maestro/server` folder and the recording (final success rate) in the corresponding assignment folder. In the case of attack homework, after a successful execution you will be able to compare the images before and after genetic attack. Those images will be saved as `before_GA.png` and `after_GA.png` in the `Maestro/server` folder.
 

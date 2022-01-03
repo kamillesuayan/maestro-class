@@ -34,7 +34,7 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
             spec = importlib.util.spec_from_file_location(str(task) + "_" + str(student_id), attacker_path)
             foo = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(foo)
-            attacker = foo.GeneticAttack(vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,)
+            attacker = foo.GeneticAttack(vm, image_size=[1, 28, 28], temperature=0.1,n_generation=200,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.2,child_rate=0.2)
             attackers.append(attacker)
         return attackers
     else:
@@ -44,7 +44,7 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
+            vm, image_size=[1, 28, 28], temperature=0.1,n_generation=100,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.1,child_rate=0.2
         )
     elif task == "attack_project":
         attacker = foo.ProjectAttack(
@@ -230,7 +230,7 @@ class Evaluator:
             n_success_attack += success
         return distance, og_images, perturbed_images, n_success_attack
 
-    def attack_evaluator(self, t_threshold = 600, dis_threshold = 80):
+    def attack_evaluator(self, t_threshold = 600, q_threshold=18000, dis_threshold = 2000):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -279,7 +279,7 @@ class Evaluator:
         print(
             "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
                 target_label, n_success_attack, len(test_loader), final_acc))
-        metrics = self._get_scores(start_time,final_acc,number_queries,distance)
+        metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,dis_threshold=dis_threshold)
         scores.append(metrics)
         total_distance += distance
         total_n_success_attack += n_success_attack

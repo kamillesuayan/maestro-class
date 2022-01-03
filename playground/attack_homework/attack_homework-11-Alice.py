@@ -101,7 +101,7 @@ class GeneticAttack:
         output = self.vm.get_batch_output(image)
         scores = output[:, target]
         mse = np.sqrt(np.power(image - self.original_image, 2).sum(axis=-1).sum(axis=-1).mean(axis=-1))
-        return output, scores-mse*0.3
+        return output, scores-mse*1
 
     def eval_population(self, population, target_label):
         """

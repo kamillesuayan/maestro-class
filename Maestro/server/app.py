@@ -24,8 +24,8 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 # executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
-# application_config_file = "Server_Config/Attack_Project.json"
+# application_config_file = "Server_Config/Genetic_Attack.json"
+application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
@@ -75,7 +75,7 @@ def append_to_queue(student_id, application, record_path, task):
     # time.sleep(5)
     # print("finsh!")
     print("Appending to queue!")
-    score = record_scores(student_id, application, record_path, task)
+    score = record_scores(student_id, student_name, application, record_path, task)
     # try:
     #     thread_temp = executor.submit(
     #         record_scores, student_id, application, record_path, task
@@ -87,7 +87,7 @@ def append_to_queue(student_id, application, record_path, task):
     # return thread_temp.result()
 ################################# MAKE TASK QUEUE WITH CELERY ####################################################
 @celery.task()
-def record_scores(student_id, application, record_path, task):
+def record_scores(student_id, student_name, application, record_path, task):
     global applications
     print("\nworking in the records: ", task, application)
     # if task == "defense_project":
@@ -107,6 +107,7 @@ def record_scores(student_id, application, record_path, task):
         application,
         model_name,
         student_id,
+        student_name,
         vm,
         task,
         app_pipeline=app.applications[application],
@@ -116,13 +117,10 @@ def record_scores(student_id, application, record_path, task):
         all_metrics = []
         for i in range(1):
             metrics = evaluator.attack_evaluator()
+            # metrics = {}
+            # metrics['score'] = 0
             all_metrics.append(metrics)
     elif task == "defense_homework":
-        # metrics = evaluator.defense_evaluator(model_name)
-        # add_to_app("temp_war_defense_eval", evaluator.defense_evaluator_attacker_loader(applications))
-        # applications["temp_war_defense_eval"] = evaluator.defense_evaluator_attacker_loader(applications)
-        # print("\ntest\n", applications["temp_war_defense_eval"])
-        # print("xjcc")
         metrics = evaluator.defense_evaluator(IP_ADDR, PORT, model_name, app.applications, attacker_path_list)
     elif task == "defense_project":
         score = evaluator.defense_evaluator_project()
@@ -130,8 +128,6 @@ def record_scores(student_id, application, record_path, task):
         score = evaluator.attack_evaluator()
     elif task == "war_defend":
         score = evaluator.defense_evaluator_war(app.applications,attacker_path_list)
-
-
     else:
         print("loading evaulator error")
 
@@ -283,6 +279,8 @@ def main():
     def file_evaluator():
         print("Evaluate the students' method.")
         student_id = request.form["id"]
+        student_name = request.form["student_name"]
+
         print("Student id", student_id)
         application = request.form["Application_Name"]
         task = request.form["task"]
@@ -293,10 +291,10 @@ def main():
         if submission:
             filename = str(application) + "_" + str(student_id) + ".py"
             print(submission)
-            submission.save(os.path.join("../tmp/" + str(task) + "/", filename))
+            submission.save(os.path.join("../../playground/" + str(task) + "/", filename))
 
         # record_path = Path("../tmp/" + task + "/recording.txt")
-        record_path = Path("../tmp/" + task + "/recording_"+str(student_id)+".txt")
+        record_path = Path("../../playground/" + task + "/recording_"+str(student_id)+".txt")
 
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
@@ -316,14 +314,14 @@ def main():
         # record_scores(application, student_id, record_path)
         # record_scores(application, student_id, record_path)
         # print(record_path,str(record_path),str(record_path.stem))
-        job = (student_id, application, str(record_path), task)
+        job = (student_id, student_name, application, str(record_path), task)
         if TASK_QUEUE:
-            append_to_queue.delay(student_id, application, str(record_path), task)
+            append_to_queue.delay(student_id, student_name, application, str(record_path), task)
             # append_to_queue.apply(args=job)
             # wait.apply(3)
         else:
             # try:
-            record_scores(student_id, application, record_path, task)
+            record_scores(student_id, student_name, application, record_path, task)
 
             # thread_temp = executor.submit(
             #     record_scores, student_id, application, record_path, task)
@@ -337,7 +335,7 @@ def main():
         print("check the score of the defense method")
         task = request.form["task"]
         student_id = request.form["id"]
-        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
 
         application = request.form["Application_Name"]
         output = []
@@ -358,7 +356,7 @@ def main():
         print("check the score of the defense method")
         task = request.form["task"]
         student_id = request.form["id"]
-        record_path = "../tmp/" + str(task) + "/recording_"+str(student_id)+".txt"
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
 
         application = request.form["Application_Name"]
         output = []

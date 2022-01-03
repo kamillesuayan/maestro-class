@@ -11,31 +11,22 @@ A service for educational purposes in the domain of adversarial attacks / defens
 -   `Maestro/evaluator/`
 	-   Evaluator class to evaluate different applications.
 	-   Compute attack rate/constraint violations etc.
--   `Maestro/constraint/`
-	-   Contains class for different constraints.
 -   `Maestro/attacker_helper/`
 	-   Contains helper file for the attacker to query the server.
--   `Maestro/examples/`
-
-    - Examples for loading custom models and datasets (good for getting around NLP libraries).
-	-   Examples for several scenarios (outdated, pre REST API examples).
-	-   Server Examples (example code using REST API).
-	-   Attacker File (contains starting files for the attacker).
-	-   Evaluation (contains evaluations for the attacker file as well as sample complete attacker files).
-
 -   `Maestro/models/`
 	-   Handles model loading (from HugginFace).
 	-   A couple customized models such as LSTM.
-
 -   `Maestro/pipeline/`
 	-   Contains AutoPipeline, Pipeline, and Model_Wrapper. Crucial logics from the backend of the server.
-
 -   `Maestro/server/`
 	-   Handles the flask api server.
 	-   Complete the methods that handle POST requests.
-
 -   `Maestro/utils/`
 	- Utility functions such as move_to_device.
+-   `playground`
+	-   **This is the folder where students will write their own code.**
+	-   Attacker File (contains starting files for the attacker).
+	-   Evaluation (contains evaluations for the attacker file as well as sample complete attacker files).
 
 ## How to use
 ### Server Side

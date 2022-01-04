@@ -44,11 +44,11 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
-            vm, image_size=[1, 28, 28], temperature=0.1,n_generation=100,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.1,child_rate=0.2
+            vm, image_size=[1, 28, 28], temperature=0.1,n_generation=100,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.1, child_rate=0.2
         )
     elif task == "attack_project":
         attacker = foo.ProjectAttack(
-            vm, image_size=[1, 28, 28], n_population=100, mutate_rate=0.2,
+            vm, image_size=[3, 32, 32], n_population=100, mutate_rate=0.2,
         )
     else:
         attacker = foo.GeneticAttack(
@@ -145,44 +145,11 @@ class Evaluator:
         self.constraint = constraint
         self.task = task
 
-    # for the student debugging
-    # def evaluate_attacker(self):
-    #     all_vals = []
-    #     new_batches = []
-    #     constraint_violations = 0
-    #     for batch in self.iterator_dataloader:
-    #         print("start_batch")
-    #         # print(batch)
-    #         flipped = [0]
-    #         # get gradient w.r.t. trigger embeddings for current batch
-    #         labels = batch["labels"].cpu().detach().numpy()
-    #         perturbed = self.method.attack(
-    #             batch["image"].cpu().detach().numpy(),
-    #             labels,
-    #             self.vm,
-    #             self.constraint.epsilon,
-    #         )
-    #         logits = self.vm.get_batch_output(perturbed, labels)
-    #         logits = np.array(logits)
-    #         print(logits)
-    #         preds = np.argmax(logits, axis=1)
-    #         print(preds, labels)
-    #         success = preds != labels
-    #         print(success)
-    #         constraint_violation = self._constraint(
-    #             batch["image"].cpu().detach().numpy(), perturbed
-    #         )
-    #         constraint_violations += constraint_violation
-    #         all_vals.append(success)
-    #     a = np.array(all_vals).mean()
-    #     print(f"label flip rate: {a}")
-    #     print(f"Constraint Violation Cases: {constraint_violations}")
-
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
     def _metrics_dict(self,score, final_acc, cost_time, distance,number_queries):
         return {"score":score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
-    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,dis_threshold = 600):
+    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,dis_threshold = 7.5):
         cost_time = time.perf_counter() - start_time
         if cost_time > t_threshold:
             time_score = 0
@@ -204,9 +171,9 @@ class Evaluator:
         metrics = self._metrics_dict(score, final_acc, cost_time, distance,number_queries)
         return metrics
 
-    def attack_one_batch(self, test_loader, attack_method, target_label, vm):
+    def attack_whole_batch(self, test_loader, attack_method, target_label, vm):
         # print(vm.application_name)
-        distance = 0
+        distance = []
         n_success_attack = 0
 
         og_images = []
@@ -220,17 +187,17 @@ class Evaluator:
             perturbed_data, perturbed_label, success = attack_method(
                 batch, labels, target_label=target_label,
             )
-
             perturbed_images.append((labels[0],perturbed_label,np.squeeze(perturbed_data)))
-            # print(batch.shape)
-            # print(perturbed_data[0].shape)
             delta_data = batch - perturbed_data[0]
-            distance += np.linalg.norm(delta_data)
+            distance.append(np.linalg.norm(delta_data))
 
             n_success_attack += success
+        print("distance", distance)
+        distance = np.mean(distance)
+        print("distance", distance)
         return distance, og_images, perturbed_images, n_success_attack
 
-    def attack_evaluator(self, t_threshold = 600, q_threshold=18000, dis_threshold = 2000):
+    def attack_evaluator(self, t_threshold = 600, q_threshold=18000, dis_threshold = 7.5):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -252,8 +219,8 @@ class Evaluator:
         )
         print("start testing")
         # Loop over all examples in test set
-        total_distance = 0
-        total_n_success_attack = 0
+        # total_distance = 0
+        # total_n_success_attack = 0
         total_batch_output_count = 0
         total_batch_gradient_count = 0
         scores = []
@@ -263,13 +230,13 @@ class Evaluator:
         n_success_attack = 0
         test_loader = iterator_dataloader
 
-        distance, og_images, perturbed_images, n_success_attack = self.attack_one_batch(test_loader, self.method.attack, target_label, self.vm)
+        distance, og_images, perturbed_images, n_success_attack = self.attack_whole_batch(test_loader, self.method.attack, target_label, self.vm)
             # exit(0)
 
         # visualization
-        from Maestro.utils import visualize
-        visualize(og_images, "before_GA.png")
-        visualize(perturbed_images, "after_GA.png")
+        # from Maestro.utils import visualize
+        # visualize(og_images, "before_GA.png")
+        # visualize(perturbed_images, "after_GA.png")
 
         # Calculate final accuracy for this epsilon
         final_acc = n_success_attack / float(len(test_loader))
@@ -281,8 +248,8 @@ class Evaluator:
                 target_label, n_success_attack, len(test_loader), final_acc))
         metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,dis_threshold=dis_threshold)
         scores.append(metrics)
-        total_distance += distance
-        total_n_success_attack += n_success_attack
+        # total_distance += distance
+        # total_n_success_attack += n_success_attack
 
         # print("success rate")
         # print(total_n_success_attack/10,total_n_success_attack/(len(test_loader)*10.0))
@@ -338,7 +305,7 @@ class Evaluator:
         # print(attackers)
         for attacker in attackers:
             # print(attacker)
-            distance, og_images, perturbed_images, n_success_attack = self.attack_one_batch(test_loader, attacker.attack, target_label, self.vm)
+            distance, og_images, perturbed_images, n_success_attack = self.attack_whole_batch(test_loader, attacker.attack, target_label, self.vm)
 
         adv_images = []
         gt_labels = []

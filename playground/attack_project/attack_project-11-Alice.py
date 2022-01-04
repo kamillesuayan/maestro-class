@@ -7,7 +7,7 @@ from transformers.data.data_collator import default_data_collator
 import matplotlib.pyplot as plt
 
 
-class GeneticAttack:
+class ProjectAttack:
     def __init__(
         self,
         vm,
@@ -24,7 +24,7 @@ class GeneticAttack:
         """
         args:
             vm: virtual model is wrapper used to get outputs/gradients of a model.
-            image_size: [1,28,28]
+            image_size: [3,32,32]
             n_population: number of population in each iteration
             n_generation: maximum of generation constrained. The attack automatically stops when this maximum is reached
             mutate_rate: if use_mask is set to true, this is used to set the rate of masking when perturbed
@@ -52,7 +52,7 @@ class GeneticAttack:
         """
         currently this attack has 2 versions, 1 with no mask pre-defined, 1 with mask pre-defined.
         args:
-            original_image: a numpy ndarray images, [1,28,28]
+            original_image: a numpy ndarray images, [3,32,32]
             labels: label of the image, a list of size 1
             target_label: target label we want the image to be classified, int
         return:

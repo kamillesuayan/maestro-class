@@ -207,8 +207,12 @@ class Evaluator:
         for instance in dev_data:
             if instance["label"] != target_label:
                 targeted_dev_data.append(instance)
-        print(len(targeted_dev_data))
-        targeted_dev_data = targeted_dev_data
+        print("targeted_dev_data: ", len(targeted_dev_data))
+        targeted_dev_data = targeted_dev_data[:] # change the test data size
+        # print("targeted_dev_data: ", len(targeted_dev_data))
+        # exit()
+
+
         universal_perturb_batch_size = 1
         # tokenizer = model_wrapper.get_tokenizer()
         iterator_dataloader = DataLoader(
@@ -246,7 +250,7 @@ class Evaluator:
         print(
             "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
                 target_label, n_success_attack, len(test_loader), final_acc))
-        metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,dis_threshold=dis_threshold)
+        metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,l2_threshold=dis_threshold)
         scores.append(metrics)
         # total_distance += distance
         # total_n_success_attack += n_success_attack

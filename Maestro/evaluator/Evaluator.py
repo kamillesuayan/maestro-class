@@ -44,7 +44,7 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
     spec.loader.exec_module(foo)
     if task == "attack_homework":
         attacker = foo.GeneticAttack(
-            vm, image_size=[1, 28, 28], temperature=0.1,n_generation=100,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.1, child_rate=0.2
+            vm, image_size=[1, 28, 28], temperature=0.1,n_generation=2000,n_population=100,use_mask=False,mask_rate=0.3,step_size=0.1,mutate_rate=0.2,child_rate=0.2,l2_threshold=7.5
         )
     elif task == "attack_project":
         attacker = foo.ProjectAttack(
@@ -149,7 +149,7 @@ class Evaluator:
         return self.constraint.violate(original_input, perturbed_input)
     def _metrics_dict(self,score, final_acc, cost_time, distance,number_queries):
         return {"score":score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
-    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,dis_threshold = 7.5):
+    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,l2_threshold = 7.5):
         cost_time = time.perf_counter() - start_time
         if cost_time > t_threshold:
             time_score = 0
@@ -161,10 +161,10 @@ class Evaluator:
         else:
             query_score = 1 - number_queries/q_threshold
 
-        if distance > dis_threshold:
+        if distance > l2_threshold:
             dis_score = 0
         else:
-            dis_score = 1 - distance / dis_threshold
+            dis_score = 1 - distance / l2_threshold
         print(cost_time, distance,number_queries)
         score = final_acc * 70 + query_score * 20 + dis_score * 10
         print("score: ", final_acc, query_score, dis_score,score)
@@ -192,9 +192,9 @@ class Evaluator:
             distance.append(np.linalg.norm(delta_data))
 
             n_success_attack += success
-        print("distance", distance)
+        # print("distance", distance)
         distance = np.mean(distance)
-        print("distance", distance)
+        # print("distance", distance)
         return distance, og_images, perturbed_images, n_success_attack
 
     def attack_evaluator(self, t_threshold = 600, q_threshold=18000, dis_threshold = 7.5):

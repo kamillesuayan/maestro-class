@@ -21,7 +21,9 @@ class GeneticAttack:
         use_mask=True,
         step_size = 0.1,
         child_rate = 0.5,
-        mutate_rate = 0.6
+        mutate_rate = 0.6,
+        l2_threshold = 7.5
+
     ):
         """
         args:
@@ -32,6 +34,8 @@ class GeneticAttack:
             mutate_rate: if use_mask is set to true, this is used to set the rate of masking when perturbed
             temperature: this sets the temperature when computing the probabilities for next generation
             use_mask: when this is true, only a subset of the image will be perturbed.
+            l2_threshold: the constrain on the distance between the original data point and adversarial data point.
+
 
         """
         self.vm = vm
@@ -44,6 +48,8 @@ class GeneticAttack:
         self.step_size = step_size
         self.child_rate = child_rate
         self.mutate_rate = mutate_rate
+        self.l2_threshold = l2_threshold
+
 
     def attack(
         self,

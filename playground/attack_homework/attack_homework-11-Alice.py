@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
 from transformers.data.data_collator import default_data_collator
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -44,7 +45,7 @@ class GeneticAttack:
         self.n_generation = n_generation
         self.mask_rate = mask_rate
         self.temperature = temperature
-        self.use_mask= use_mask
+        self.use_mask = use_mask
         self.step_size = step_size
         self.child_rate = child_rate
         self.mutate_rate = mutate_rate
@@ -52,10 +53,7 @@ class GeneticAttack:
 
 
     def attack(
-        self,
-        original_image:  np.ndarray,
-        labels: List[int],
-        target_label: int,
+        self, original_image: np.ndarray, labels: List[int], target_label: int,
     ):
         """
         currently this attack has 2 versions, 1 with no mask pre-defined, 1 with mask pre-defined.
@@ -69,7 +67,9 @@ class GeneticAttack:
             success: whether the attack succeds
         """
         self.original_image = np.array(original_image)
-        self.mask = np.random.binomial(1, self.mask_rate, size=self.image_size).astype("bool")
+        self.mask = np.random.binomial(1, self.mask_rate, size=self.image_size).astype(
+            "bool"
+        )
         population = self.init_population(original_image)
         examples = [(labels[0], labels[0], np.squeeze(x)) for x in population[:10]]
         visualize(examples, "population.png")
@@ -84,7 +84,7 @@ class GeneticAttack:
                 # visualize([(labels[0],np.argmax(output[best_index, :]),np.squeeze(population[best_index]))], "after_GA1.png")
                 success = True
                 break
-        return [population[best_index]], np.argmax(output[best_index, :]),success
+        return [population[best_index]], np.argmax(output[best_index, :]), success
 
     def fitness(self, image: np.ndarray, target: int):
         """
@@ -96,18 +96,6 @@ class GeneticAttack:
         output = self.vm.get_batch_output(image)
         scores = output[:, target]
         return output, scores
-
-    def fitness2(self, image: np.ndarray, target: int):
-        """
-        evaluate how fit the current image is
-        return:
-            output: output of the model
-            scores: the "fitness" of the image, measured as logits of the target label
-        """
-        output = self.vm.get_batch_output(image)
-        scores = output[:, target]
-        mse = np.sqrt(np.power(image - self.original_image, 2).sum(axis=-1).sum(axis=-1).mean(axis=-1))
-        return output, scores-mse*1
 
     def eval_population(self, population, target_label):
         """
@@ -123,28 +111,30 @@ class GeneticAttack:
             best_indx: index of the best image in the population
         """
         output, scores = self.fitness(population, target_label)
-        # output, scores = self.fitness2(population, target_label)
         # --------------TODO--------------
-        logits = None
-        select_probs = None
-        score_ranks = None
-        best_index = None
+        score_ranks = None  # Sort the scores from largeset to smallest
+        best_index = None  # The index for the best scored candidate
+        logits = None  # Exponentiate the scores after incorporating temperature
+        select_probs = None  # Normalize the logits between 0-1
         # ------------END TODO-------------
 
         if np.argmax(output[best_index, :]) == target_label:
             return population, output, scores, best_index
 
         # --------------TODO--------------
-        # the elite gene that's defeintely in the next population without perturbation
+        # Compute the next generation of population, which is comprised of Elite, Survived, and Offspirngs
+        # Elite: top scoring gene, will not be mutated
         elite = []
-        # strong and fit genes passed down to next generation, they have a chance to mutate
-        survived = []
 
-        # offsprings of strong genes
-        childs = []
+        # Survived: rest of the top genes that survived, mutated with some probability
+        survived = []  # Survived, and mutate some of them
 
-        # population =np.array(elite + survived +childs)
-        population = population
+        # Offsprings: offsprings of strong genes
+        # Identify the parents of the children based on select_probs, then use crossover to produce the next generation
+        children = []
+
+        # population =np.array(elite + survived +children)
+        population = population  # Delete this and uncomment the line above if you finished implementing
         # ------------END TODO-------------
         return population, output, scores, best_index
 
@@ -157,10 +147,14 @@ class GeneticAttack:
             perturbed: perturbed image
         """
         if not self.use_mask:
-            perturbed = np.clip(image + np.random.randn(*self.mask.shape) * self.step_size, 0, 1)
+            perturbed = np.clip(
+                image + np.random.randn(*self.mask.shape) * self.step_size, 0, 1
+            )
         else:
             perturbed = np.clip(
-                image + self.mask * np.random.randn(*self.mask.shape) * self.step_size, 0, 1
+                image + self.mask * np.random.randn(*self.mask.shape) * self.step_size,
+                0,
+                1,
             )
 
         return perturbed
@@ -189,7 +183,9 @@ class GeneticAttack:
         return:
             a list of perturbed images initialized from orignal_image
         """
-        return np.array([self.perturb(original_image[0]) for _ in range(self.n_population)])
+        return np.array(
+            [self.perturb(original_image[0]) for _ in range(self.n_population)]
+        )
 
 
 def visualize(examples, filename):
@@ -206,5 +202,4 @@ def visualize(examples, filename):
     plt.tight_layout()
     plt.show()
     plt.savefig(filename)
-
 

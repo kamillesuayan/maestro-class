@@ -136,5 +136,8 @@ dmypy.json
 
 # data
 data/
-Maestro/tmp/*/recording.txt
+Maestro/tmp/*/recording*.txt
 playground/*/*.txt
+Maestro/server/*.png
+playground/attack_homework/*
+Maestro/server/population.png

@@ -9,7 +9,5 @@ dill==0.3.3
 torch==1.8.0
 PyYAML==5.4.1
 celery==5.2.3
-redis==4.1.0
-redis-server==6.0.9
 matplotlib==3.5.1
 sklearn==0.0

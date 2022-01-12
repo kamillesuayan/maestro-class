@@ -148,9 +148,23 @@ class GeneticAttack:
             perturbed: perturbed image
         """
         if not self.use_mask:
-            perturbed = np.clip(
-                image + np.random.randn(*self.mask.shape) * self.step_size, 0, 1
+            adv_images = image + np.random.randn(*self.mask.shape) * self.step_size
+            # perturbed = np.maximum(np.minimum(adv_images,self.original_image+0.5), self.original_image-0.5)
+            delta = np.expand_dims(adv_images - self.original_image, axis=0)
+            # Assume x and adv_images are batched tensors where the first dimension is
+            # a batch dimension
+            eps = self.l2_threshold
+            mask = (
+                np.linalg.norm(delta.reshape((delta.shape[0], -1)), ord=2, axis=1)
+                <= eps
             )
+            scaling_factor = np.linalg.norm(
+                delta.reshape((delta.shape[0], -1)), ord=2, axis=1
+            )
+            scaling_factor[mask] = eps
+            delta *= eps / scaling_factor.reshape((-1, 1, 1, 1))
+            perturbed = self.original_image + delta
+            perturbed = np.squeeze(np.clip(perturbed, 0, 1), axis=0)
         else:
             perturbed = np.clip(
                 image + self.mask * np.random.randn(*self.mask.shape) * self.step_size,

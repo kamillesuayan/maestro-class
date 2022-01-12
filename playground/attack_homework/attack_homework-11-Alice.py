@@ -170,8 +170,8 @@ class GeneticAttack:
             x_new: newly crossovered image
         """
         x_new = x1.copy()
-        for i in range(len(x1)):
-            for j in range(len(x1[i])):
+        for i in range(x1.shape[1]):
+            for j in range(x1.shape[2]):
                 if np.random.uniform() < 0.5:
                     x_new[0][i][j] = x2[0][i][j]
         return x_new

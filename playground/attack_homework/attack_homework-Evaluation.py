@@ -44,8 +44,8 @@ def main():
     url = "http://127.0.0.1:" + str(port)
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     print("at test")
-    student_id = 11
-    student_name = "Alice"
+    student_id = 85086737
+    student_name = "Kamille"
 
     if test == "ask server to evaluate the code":
         asking(url, device, student_id, student_name)

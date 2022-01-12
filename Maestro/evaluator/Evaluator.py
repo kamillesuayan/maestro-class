@@ -223,8 +223,8 @@ class Evaluator:
         )
         print("start testing")
         # Loop over all examples in test set
-        # total_distance = 0
-        # total_n_success_attack = 0
+        total_distance = 0
+        total_n_success_attack = 0
         total_batch_output_count = 0
         total_batch_gradient_count = 0
         scores = []
@@ -238,9 +238,9 @@ class Evaluator:
             # exit(0)
 
         # visualization
-        # from Maestro.utils import visualize
-        # visualize(og_images, "before_GA.png")
-        # visualize(perturbed_images, "after_GA.png")
+        from Maestro.utils import visualize
+        visualize(og_images, "before_GA.png")
+        visualize(perturbed_images, "after_GA.png")
 
         # Calculate final accuracy for this epsilon
         final_acc = n_success_attack / float(len(test_loader))

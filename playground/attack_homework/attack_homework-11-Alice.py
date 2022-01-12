@@ -20,11 +20,10 @@ class GeneticAttack:
         mask_rate=0.2,
         temperature=0.3,
         use_mask=True,
-        step_size = 0.1,
-        child_rate = 0.5,
-        mutate_rate = 0.6,
-        l2_threshold = 7.5
-
+        step_size=0.1,
+        child_rate=0.5,
+        mutate_rate=0.6,
+        l2_threshold=7.5,
     ):
         """
         args:
@@ -50,7 +49,6 @@ class GeneticAttack:
         self.child_rate = child_rate
         self.mutate_rate = mutate_rate
         self.l2_threshold = l2_threshold
-
 
     def attack(
         self, original_image: np.ndarray, labels: List[int], target_label: int,
@@ -94,7 +92,10 @@ class GeneticAttack:
             scores: the "fitness" of the image, measured as logits of the target label
         """
         output = self.vm.get_batch_output(image)
-        scores = output[:, target]
+        softmax_output = np.exp(output) / np.expand_dims(
+            np.sum(np.exp(output), axis=1), axis=1
+        )
+        scores = softmax_output[:, target]
         return output, scores
 
     def eval_population(self, population, target_label):

@@ -1,3 +1,4 @@
+from datasets.load import METRICS_MODULE
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
 import importlib.util
 from typing import List, Iterator, Dict, Tuple, Any, Type
@@ -147,9 +148,27 @@ class Evaluator:
 
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
-    def _metrics_dict(self,score, final_acc, cost_time, distance,number_queries):
-        return {"score":score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
-    def _get_scores(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,l2_threshold = 7.5):
+    def _metrics_dict(self,grade_score, leaderboard_score, final_acc, cost_time, distance,number_queries):
+        return {"grade_score":grade_score,"leaderboard_score":leaderboard_score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
+    def _get_scores(self, start_time, final_acc, number_queries,distance,t_threshold, q_threshold,l2_threshold):
+        cost_time = time.perf_counter() - start_time
+        print("Distance: ", distance)
+        print("Number of Queries: ", number_queries)
+        print("Final Accuracy: ",final_acc)
+        '''
+        if(distance < l2_threshold) & (number_queries < q_threshold) & (final_acc > 0.9):
+            score = 100
+        else:
+            score = 
+        '''
+        grade_score = (final_acc == 1.0) * 7.0 + (number_queries < q_threshold) * 2.0 + (distance < l2_threshold) * 1.0
+        leaderboard_score = min(final_acc,1.0) * 70 + (max(q_threshold-number_queries, 0) / q_threshold) * 20 + (max(l2_threshold-distance, 0)/l2_threshold) * 10
+        print("Grade Score: ",grade_score)
+        print("Leaderboard Score: ",leaderboard_score)
+        metrics = self._metrics_dict(grade_score, leaderboard_score, final_acc, cost_time, distance, number_queries)
+        return metrics
+
+    def _get_scores_value(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,l2_threshold = 7.5):
         cost_time = time.perf_counter() - start_time
         if cost_time > t_threshold:
             time_score = 0
@@ -197,7 +216,7 @@ class Evaluator:
         # print("distance", distance)
         return distance, og_images, perturbed_images, n_success_attack
 
-    def attack_evaluator(self, t_threshold = 600, q_threshold=18000, dis_threshold = 7.5):
+    def attack_evaluator(self, t_threshold=600, q_threshold=8000, dis_threshold = 7.5):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
@@ -250,7 +269,7 @@ class Evaluator:
         print(
             "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
                 target_label, n_success_attack, len(test_loader), final_acc))
-        metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,l2_threshold=dis_threshold)
+        metrics = self._get_scores(start_time,final_acc,number_queries,distance,t_threshold,q_threshold=q_threshold,l2_threshold=dis_threshold)
         scores.append(metrics)
         total_distance += distance
         total_n_success_attack += n_success_attack

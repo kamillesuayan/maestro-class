@@ -1,4 +1,3 @@
-from datasets.load import METRICS_MODULE
 from Maestro.attacker_helper.attacker_request_helper import virtual_model
 import importlib.util
 from typing import List, Iterator, Dict, Tuple, Any, Type

@@ -252,8 +252,8 @@ class Evaluator:
                 target_label, n_success_attack, len(test_loader), final_acc))
         metrics = self._get_scores(start_time,final_acc,number_queries,distance,q_threshold=q_threshold,l2_threshold=dis_threshold)
         scores.append(metrics)
-        # total_distance += distance
-        # total_n_success_attack += n_success_attack
+        total_distance += distance
+        total_n_success_attack += n_success_attack
 
         # print("success rate")
         # print(total_n_success_attack/10,total_n_success_attack/(len(test_loader)*10.0))

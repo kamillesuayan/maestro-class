@@ -99,7 +99,8 @@ application_config_file = "Server_Config/FGSM_Attack.json"
 # application_config_file = "Server_Config/Defense_Project.json" # (Project 2)
 ```
 Run the app (as mentioned in "Running the app" above)
-To the attack file
+
+To the attack file, Activate the virtual environment as always and run the following commands
 ```
 $ cd playground/attack_homework
 $ (env) python3 attack_homework-FGSM_example.py

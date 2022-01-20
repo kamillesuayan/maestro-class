@@ -1,5 +1,6 @@
 import torch
 import requests
+import argparse
 test = ["ask server to evaluate the code", "get the score"]
 test = test[0] # 0 checks the student ask for the server to evaluate their code; 1 gets the result from the server.
 
@@ -19,13 +20,21 @@ def getScore(url, device, student_id=123):
     print(score)
 
 def main():
-    LOCAL = True
-    if LOCAL == True:
-        port = 5000
-    else:
+    # command line: python3 attack_project-Evaluation.py --local OR python3 attack_project-Evaluation.py --remote to test on the respective server
+    parser = argparse.ArgumentParser(description="Attack Project Evaluation")
+    parser.add_argument('--remote', dest='feature', action='store_true')
+    parser.add_argument('--local', dest='feature', action='store_false')
+    parser.set_defaults(feature=True)
+    args = parser.parse_args()
+    REMOTE = args.feature
+    if REMOTE == True:
+        ip = "128.195.151.199:"
         port = 443
+    else:
+        ip = "127.0.0.1:"
+        port = 5000
 
-    url = "http://127.0.0.1:" + str(port)
+    url = "http://" + ip + str(port)
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     print("at test")
     student_id = 11

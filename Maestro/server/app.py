@@ -24,9 +24,9 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 # executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Genetic_Attack.json"
 # application_config_file = "Server_Config/FGSM_Attack.json"
-# application_config_file = "Server_Config/Attack_Project.json"
+application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
@@ -114,12 +114,17 @@ def record_scores(student_id, student_name, application, record_path, task):
         app_pipeline=app.applications[application],
     )
     print(f"the task is {task}")
-    if (task == "attack_homework") | (task == "attack_project"):
+    if task == "attack_homework":
         all_metrics = []
         for i in range(1):
             metrics = evaluator.attack_evaluator()
             # metrics = {}
             # metrics['score'] = 0
+            all_metrics.append(metrics)
+    elif task == "attack_project":
+        all_metrics = []
+        for i in range(1):
+            metrics = evaluator.attack_evaluator_project()
             all_metrics.append(metrics)
     elif task == "defense_homework":
         metrics = evaluator.defense_evaluator(IP_ADDR, PORT, model_name, app.applications, attacker_path_list)
@@ -209,7 +214,6 @@ def main():
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
         labels = json_data["labels"]
-
         outputs = app.applications[application].get_batch_input_gradient(
             batch_input, labels
         )

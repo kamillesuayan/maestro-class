@@ -13,6 +13,41 @@ import time
 from Maestro.data import get_dataset
 from Maestro.models import build_model
 from Maestro.pipeline import VisionPipeline
+import requests
+import os
+
+
+def get_data(application, data_type="validation", perturbation=""):
+    data_file = (
+            "./data_" + application + "_pertb_" + perturbation + ".pkl"
+    )
+    dev_data = []
+    print("getting data", data_file, os.path.isfile(data_file))
+    if False:  # os.path.isfile(data_file):
+        print("found local data, loading...")
+        dev_data = pickle.load(open(data_file, "rb"))
+    else:
+        data = {
+            "Application_Name": application,
+            "data_type": data_type,
+            "perturbation": perturbation,
+        }
+        final_url = "{0}/get_data".format("http://127.0.0.1:5000")
+        response = requests.post(final_url, data=data)
+        retruned_json = response.json()
+        for instance in retruned_json["data"]:
+            new_instance = {}
+            for field in instance:
+                if isinstance(instance[field], List):
+                    new_instance[field] = instance[field]
+                else:
+                    new_instance[field] = instance[field]
+            dev_data.append(new_instance)
+        # with open(data_file, mode="wb") as f:
+        #     pickle.dump(
+        #         dev_data, f,
+        #     )
+    return dev_data
 
 def load_attacker(application, student_id, student_name, task_folder, task, vm, attacker_path_list=None):
     print("load_attacker", attacker_path_list, task, application)
@@ -48,7 +83,7 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
         )
     elif task == "attack_project":
         attacker = foo.ProjectAttack(
-            vm, image_size=[3, 32, 32], n_population=100, mutate_rate=0.2,
+            vm, [1, 3, 32, 32],
         )
     else:
         attacker = foo.GeneticAttack(
@@ -215,11 +250,54 @@ class Evaluator:
         # print("distance", distance)
         return distance, og_images, perturbed_images, n_success_attack
 
+    def batch_attack(self, test_loader, attack_method, target_label, vm):
+        # all_vals = []
+        # correct = 0
+        distance = []
+        n_success_attack = 0
+
+        original_images = []
+        perturbed_images = []
+        print("start testing")
+        # Loop over all examples in test set
+        for batch in test_loader:
+            # Call FGSM Attack
+            labels = batch["labels"]
+            original_images.append(batch["image"].cpu().detach().numpy())
+            # print(batch)
+            perturbed_data = attack_method(
+                batch["image"].cpu().detach().numpy(),
+                labels.cpu().detach().numpy(),
+                target_label,
+            )
+            perturbed_images.append(perturbed_data)
+            delta_data = batch["image"].cpu().detach().numpy() - perturbed_data
+            distance.append(np.linalg.norm(delta_data))
+
+            # Re-classify the perturbed image
+            output = vm.get_batch_output(perturbed_data, labels.cpu().detach().numpy(),)
+            final_pred = np.argmax(output[0])
+            # final_pred = output.max(1, keepdim=True)[1]
+            # print(output, final_pred)
+            if final_pred.item() != labels.item():
+                n_success_attack += 1
+
+            # Calculate final accuracy for this epsilon
+        final_acc = n_success_attack / float(len(test_loader))
+        print(
+            "Test Accuracy = {} / {} = {}".format(
+                n_success_attack, len(test_loader), final_acc
+            )
+        )
+        distance = np.mean(distance)
+
+        return distance, original_images, perturbed_images, n_success_attack
+
     def attack_evaluator(self, t_threshold=600, q_threshold=8000, dis_threshold = 7.5):
         start_time = time.perf_counter()
         dataset_label_filter = 0
         target_label = 7
-        dev_data = self.vm.get_data(data_type="test")
+        dev_data = get_data(application="GeneticAttack", data_type="test")
         print("attack_evaluator")
         targeted_dev_data = []
         for instance in dev_data:
@@ -287,6 +365,78 @@ class Evaluator:
 
         return metrics
 
+    def attack_evaluator_project(
+            self, t_threshold=600, q_threshold=18000, l2_threshold=7.5
+    ):
+        total_batch_output_count = 0
+        total_batch_gradient_count = 0
+        scores = []
+        start_time = time.perf_counter()
+        dataset_label_filter = 0
+        target_label = 7
+        dev_data = get_data(application="Project_Attack", data_type="test")
+        print("attack_evaluator_project")
+        targeted_dev_data = []
+        for instance in dev_data:
+            if instance["label"] != target_label:
+                targeted_dev_data.append(
+                    instance
+                )  # dict_keys(['image', 'label', 'uid'])
+        print(
+            "data size",
+            len(targeted_dev_data),
+            np.array(targeted_dev_data[0]["image"]).shape,
+        )
+        targeted_dev_data = targeted_dev_data  # [:10]
+        universal_perturb_batch_size = 1
+        iterator_dataloader = DataLoader(
+            targeted_dev_data,
+            batch_size=universal_perturb_batch_size,
+            shuffle=True,
+            collate_fn=default_data_collator,
+        )
+        print("start testing")
+
+        (
+            distance,
+            original_images,
+            perturbed_images,
+            n_success_attack,
+        ) = self.batch_attack(
+            iterator_dataloader, self.method.attack, target_label, self.vm
+        )
+
+        # print(original_images.shape, perturbed_images.shape)
+        # perturbed = np.array(perturbed_images) - np.array(original_images)
+        # print(np.linalg.norm(perturbed))
+        # perturbed = np.clip(perturbed,-l2_threshold,l2_threshold)
+        # perturbed_images =perturbed + original_images
+        # print(np.linalg.norm(perturbed))
+
+        # Calculate final accuracy for this epsilon
+        final_acc = n_success_attack / float(len(iterator_dataloader))
+        number_queries = self.vm.batch_output_count + self.vm.batch_gradient_count
+        total_batch_output_count += self.vm.batch_output_count
+        total_batch_gradient_count += self.vm.batch_gradient_count
+        print(
+            "target_label: {}\t Attack Success Rate = {} / {} = {}".format(
+                target_label, n_success_attack, len(iterator_dataloader), final_acc
+            )
+        )
+        metrics = self._get_scores(
+            start_time,
+            final_acc,
+            number_queries,
+            distance,
+            t_threshold,
+            q_threshold=q_threshold,
+            l2_threshold=l2_threshold,
+        )
+        scores.append(metrics)
+        # total_distance += distance
+        # total_n_success_attack += n_success_attack
+        return metrics
+
 
     # def defense_evaluator_attacker_loader(self, applications=None):
     #     new_pipeline = VisionPipeline(
@@ -307,7 +457,7 @@ class Evaluator:
         print(model_name, applications, attacker_path_list)
         trainset = self.app_pipeline.training_data.data
         testset = self.app_pipeline.validation_data.data
-        dev_data = self.vm.get_data(data_type="test")
+        dev_data = get_data(application="Adv_Training", data_type="test")
         targeted_dev_data = []
         target_label = 7
         for instance in dev_data:

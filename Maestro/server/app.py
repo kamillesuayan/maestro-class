@@ -225,7 +225,7 @@ def main():
         print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
-        print(f"perturb: {request.form['perturbation']}")
+        # print(f"perturb: {request.form['perturbation']}")
         if data_type == "train":
             data = app.applications[application].training_data.get_write_data()
         elif data_type == "validation":
@@ -233,10 +233,10 @@ def main():
         elif data_type == "test":
             data = app.applications[application].test_data.get_write_data()
         # print(data)
-        if request.form["perturbation"] != "":
-            data = perturb_transform(
-                app.applications[application], data, request.form["perturbation"]
-            )
+        # if request.form["perturbation"] != "":
+        #     data = perturb_transform(
+        #         app.applications[application], data, request.form["perturbation"]
+        #     )
         # json_data = get_json_data(data)
         # this won't work right now, cause someone change code in processing_data.py
         # print(data)

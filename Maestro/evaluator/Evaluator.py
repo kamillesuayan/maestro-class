@@ -30,7 +30,7 @@ def get_data(application, data_type="validation", perturbation=""):
         data = {
             "Application_Name": application,
             "data_type": data_type,
-            "perturbation": perturbation,
+            #"perturbation": perturbation,
         }
         final_url = "{0}/get_data".format("http://127.0.0.1:5000")
         response = requests.post(final_url, data=data)

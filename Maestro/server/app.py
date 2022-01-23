@@ -285,7 +285,11 @@ def main():
     @app.route("/file_evaluator", methods=["POST"])
     def file_evaluator():
         print("Evaluate the students' method.")
-        student_id = request.form["id"]
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
         student_name = request.form["student_name"]
 
         print("Student id", student_id)
@@ -296,18 +300,19 @@ def main():
         except:
             submission = None
         if submission:
-            filename = str(application) + "_" + str(student_id) + ".py"
+            filename = str(application) + "_" + str(student_name) + ".py"
             print(submission)
             submission.save(os.path.join("../../playground/" + str(task) + "/", filename))
 
         # record_path = Path("../tmp/" + task + "/recording.txt")
-        record_path = Path("../../playground/" + task + "/recording_"+str(student_id)+".txt")
+        record_path = Path("../../playground/" + task + "/recording_"+str(student_id)+str(student_name)+".txt")
 
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
             f.write('\n' +
-                str(student_id)
+                #str(student_id)+"-"+str(student_name)
+                str(student_name)
                 + "\t"
                 + now.strftime("%Y-%m-%d %H:%M:%S")
                 + "\t"
@@ -341,8 +346,13 @@ def main():
     def retrieve_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        student_id = request.form["id"]
-        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
+        student_name = request.form["name"]
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+str(student_name)+".txt"
 
         application = request.form["Application_Name"]
         output = []
@@ -354,7 +364,7 @@ def main():
             for i in data:
                 print(i)
                 recording = i.split("\t")
-                if recording[0] == student_id:
+                if recording[0] == student_name:
                     output.append(recording)
         return {"score": output}
 
@@ -362,8 +372,13 @@ def main():
     def evaluate_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        student_id = request.form["id"]
-        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
+        student_name = request.form["name"]
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+str(student_name)+".txt"
 
         application = request.form["Application_Name"]
         output = []

@@ -60,7 +60,7 @@ def load_attacker(application, student_id, student_name, task_folder, task, vm, 
         + "/"
         + str(task_folder)
         + "-"
-        + str(student_id) + "-" + str(student_name)
+        + str(student_id) + str(student_name)
         + ".py",
         )
     elif (task == "defense_homework")|(task == "defense_project"):

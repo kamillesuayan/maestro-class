@@ -27,38 +27,6 @@ class virtual_model:
             self.request_url, perturbed_tokens, labels, gradient=True,
         )
 
-    def get_data(self, data_type="validation", perturbation=""):
-        data_file = (
-            "./data_" + self.application_name + "_pertb_" + perturbation + ".pkl"
-        )
-        dev_data = []
-        print("getting data", data_file, os.path.isfile(data_file))
-        if False:  # os.path.isfile(data_file):
-            print("found local data, loading...")
-            dev_data = pickle.load(open(data_file, "rb"))
-        else:
-            data = {
-                "Application_Name": self.application_name,
-                "data_type": data_type,
-                "perturbation": perturbation,
-            }
-            final_url = "{0}/get_data".format(self.request_url)
-            response = requests.post(final_url, data=data)
-            retruned_json = response.json()
-            for instance in retruned_json["data"]:
-                new_instance = {}
-                for field in instance:
-                    if isinstance(instance[field], List):
-                        new_instance[field] = instance[field]
-                    else:
-                        new_instance[field] = instance[field]
-                dev_data.append(new_instance)
-            with open(data_file, mode="wb") as f:
-                pickle.dump(
-                    dev_data, f,
-                )
-        return dev_data
-
     def _process_batch(self, url, batch, labels=[], gradient=False):
         """
         batch: batch to process, has the shape of [batch_size, channel, height of image, width of image]

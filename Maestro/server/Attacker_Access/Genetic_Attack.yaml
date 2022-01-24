@@ -17,7 +17,7 @@ Attacker Access:
       read: False
       write: False
     output_access:
-      gradient: False
+      gradient: True
       output: True
 
       

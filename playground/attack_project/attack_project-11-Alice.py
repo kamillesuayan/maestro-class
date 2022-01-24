@@ -114,26 +114,46 @@ class ProjectAttack:
             scores: the "fitness" of the image, measured as logits of the target label
             best_indx: index of the best image in the population
         """
+
+        print("POPULATION SHAPE:")
+        input()
         output, scores = self.fitness(population, target_label)
         # output, scores = self.fitness2(population, target_label)
         # --------------TODO--------------
-        logits = None
-        select_probs = None
-        score_ranks = None
-        best_index = None
+        score_ranks = np.sort(scores)[::-1]  # Sort the scores from largest to smallest
+        best_index = np.argmax(scores)
+        logits = np.exp(scores/self.temperature)  # Exponentiate the scores after incorporating temperature
+        select_probs = logits / np.sum(logits) # Normalize the logits between 0-1
         # ------------END TODO-------------
 
         if np.argmax(output[best_index, :]) == target_label:
             return population, output, scores, best_index
 
         # --------------TODO--------------
-        # the elite gene that's defeintely in the next population without perturbation
-        elite = []
+        # the elite gene that's definitely in the next population without perturbation
+        elite = [population[best_index]]
         # strong and fit genes passed down to next generation, they have a chance to mutate
-        survived = []
+        survived = []  # Survived, and mutate some of them
+
+        survive_amt = int(self.n_population * (1-self.child_rate))
+        for i in range(1, survive_amt):
+            if i < survive_amt // 2: # keep the best half survivors
+                next_best = np.where(scores == score_ranks[i])[0][0]
+                survived.append(population[next_best])
+            else: # perturb other half of survivors
+                next_best = np.where(scores == score_ranks[i])[0][0]
+                survived.append(self.perturb(population[next_best]))
 
         # offsprings of strong genes
-        childs = []
+        children = []
+
+        # choose parents based on their probabilities
+        for _ in range(self.n_population - (len(elite) + len(survived))):
+            # choose random index based on probabilities
+            # parent = np.random.choice(self.n_population, 2, replace=False, p=select_probs)
+            # children.append(self.crossover(population[parent[0]], population[parent[1]]))
+            parent = np.random.choice(self.n_population, 1, replace=False, p=select_probs)
+            children.append(self.crossover(population[parent[0]], population[best_index]))
 
         # population =np.array(elite + survived +childs)
         population = population

@@ -24,7 +24,7 @@ class ProjectAttack:
         original_image:  np.ndarray,
         labels: List[int],
         target_label: int,
-        epsilon = 0.214
+        epsilon = 0.4
 
     ):
         """

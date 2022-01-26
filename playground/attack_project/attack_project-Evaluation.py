@@ -38,7 +38,7 @@ def main():
     url = "http://" + ip + str(port)
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     print("at test")
-    group_name = "Alice"
+    group_name = "AdversarialGworl"
 
     if test == "ask server to evaluate the code":
         asking(url, device, group_name)

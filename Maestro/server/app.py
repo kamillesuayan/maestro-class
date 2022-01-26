@@ -138,13 +138,17 @@ def record_scores(student_id, student_name, application, record_path, task):
         print("loading evaulator error")
 
     print("evaluator")
-    grade_score = metrics["grade_score"]
+    # grade score is for attack hw only
+    #grade_score = metrics["grade_score"]
     leaderboard_score = metrics["leaderboard_score"]
-    print(grade_score, record_path)
+    #print(grade_score, record_path)
+    print(record_path)
     print(leaderboard_score, record_path)
     with open(record_path, "a+") as f:
-        f.write(str(grade_score) + " " + str(leaderboard_score) + "\n")
+        #f.write(str(grade_score) + " " + str(leaderboard_score) + "\n")
+        f.write(str(leaderboard_score) + "\n")
     return metrics
+
 def add_to_app(name, pipeline):
     global applications
     applications[name] = pipeline

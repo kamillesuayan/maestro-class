@@ -182,8 +182,15 @@ class Evaluator:
 
     def _constraint(self, original_input, perturbed_input):
         return self.constraint.violate(original_input, perturbed_input)
-    def _metrics_dict(self,grade_score, leaderboard_score, final_acc, cost_time, distance,number_queries):
-        return {"grade_score":grade_score,"leaderboard_score":leaderboard_score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
+
+    # grade_score is for attack hw only
+    # def _metrics_dict(self,grade_score, leaderboard_score, final_acc, cost_time, distance,number_queries):
+    #     return {"grade_score":grade_score,"leaderboard_score":leaderboard_score,"final_acc":final_acc,"cost_time":cost_time,"distance":distance,"number_queries":number_queries}
+
+    def _metrics_dict(self, leaderboard_score, final_acc, cost_time, distance, number_queries):
+        return {"leaderboard_score": leaderboard_score, "final_acc": final_acc,
+                "cost_time": cost_time, "distance": distance, "number_queries": number_queries}
+
     def _get_scores(self, start_time, final_acc, number_queries,distance,t_threshold, q_threshold,l2_threshold):
         cost_time = time.perf_counter() - start_time
         print("Distance: ", distance)
@@ -195,11 +202,12 @@ class Evaluator:
         else:
             score = 
         '''
-        grade_score = (final_acc == 1.0) * 7.0 + (number_queries < q_threshold) * 2.0 + (distance < l2_threshold) * 1.0
+        #grade_score = (final_acc == 1.0) * 7.0 + (number_queries < q_threshold) * 2.0 + (distance < l2_threshold) * 1.0
         leaderboard_score = min(final_acc,1.0) * 70 + (max(q_threshold-number_queries, 0) / q_threshold) * 20 + (max(l2_threshold-distance, 0)/l2_threshold) * 10
-        print("Grade Score: ",grade_score)
+        #print("Grade Score: ",grade_score)
         print("Leaderboard Score: ",leaderboard_score)
-        metrics = self._metrics_dict(grade_score, leaderboard_score, final_acc, cost_time, distance, number_queries)
+        #metrics = self._metrics_dict(grade_score, leaderboard_score, final_acc, cost_time, distance, number_queries)
+        metrics = self._metrics_dict(leaderboard_score, final_acc, cost_time, distance, number_queries)
         return metrics
 
     def _get_scores_value(self,start_time,final_acc,number_queries,distance,t_threshold = 600, q_threshold=6000,l2_threshold = 7.5):

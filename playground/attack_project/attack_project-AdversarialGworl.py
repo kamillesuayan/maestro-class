@@ -13,8 +13,8 @@ class ProjectAttack:
         vm,
         image_size: List[int],
         l2_threshold=7.5,
-        steps=3, # strong correlation with distance??
-        alpha=0.019 # tune
+        steps=10, # strong correlation with distance??
+        alpha=0.2 # tune
         
     ):
         self.vm = vm
@@ -29,7 +29,7 @@ class ProjectAttack:
         original_image:  np.ndarray,
         labels: List[int],
         target_label: int,
-        epsilon = 0.214 # tune
+        epsilon = 0.02 # tune
 
     ):
         """
@@ -48,6 +48,7 @@ class ProjectAttack:
         # To run this file change the group_name(#L:41) in attack_project-Evaluation.py to "FGSM_Targeted"
 
         target_labels = [target_label]*len(labels)
+
         for i in range(self.steps):
             # Calculate the gradient of loss with respect to the image and target_label
             data_grad = self.vm.get_batch_input_gradient(perturbed_image, target_labels)

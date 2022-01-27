@@ -4,6 +4,7 @@ import json
 import pickle
 import os
 from typing import List, Iterator, Dict, Tuple, Any, Type
+import random
 
 
 class virtual_model:
@@ -26,6 +27,30 @@ class virtual_model:
         return self._process_batch(
             self.request_url, perturbed_tokens, labels, gradient=True,
         )
+
+    def get_ref_image(self, target_label):
+        data_file = (
+            "./data_" + self.application_name + "_perturb_.pkl"
+        )
+        dev_data = []
+        data = {
+            "Application_Name": self.application_name,
+            "data_type": "validation",
+            "perturbation": "",
+        }
+        final_url = "{0}/get_data".format(self.request_url)
+        response = requests.post(final_url, data=data)
+        returned_json = response.json()
+        for instance in returned_json["data"]:
+            new_instance = {}
+            for field in instance:
+                new_instance[field] = instance[field]
+            dev_data.append(new_instance)
+        targeted_dev_data = []
+        for instance in dev_data:
+            if instance["label"] == target_label:
+                targeted_dev_data.append(instance)
+        return random.choice(targeted_dev_data)
 
     def _process_batch(self, url, batch, labels=[], gradient=False):
         """

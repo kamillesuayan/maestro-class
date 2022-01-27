@@ -14,7 +14,7 @@ class ProjectAttack:
         image_size: List[int],
         l2_threshold=7.5,
         steps=3, # strong correlation with distance??
-        alpha=0.0111 # tune
+        alpha=0.019 # tune
         
     ):
         self.vm = vm
@@ -58,6 +58,7 @@ class ProjectAttack:
 
             # Perturb the image in the direction of gradient with respect to target_label by epsilon
             # Ensure that it is TARGETED
+
             # grad = self.alpha*(torch.FloatTensor(original_image) - epsilon * sign_data_grad)
             # perturbed_image = original_image - grad
             # np_perturbed = perturbed_image.cpu().detach().numpy()
@@ -67,7 +68,7 @@ class ProjectAttack:
             # np_perturbed = np.clip(perturbed_image, perturbed_image, grad)
             # perturbed_image = original_image + grad
 
-            # # Clip the value of each pixel to be between 0 & 1
+            
             # perturbed_image = np.clip(np_perturbed, self.x_p, np_perturbed)
 
             temp_grad = self.alpha * sign_data_grad
@@ -77,6 +78,7 @@ class ProjectAttack:
             final_grad = torch.clamp(final_grad, -epsilon, epsilon)
             x_p = perturbed_image - final_grad.cpu().detach().numpy()
 
+            # Clip the value of each pixel to be between 0 & 1
             perturbed_image = np.clip(x_p, 0,1)
 
         # ------------END TODO-------------

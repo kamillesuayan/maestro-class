@@ -47,7 +47,7 @@ class ProjectAttack:
         # --------------TODO--------------
         # To run this file change the group_name(#L:41) in attack_project-Evaluation.py to "FGSM_Targeted"
 
-        target_labels = [target_label]*len(labels)
+        target_labels = np.ones_like(labels) * target_label
 
         for i in range(self.steps):
             # Calculate the gradient of loss with respect to the image and target_label

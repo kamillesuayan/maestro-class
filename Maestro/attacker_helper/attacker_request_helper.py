@@ -19,11 +19,11 @@ class virtual_model:
         self.batch_gradient_count = 0
 
     def get_batch_output(self, perturbed_tokens, labels=[]):
-        self.batch_output_count += 1
+        self.batch_output_count += 1 * perturbed_tokens.shape[0]
         return self._process_batch(self.request_url, perturbed_tokens, gradient=False,)
 
     def get_batch_input_gradient(self, perturbed_tokens, labels):
-        self.batch_gradient_count += 1
+        self.batch_gradient_count += 1 * perturbed_tokens.shape[0]
         return self._process_batch(
             self.request_url, perturbed_tokens, labels, gradient=True,
         )

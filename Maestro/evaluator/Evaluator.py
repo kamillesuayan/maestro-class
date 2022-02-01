@@ -286,8 +286,9 @@ class Evaluator:
             output = vm.get_batch_output(perturbed_data, labels.cpu().detach().numpy(),)
             final_pred = np.argmax(output[0])
             # final_pred = output.max(1, keepdim=True)[1]
-            # print(output, final_pred)
-            if final_pred.item() != labels.item():
+            #print(type(target_label), type(final_pred.item()))
+            print(output[0])
+            if final_pred.item() == target_label:
                 n_success_attack += 1
 
             # Calculate final accuracy for this epsilon

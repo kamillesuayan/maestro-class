@@ -9,7 +9,7 @@ Attacker Access:
       write: False
     dev_data_access:
       read: False
-      write: False
+      write: True
     test_data_access: 
       read: True
       write: True

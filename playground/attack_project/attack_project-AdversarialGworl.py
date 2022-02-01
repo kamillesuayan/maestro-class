@@ -13,7 +13,7 @@ class ProjectAttack:
         vm,
         image_size: List[int],
         l2_threshold=7.5,
-        steps=6, # strong correlation with distance??
+        steps=7, # strong correlation with distance??
         alpha=0.2 # tune
         
     ):
@@ -29,7 +29,8 @@ class ProjectAttack:
         original_image:  np.ndarray,
         labels: List[int],
         target_label: int,
-        epsilon = 0.01 # tune
+        #epsilon = 0.01 # tune
+        epsilon = 0.021
 
     ):
         """

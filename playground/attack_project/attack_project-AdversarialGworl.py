@@ -60,18 +60,6 @@ class ProjectAttack:
             # Perturb the image in the direction of gradient with respect to target_label by epsilon
             # Ensure that it is TARGETED
 
-            # grad = self.alpha*(torch.FloatTensor(original_image) - epsilon * sign_data_grad)
-            # perturbed_image = original_image - grad
-            # np_perturbed = perturbed_image.cpu().detach().numpy()
-            # grad = grad.cpu().detach().numpy()
-            # step_grad = torch.clamp(grad, -epsilon, epsilon)
-
-            # np_perturbed = np.clip(perturbed_image, perturbed_image, grad)
-            # perturbed_image = original_image + grad
-
-            
-            # perturbed_image = np.clip(np_perturbed, self.x_p, np_perturbed)
-
             temp_grad = self.alpha * sign_data_grad
             t = torch.from_numpy(original_image) + temp_grad
 

@@ -24,9 +24,9 @@ from Maestro.Attack_Defend.Perturb_Transform import perturb_transform
 # ------------------ LOCAL IMPORTS ---------------------------------
 
 # executor = ThreadPoolExecutor(1)
-application_config_file = "Server_Config/Genetic_Attack.json"
+# application_config_file = "Server_Config/Genetic_Attack.json"
 # application_config_file = "Server_Config/FGSM_Attack.json"
-# application_config_file = "Server_Config/Attack_Project.json"
+application_config_file = "Server_Config/Attack_Project.json"
 # application_config_file = "Server_Config/Adv_Training.json"
 # application_config_file = "Server_Config/Defense_Project.json"
 
@@ -114,12 +114,17 @@ def record_scores(student_id, student_name, application, record_path, task):
         app_pipeline=app.applications[application],
     )
     print(f"the task is {task}")
-    if (task == "attack_homework") | (task == "attack_project"):
+    if task == "attack_homework":
         all_metrics = []
         for i in range(1):
             metrics = evaluator.attack_evaluator()
             # metrics = {}
             # metrics['score'] = 0
+            all_metrics.append(metrics)
+    elif task == "attack_project":
+        all_metrics = []
+        for i in range(1):
+            metrics = evaluator.attack_evaluator_project()
             all_metrics.append(metrics)
     elif task == "defense_homework":
         metrics = evaluator.defense_evaluator(IP_ADDR, PORT, model_name, app.applications, attacker_path_list)
@@ -133,13 +138,17 @@ def record_scores(student_id, student_name, application, record_path, task):
         print("loading evaulator error")
 
     print("evaluator")
-    grade_score = metrics["grade_score"]
+    # grade score is for attack hw only
+    #grade_score = metrics["grade_score"]
     leaderboard_score = metrics["leaderboard_score"]
-    print(grade_score, record_path)
+    #print(grade_score, record_path)
+    print(record_path)
     print(leaderboard_score, record_path)
     with open(record_path, "a+") as f:
-        f.write(str(grade_score) + " " + str(leaderboard_score) + "\n")
+        #f.write(str(grade_score) + " " + str(leaderboard_score) + "\n")
+        f.write(str(leaderboard_score) + "\n")
     return metrics
+
 def add_to_app(name, pipeline):
     global applications
     applications[name] = pipeline
@@ -209,7 +218,6 @@ def main():
         application = json_data["Application_Name"]
         batch_input = json_data["data"]
         labels = json_data["labels"]
-
         outputs = app.applications[application].get_batch_input_gradient(
             batch_input, labels
         )
@@ -221,7 +229,7 @@ def main():
         print("Received!")
         application = request.form["Application_Name"]
         data_type = request.form["data_type"]
-        print(f"perturb: {request.form['perturbation']}")
+        # print(f"perturb: {request.form['perturbation']}")
         if data_type == "train":
             data = app.applications[application].training_data.get_write_data()
         elif data_type == "validation":
@@ -229,10 +237,10 @@ def main():
         elif data_type == "test":
             data = app.applications[application].test_data.get_write_data()
         # print(data)
-        if request.form["perturbation"] != "":
-            data = perturb_transform(
-                app.applications[application], data, request.form["perturbation"]
-            )
+        # if request.form["perturbation"] != "":
+        #     data = perturb_transform(
+        #         app.applications[application], data, request.form["perturbation"]
+        #     )
         # json_data = get_json_data(data)
         # this won't work right now, cause someone change code in processing_data.py
         # print(data)
@@ -281,7 +289,11 @@ def main():
     @app.route("/file_evaluator", methods=["POST"])
     def file_evaluator():
         print("Evaluate the students' method.")
-        student_id = request.form["id"]
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
         student_name = request.form["student_name"]
 
         print("Student id", student_id)
@@ -292,18 +304,19 @@ def main():
         except:
             submission = None
         if submission:
-            filename = str(application) + "_" + str(student_id) + ".py"
+            filename = str(application) + "_" + str(student_name) + ".py"
             print(submission)
             submission.save(os.path.join("../../playground/" + str(task) + "/", filename))
 
         # record_path = Path("../tmp/" + task + "/recording.txt")
-        record_path = Path("../../playground/" + task + "/recording_"+str(student_id)+".txt")
+        record_path = Path("../../playground/" + task + "/recording_"+str(student_id)+str(student_name)+".txt")
 
         record_path.parent.mkdir(parents=True, exist_ok=True)
         now = datetime.datetime.now()
         with open(record_path, "a+") as f:
             f.write('\n' +
-                str(student_id)
+                #str(student_id)+"-"+str(student_name)
+                str(student_name)
                 + "\t"
                 + now.strftime("%Y-%m-%d %H:%M:%S")
                 + "\t"
@@ -337,8 +350,13 @@ def main():
     def retrieve_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        student_id = request.form["id"]
-        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
+        student_name = request.form["name"]
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+str(student_name)+".txt"
 
         application = request.form["Application_Name"]
         output = []
@@ -350,7 +368,7 @@ def main():
             for i in data:
                 print(i)
                 recording = i.split("\t")
-                if recording[0] == student_id:
+                if recording[0] == student_name:
                     output.append(recording)
         return {"score": output}
 
@@ -358,8 +376,13 @@ def main():
     def evaluate_result():
         print("check the score of the defense method")
         task = request.form["task"]
-        student_id = request.form["id"]
-        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+".txt"
+        student_id = request.form.get("id")
+        if student_id == None:
+            student_id = ""
+        else:
+            student_id = str(student_id) + "-"
+        student_name = request.form["name"]
+        record_path = "../../playground/" + str(task) + "/recording_"+str(student_id)+str(student_name)+".txt"
 
         application = request.form["Application_Name"]
         output = []

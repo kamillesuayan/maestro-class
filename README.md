@@ -1,3 +1,8 @@
+## Reminder
+
+As to the defence homework, refer to the readme.md on `playground/defense_homework/README.md`.
+
+
 # Maestro
 
 A service for educational purposes in the domain of adversarial attacks / defense.
@@ -37,7 +42,7 @@ Make sure you have the virtual environment set (at the root folder). You can use
 ```
 $ python3 -m venv env
 $ source env/bin/activate
-``` 
+```
 Once the virtual environment is set, install the requirements:
 ```
 $ (env) pip3 install -r requirements.txt
@@ -72,7 +77,7 @@ application_config_file = "Server_Config/Genetic_Attack.json"    # (Assignment 1
 **If you cannot run `app.py` check that you are passing the right configuration file!**
 
 ### Code your assignment
-The naming convention for submission files is: `<task>-<id>-<name>.py`. An example would be `attack_project-110-Team Fire.py` or `attack_homework-11-Alice.py`. 
+The naming convention for submission files is: `<task>-<id>-<name>.py`. An example would be `attack_project-110-Team Fire.py` or `attack_homework-11-Alice.py`.
 - Go to the `playground` folder. There you will find a folder for each assignment/project with the template and evaluator file.
 - Fill in the TODO sections in the corresponding template file and follow the conventions in naming the file.
 - Change the last lines in the evaluation file to match your name and UCI ID.
@@ -87,10 +92,10 @@ $ cd playground/attack_homework
 $ (env) python3 attack_homework-Evaluation.py
 ```
 After that, a request will be sent to the server, you will be able to see the output in the other terminal tab, where `app.py` is running.
-- You can see the saved outputs (plots) in the `Maestro/server` folder and the recording (final success rate) in the corresponding assignment folder. In the case of attack homework, after a successful execution you will be able to compare the images before and after genetic attack. Those images will be saved as `before_GA.png` and `after_GA.png` in the `Maestro/server` folder. 
+- You can see the saved outputs (plots) in the `Maestro/server` folder and the recording (final success rate) in the corresponding assignment folder. In the case of attack homework, after a successful execution you will be able to compare the images before and after genetic attack. Those images will be saved as `before_GA.png` and `after_GA.png` in the `Maestro/server` folder.
 
 ### Running FGSM attack
-After importing latest updates, first uncomment the second line([#L28](https://github.com/ucinlp/maestro-class/blob/main/Maestro/server/app.py#L28)) in application configurations in app.py 
+After importing latest updates, first uncomment the second line([#L28](https://github.com/ucinlp/maestro-class/blob/main/Maestro/server/app.py#L28)) in application configurations in app.py
 ```
 # application_config_file = "Server_Config/Genetic_Attack.json"    # (Assignment 1)
 application_config_file = "Server_Config/FGSM_Attack.json"

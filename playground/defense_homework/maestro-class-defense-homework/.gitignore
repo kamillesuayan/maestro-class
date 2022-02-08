@@ -1,8 +1,0 @@
-datasets/MNIST/*
-!datasets/MNIST/train_student_split.pt
-!datasets/MNIST/test_student_split.pt
-**/__pycache__/*
-models/*
-!models/lenet_mnist_model.pth
-tasks/defense_homework/defense_homework-11-Solution.py
-

@@ -53,7 +53,7 @@ class AutoPipelineForVision:
                 # model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
 
                 # use for CIFAR10
-                model = torch.load(checkpoint_path)
+                model = torch.load(checkpoint_path, map_location=torch.device('cpu'))
                 model = torch.nn.DataParallel(model)
             else:
                 model.to(self.device)

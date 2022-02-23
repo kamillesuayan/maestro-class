@@ -1,4 +1,6 @@
 # data/
+!Maestro/tmp/datasets/attack_homework/MNIST/test_student_split.pt
+!Maestro/tmp/datasets/attack_homework/MNIST/train_student_split.pt
 models_temp/
 __pycache__/
 tmp/
@@ -136,8 +138,8 @@ dmypy.json
 
 # data
 data/
-Maestro/tmp/*/recording*.txt
 playground/*/*.txt
 Maestro/server/*.png
 playground/attack_homework/*
 Maestro/server/population.png
+playground/attack_project/*
